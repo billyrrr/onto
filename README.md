@@ -47,5 +47,10 @@ All ViewModels have automatically generated documentations
 (provided by Flasgger). This helps AGILE teams keep their 
 documentations and actual code in sync. 
 
+### Fully-extendable
+
+When you need better performance or relational database 
+support, you can always refactor a specific layer by 
+adding modules such as ```flask-sqlalchemy```.  
 
 
