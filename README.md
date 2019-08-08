@@ -21,7 +21,7 @@ real-time features of Firebase Firestore.
 
 Rather than configuring the network and different certificate 
 settings for your database and other cloud services. All you 
-have to do is to enable relative services on Google Cloud 
+have to do is to enable related services on Google Cloud 
 Console, and add your certificate. Flask-boiler configures 
 all the services you need, and expose them as a singleton 
 Context object across the project. 
