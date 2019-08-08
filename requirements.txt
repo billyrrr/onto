@@ -1,0 +1,7 @@
+Flask>=0.10
+google-auth==1.5.1
+google-cloud-datastore
+google-api-python-client
+firebase-admin
+flask_restful
+marshmallow
