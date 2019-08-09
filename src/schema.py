@@ -18,32 +18,37 @@ def _get_field(variable_key, variable_val) -> fields.Field:
         raise NotImplementedError
 
 
-def _get_field_vars(vars_obj) -> dict:
+def _get_field_vars(vars_obj, fd) -> dict:
     field_vars = dict()
     for key, val in vars_obj.items():
-        field_vars[key] = _get_field(key, val)
+        if key in fd:
+            field_vars[key] = _get_field(key, val)
     return field_vars
 
 
-def generate_schema(obj) -> Schema:
+def generate_schema(obj_cls) -> Schema:
     """
     Generates
     :param obj:
     :return:
     """
 
-    def constructor(self, obj):
+    def constructor(self, obj_cls):
         Schema.__init__(self)
-        self.obj = obj
+        self.obj_cls = obj_cls
+
+    # A list of all fields to serialize and deserialize
+    fd = obj_cls.get_fields()
 
     @post_load
     def make_temp_obj(self, data: dict, **kwargs):
         for k, v in data.items():
-            key, value = firestore_key_to_attr_name(k), v
-            setattr(self.obj, key, value)
+            if k in fd:
+                key, value = firestore_key_to_attr_name(k), v
+                setattr(self.obj, key, value)
         return self.obj
 
-    field_vars = _get_field_vars(vars(obj))
+    field_vars = _get_field_vars(vars(obj_cls), fd)
 
     TempSchema = type("TempSchema", (Schema,),
                       {
@@ -53,5 +58,5 @@ def generate_schema(obj) -> Schema:
                       }
     )
 
-    return TempSchema(obj)
+    return TempSchema(obj_cls)
 
