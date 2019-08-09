@@ -3,5 +3,12 @@ google-auth==1.5.1
 google-cloud-datastore
 google-api-python-client
 firebase-admin
+
+# REST API Framework
 flask_restful
+
+# Serializes and deserializes data
 marshmallow
+
+# Provides conversion between "CamelCase" and "snake_case"
+inflection
