@@ -5,6 +5,9 @@ from src import schema, fields
 
 
 def test__get_field_vars():
+    """
+    Tests that _get_field_vars returns a dictionary of expected Field objects.
+    """
 
     class TestObject:
 
@@ -22,7 +25,7 @@ def test__get_field_vars():
         Test fixture for comparing two fields.Field objects
         """
         if x.load_from != y.load_from:
-            return "x.load_from: {} != y.load_from: {}".format(
+            return "x != y since x.load_from: {} != y.load_from: {}".format(
                 x.load_from, y.load_from
             )
 
@@ -37,6 +40,11 @@ def test__get_field_vars():
 
 
 def test_set_attr():
+    """
+    Tests that generate_schema returns a schema that has the ability to
+        set instance variables based on keys of different format in the
+        dictionary provided in schema.load(d)
+    """
 
     class TestObject:
 
@@ -59,6 +67,10 @@ def test_set_attr():
 
 
 def test_conversion():
+    """
+    Tests that "camelCase" key used in Firestore converts to "snake_case"
+        target instance variable names.
+    """
 
     res = schema.firestore_key_to_attr_name("intA")
     assert res == "int_a"
