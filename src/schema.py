@@ -1,10 +1,28 @@
 from src import fields
 from marshmallow import Schema, post_load
 from inflection import camelize, underscore
+from functools import partial
 
 
-attr_name_to_firestore_key = camelize
+attr_name_to_firestore_key = partial(camelize, uppercase_first_letter=False)
 firestore_key_to_attr_name = underscore
+
+
+def _get_field(variable_key, variable_val) -> fields.Field:
+    if isinstance(variable_val, int):
+        return fields.Integer(
+            load_from=attr_name_to_firestore_key(variable_key)
+        )
+    else:
+        # TODO: implement _get_field for other field types
+        raise NotImplementedError
+
+
+def _get_field_vars(vars_obj) -> dict:
+    field_vars = dict()
+    for key, val in vars_obj.items():
+        field_vars[key] = _get_field(key, val)
+    return field_vars
 
 
 def generate_schema(obj) -> Schema:
@@ -25,12 +43,13 @@ def generate_schema(obj) -> Schema:
             setattr(self.obj, key, value)
         return self.obj
 
+    field_vars = _get_field_vars(vars(obj))
+
     TempSchema = type("TempSchema", (Schema,),
                       {
                           "__init__": constructor,
-                          "int_a": fields.Integer(load_from="intA"),
-                          "int_b": fields.Integer(load_from="intB"),
-                          "make_temp_obj": make_temp_obj
+                          "make_temp_obj": make_temp_obj,
+                          **field_vars
                       }
     )
 

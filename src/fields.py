@@ -1,7 +1,8 @@
 from marshmallow import fields
 
+Field = fields.Field
 
-class Boolean(fields.Field):
+class Boolean(Field):
     """Field that serializes to a boolean and deserializes
         to a boolean.
     """
@@ -13,7 +14,7 @@ class Boolean(fields.Field):
         return value
 
 
-class Integer(fields.Field):
+class Integer(Field):
     """Field that serializes to an integer and deserializes
             to an integer.
     """
