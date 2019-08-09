@@ -5,7 +5,7 @@ from .context import Context as CTX
 from .utils import random_id
 
 
-class DomainModel(Schema):
+class DomainModel(object):
 
     @property
     def collection_name(self):
@@ -18,14 +18,43 @@ class DomainModel(Schema):
     def collection(self):
         return CTX.db.collection(self.collection_name)
 
-    def __init__(self):
-        self._schema = generate_schema(self)
+    @property
+    def doc_id(self):
+        if self._doc_id is None:
+            self._doc_id = random_id()
+        return self._doc_id
 
-    def to_dict(self):
+    @property
+    def doc_ref(self):
+        return self.collection.document(self.doc_id)
+
+    def __init__(self, doc_id=None):
+        self._schema: Schema = generate_schema(self)
+        self._doc_id = doc_id
+
+    def _export_as_dict(self):
         mres: MarshalResult = self._schema.dump(self)
         return mres.data
+    #
+    # def from_dict(self, d):
+    #     raise NotImplementedError
 
     def save(self):
-        d = self._schema.dump(self).data
-        doc_id = random_id()
-        self.collection.document(doc_id).set(document_data=d)
+        d = self._export_as_dict()
+        self.doc_ref.set(document_data=d)
+
+    def _import_doc(self):
+        d = self.doc_ref.get().to_dict()
+        # TODO: handle errors
+        deserialized, _ = self._schema.load(d)
+        self._import_properties(deserialized)
+
+    def _import_properties(self, deserialized):
+        raise NotImplementedError
+
+    @classmethod
+    def get(cls, doc_id):
+        obj = cls(doc_id=doc_id)
+        obj._import_doc()
+        return obj
+
