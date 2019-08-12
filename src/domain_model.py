@@ -8,5 +8,4 @@ from .utils import random_id
 
 
 class DomainModel(FirestoreObject):
-
     pass
