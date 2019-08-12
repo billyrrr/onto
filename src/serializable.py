@@ -65,9 +65,10 @@ class Serializable(object):
         instance = super().__new__(cls, *args, **kwargs)
         return instance
 
-    def _export_as_dict(self):
+    def _export_as_dict(self) -> dict:
         mres: MarshalResult = self._schema.dump(self)
         return mres.data
 
-    def _import_properties(self, deserialized):
-        raise NotImplementedError
+    def _import_properties(self, deserialized: dict) -> None:
+        for key, val in deserialized.items():
+            setattr(self, key, val)
