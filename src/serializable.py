@@ -60,10 +60,10 @@ class Serializable(object):
         else:
             return cls._fields
 
-    def __new__(cls, *args, **kwargs):
-
-        instance = super().__new__(cls, *args, **kwargs)
-        return instance
+    # def __new__(cls, *args, **kwargs):
+    #
+    #     instance = super().__new__(cls, *args, **kwargs)
+    #     return instance
 
     def _export_as_dict(self) -> dict:
         mres: MarshalResult = self._schema.dump(self)

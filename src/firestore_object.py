@@ -43,14 +43,18 @@ class FirestoreObject(Serializable):
         d = self._export_as_dict()
         self.doc_ref.set(document_data=d)
 
+    def delete(self):
+        self.doc_ref.delete()
+
     @classmethod
-    def create(cls):
+    def create(cls, doc_id=None):
         """
         Create an instance of object and assign a Firestore
             reference with random id to the instance.
         :return:
         """
-        doc_id = random_id()
+        if doc_id is None:
+            doc_id = random_id()
         obj = cls(doc_id=doc_id)
         return obj
 
