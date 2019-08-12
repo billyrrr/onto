@@ -1,3 +1,4 @@
+from google.cloud.firestore_v1 import Transaction
 from marshmallow import Schema, MarshalResult
 
 from src.schema import generate_schema
@@ -33,18 +34,24 @@ class FirestoreObject(Serializable):
         super().__init__()
         self._doc_id = doc_id
 
-    def _import_doc(self):
-        d = self.doc_ref.get().to_dict()
+    def _import_doc(self, d):
         # TODO: handle errors
         deserialized, _ = self._schema.load(d)
         self._import_properties(deserialized)
 
-    def save(self):
+    def save(self, transaction: Transaction=None):
         d = self._export_as_dict()
-        self.doc_ref.set(document_data=d)
+        if transaction is None:
+            self.doc_ref.set(document_data=d)
+        else:
+            transaction.set(reference=self.doc_ref,
+                            document_data=d)
 
-    def delete(self):
-        self.doc_ref.delete()
+    def delete(self, transaction: Transaction=None):
+        if transaction is None:
+            self.doc_ref.delete()
+        else:
+            transaction.delete(reference=self.doc_ref)
 
     @classmethod
     def create(cls, doc_id=None):
@@ -59,7 +66,11 @@ class FirestoreObject(Serializable):
         return obj
 
     @classmethod
-    def get(cls, doc_id):
+    def get(cls, doc_id, transaction: Transaction=None):
         obj = cls(doc_id=doc_id)
-        obj._import_doc()
+        if transaction is None:
+            d = obj.doc_ref.get().to_dict()
+        else:
+            d = obj.doc_ref.get(transaction=transaction).to_dict()
+        obj._import_doc(d)
         return obj
