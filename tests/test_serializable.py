@@ -3,7 +3,6 @@ from src import view_model, schema
 
 
 def test__additional_fields():
-
     class ModelA(view_model.ViewModel, serializable_fields=["int_a"]):
         int_a = 0
 
@@ -17,6 +16,7 @@ def test__additional_fields():
 def test_infer_fields():
     class ModelA(view_model.ViewModel, serializable_fields=None):
         int_a = 0
+
     assert ModelA._infer_fields() == ["int_a"]
 
 
@@ -50,8 +50,8 @@ def test_singleton_schema():
 
 
 def test_generate_schema():
-
-    class ModelA(serializable.Serializable, serializable_fields=["int_a", "int_b"]):
+    class ModelA(serializable.Serializable,
+                 serializable_fields=["int_a", "int_b"]):
 
         def __init__(self):
             super().__init__()
@@ -62,7 +62,6 @@ def test_generate_schema():
 
 
 def test_multiple_inheritance():
-
     class ModelA(view_model.ViewModel):
 
         def __init__(self):
@@ -94,13 +93,12 @@ def test_multiple_inheritance():
 
 
 def test__export_as_dict():
-
     class ModelASchema(schema.Schema):
         int_a = schema.fields.Integer(load_from="intA", dump_to="intA")
         int_b = schema.fields.Integer(load_from="intB", dump_to="intB")
 
-    class ModelA(serializable.Serializable, serializable_fields=["int_a", "int_b"]):
-
+    class ModelA(serializable.Serializable,
+                 serializable_fields=["int_a", "int_b"]):
         _schema = ModelASchema()
 
         def __init__(self):
@@ -116,4 +114,3 @@ def test__export_as_dict():
         "intA": 1,
         "intB": 2
     }
-

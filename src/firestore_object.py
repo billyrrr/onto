@@ -59,4 +59,3 @@ class FirestoreObject(Serializable):
         obj = cls(doc_id=doc_id)
         obj._import_doc()
         return obj
-

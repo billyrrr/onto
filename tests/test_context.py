@@ -9,8 +9,8 @@ from src.config import Config
 def test_firebase_app_context():
     config = Config(
         app_name="gravitate-dive-testing",
-        debug = True,
-        testing = True,
+        debug=True,
+        testing=True,
         certificate_filename="gravitate-dive-testing-firebase-adminsdk-g1ybn-2dde9daeb0.json"
     )
     CTX.read(config)

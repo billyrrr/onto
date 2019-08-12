@@ -5,7 +5,6 @@ from src import schema, fields
 
 
 def test__get_instance_vars():
-
     class TestObject:
 
         def __init__(self):
@@ -20,7 +19,6 @@ def test__get_instance_vars():
 
 
 def test__get_instance_vars_nested_init():
-
     class TestObject:
 
         def _nested_init(self):
