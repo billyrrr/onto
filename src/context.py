@@ -16,19 +16,15 @@ import firebase_admin
 from firebase_admin import credentials
 from google.cloud import firestore
 
-#
-# # Original Firebase set-up certs
-#
-
-
-config = None  # TODO: implement 
+from src.config import Config
 
 
 class Context:
-    firebaseApp: firebase_admin.App = None
+    firebase_app: firebase_admin.App = None
     db: firestore.Client = None
-    debug = None
-    testing = None
+    config: Config = None
+    # debug = None
+    # testing = None
     _cred = None
     __instance = None
 
@@ -42,7 +38,7 @@ class Context:
         return cls.__instance
 
     @classmethod
-    def read(cls):
+    def read(cls, config):
         """ Description
             Read config file andd reload firebase app and firestore client.
 
@@ -55,10 +51,11 @@ class Context:
 
         :rtype:
         """
-        cls._reload_debug_flag(config.DEBUG)
-        cls._reload_testing_flag(config.TESTING)
-        cls._reload_firebase_app(config.FIREBASE_CERTIFICATE_JSON_PATH)
-        cls._reload_firestore_client(config.FIREBASE_CERTIFICATE_JSON_PATH)
+        cls.config = config
+        cls._reload_debug_flag(cls.config.DEBUG)
+        cls._reload_testing_flag(cls.config.TESTING)
+        cls._reload_firebase_app(cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
+        cls._reload_firestore_client(cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
         return cls
 
     @classmethod
@@ -75,22 +72,22 @@ class Context:
         cls.testing = testing
 
     @classmethod
-    def _reload_firebase_app(cls, certificatePath):
+    def _reload_firebase_app(cls, certificate_path):
 
         try:
-            cls._cred = credentials.Certificate(certificatePath)
+            cls._cred = credentials.Certificate(certificate_path)
         except ValueError as e:
             logging.exception('Error initializing credentials.Certificate')
         # TODO delete certificate path in function call
 
         try:
-            cls.firebaseApp = firebase_admin.initialize_app(credential=cls._cred, name=config.APP_NAME)
+            cls.firebase_app = firebase_admin.initialize_app(credential=cls._cred, name=cls.config.APP_NAME)
         except ValueError as e:
-            logging.exception('Error initializing firebaseApp')
+            logging.exception('Error initializing firebase_app')
 
     @classmethod
-    def _reload_firestore_client(cls, credPath):
+    def _reload_firestore_client(cls, cred_path):
         try:
-            cls.db = firestore.Client.from_service_account_json(credPath)
+            cls.db = firestore.Client.from_service_account_json(cred_path)
         except ValueError as e:
-            logging.exception('Error initializing firestore client from cls.firebaseApp')
+            logging.exception('Error initializing firestore client from cls.firebase_app')
