@@ -24,3 +24,7 @@ class Integer(Field):
 
     def _deserialize(self, value, attr, data, **kwargs):
         return value
+
+
+class Raw(fields.Raw):
+    pass

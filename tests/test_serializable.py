@@ -1,7 +1,5 @@
-import pytest
-from marshmallow import Schema
-from src import view_model
-from src import fields
+from src import serializable
+from src import view_model, schema
 
 
 def test__additional_fields():
@@ -40,8 +38,9 @@ def test_singleton_schema():
     """
 
     class ModelA(view_model.ViewModel):
-        fields = ["int_a"]
-        int_a = 0
+
+        def __init__(self):
+            self.int_a = 0
 
     a = ModelA()
     assert a._schema
@@ -50,16 +49,36 @@ def test_singleton_schema():
     assert a1._schema is a2._schema
 
 
+def test_generate_schema():
+
+    class ModelA(serializable.Serializable, serializable_fields=["int_a", "int_b"]):
+
+        def __init__(self):
+            super().__init__()
+            self.int_a = 0
+            self.int_b = 0
+
+    a = ModelA()
+
+
 def test_multiple_inheritance():
 
     class ModelA(view_model.ViewModel):
-        int_a = 0
+
+        def __init__(self):
+            super().__init__()
+            self.int_a = 0
 
     class ModelB(view_model.ViewModel):
-        int_b = 1
+
+        def __init__(self):
+            super().__init__()
+            self.int_b = 1
 
     class ModelAB(ModelA, ModelB):
-        pass
+
+        def __init__(self):
+            super().__init__()
 
     ab = ModelAB()
     ab.int_a = 1
@@ -68,8 +87,33 @@ def test_multiple_inheritance():
     assert ab.int_a == 1
     assert ab.int_b == 2
 
-    assert ab.to_dict() == {
-        "int_a": 1,
-        "int_b": 2
+    assert ab._export_as_dict() == {
+        "intA": 1,
+        "intB": 2
+    }
+
+
+def test__export_as_dict():
+
+    class ModelASchema(schema.Schema):
+        int_a = schema.fields.Integer(load_from="intA", dump_to="intA")
+        int_b = schema.fields.Integer(load_from="intB", dump_to="intB")
+
+    class ModelA(serializable.Serializable, serializable_fields=["int_a", "int_b"]):
+
+        _schema = ModelASchema()
+
+        def __init__(self):
+            super().__init__()
+            self.int_a = 0
+            self.int_b = 0
+
+    a = ModelA()
+    a.int_a = 1
+    a.int_b = 2
+
+    assert a._export_as_dict() == {
+        "intA": 1,
+        "intB": 2
     }
 
