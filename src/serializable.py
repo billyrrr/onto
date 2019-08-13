@@ -78,5 +78,6 @@ class Serializable(object):
 
     @classmethod
     def from_dict(cls, d, **kwargs):
-        instance = cls(**kwargs)
-        return instance._import_properties(d)
+        instance = cls(**kwargs)  # TODO: fix unexpected arguments
+        instance._import_properties(d)
+        return instance
