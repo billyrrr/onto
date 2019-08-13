@@ -72,3 +72,11 @@ class Serializable(object):
     def _import_properties(self, deserialized: dict) -> None:
         for key, val in deserialized.items():
             setattr(self, key, val)
+
+    def to_dict(self):
+        return self._export_as_dict()
+
+    @classmethod
+    def from_dict(cls, d, **kwargs):
+        instance = cls(**kwargs)
+        return instance._import_properties(d)
