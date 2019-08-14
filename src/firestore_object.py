@@ -1,8 +1,8 @@
-from google.cloud.firestore_v1 import Transaction
+from google.cloud.firestore import Transaction
 from marshmallow import Schema, MarshalResult
 
-from src.schema import generate_schema
-from src.serializable import Serializable
+from .schema import generate_schema
+from .serializable import Serializable
 from .context import Context as CTX
 from .utils import random_id
 

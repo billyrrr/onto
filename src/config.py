@@ -33,10 +33,14 @@ class Config:
     FIREBASE_CERTIFICATE_JSON_PATH: str = None
     APP_NAME: str = None
 
-    def __new__(cls, certificate_filename=None, testing=False, debug=False,
+    def __new__(cls, certificate_filename=None, certificate_path=None,
+                testing=False, debug=False,
                 app_name=None, *args, **kwargs):
-        cls.FIREBASE_CERTIFICATE_JSON_PATH = os.path.join(
-            config_jsons_path, certificate_filename)
+        if certificate_path is not None:
+            cls.FIREBASE_CERTIFICATE_JSON_PATH = certificate_path
+        else:
+            cls.FIREBASE_CERTIFICATE_JSON_PATH = os.path.join(
+                config_jsons_path, certificate_filename)
         cls.TESTING = testing
         cls.DEBUG = debug
         cls.APP_NAME = app_name

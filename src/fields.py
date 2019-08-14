@@ -1,6 +1,8 @@
 from marshmallow import fields
+from marshmallow.fields import *
 
 Field = fields.Field
+
 
 class Boolean(Field):
     """Field that serializes to a boolean and deserializes

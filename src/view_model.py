@@ -1,11 +1,11 @@
 from typing import Dict, Tuple
 
-from google.cloud.firestore_v1 import DocumentReference
+from google.cloud.firestore import DocumentReference
 from marshmallow import MarshalResult
 
-from src.domain_model import DomainModel
-from src.firestore_object import FirestoreObject
-from src.serializable import Serializable
+from .domain_model import DomainModel
+from .firestore_object import FirestoreObject
+from .serializable import Serializable
 
 
 class ViewModel(FirestoreObject):

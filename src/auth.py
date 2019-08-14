@@ -12,31 +12,40 @@ from flask_restful import abort
 from .context import Context
 
 # Flag for whether main app is in TESTING mode
-testing = Context.testing
-if testing is True:
-    warnings.warn("Testing mode is True. Set to False before release. ")
+def is_testing():
+    testing = Context.config.TESTING
+    if testing is True:
+        warnings.warn("Testing mode is True. Set to False before release. ")
+    return testing
 
 
 # For Testing Purposes. If not in TESTING mode, the function verfifies the token with FirebaseApp.
 # Otherwise, a fixed uid will be returned in the format {"uid":"testuid1"}
-auth_verify_id_token = None
-if testing:
-    def mock_auth_verify_id_token(*args, **kwargs):
-        mock_uid = args[0]
-        warnings.warn("@authenticate (decorator for service methods) is returning uid as {}. ".format(mock_uid))
-        return {
-            "uid": mock_uid
-        }
-    auth_verify_id_token = mock_auth_verify_id_token
-else:
-    auth_verify_id_token = auth.verify_id_token
+
+class AuthVerifyIdTokenFunc:
+
+    def __call__(self, *args, **kwargs):
+        if is_testing():
+            def mock_auth_verify_id_token(*args, **kwargs):
+                mock_uid = args[0]
+                warnings.warn(
+                    "@authenticate (decorator for service methods) is returning uid as {}. ".format(
+                        mock_uid))
+                return {
+                    "uid": mock_uid
+                }
+
+            return mock_auth_verify_id_token(*args, **kwargs)
+        else:
+            return auth.verify_id_token(*args, **kwargs)
 
 
 def default_authentication(id_token) -> (str, int):
+    auth_verify_id_token = AuthVerifyIdTokenFunc()
     try:
         # Verify the ID token while checking if the token is revoked by
         # passing check_revoked=True.
-        decoded_token = auth_verify_id_token(id_token, check_revoked=True, app=Context.firebaseApp)
+        decoded_token = auth_verify_id_token(id_token, check_revoked=True, app=Context.firebase_app)
         # Token is valid and not revoked.
         uid = decoded_token['uid']
         return uid, 200

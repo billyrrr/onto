@@ -16,7 +16,7 @@ import firebase_admin
 from firebase_admin import credentials
 from google.cloud import firestore
 
-from src.config import Config
+from .config import Config
 
 
 class Context:

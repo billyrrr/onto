@@ -1,6 +1,6 @@
 import warnings
 
-from src import fields
+from . import fields
 from marshmallow import Schema, post_load
 from inflection import camelize, underscore
 from functools import partial
