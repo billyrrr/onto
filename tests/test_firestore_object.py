@@ -4,7 +4,7 @@ from testfixtures import compare
 from src import schema, fields
 from src.context import Context as CTX
 from src.config import Config
-from src.firestore_object import FirestoreObject
+from src.firestore_object import FirestoreObject, PrimaryObject
 
 
 def test_create_obj():
@@ -21,7 +21,7 @@ def test_create_obj():
         int_a = fields.Raw(load_from="intA", dump_to="intA")
         int_b = fields.Raw(load_from="intB", dump_to="intB")
 
-    class TestObject(FirestoreObject):
+    class TestObject(PrimaryObject):
 
         _schema = TestObjectSchema()
 

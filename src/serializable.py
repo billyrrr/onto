@@ -20,8 +20,8 @@ class Serializable(object):
         super().__init_subclass__(**kwargs)
 
         cls._fields = serializable_fields
-        if cls._schema is None:
-            cls._schema = generate_schema(cls)
+        # if cls._schema is None:
+        #     cls._schema = generate_schema(cls)
 
     @classmethod
     def _infer_fields(cls) -> list:
