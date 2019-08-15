@@ -4,11 +4,11 @@ from google.cloud.firestore import DocumentReference
 from marshmallow import MarshalResult
 
 from .domain_model import DomainModel
-from .firestore_object import FirestoreObject
+from .firestore_object import ReferencedObject
 from .serializable import Serializable
 
 
-class ViewModel(FirestoreObject):
+class ViewModel(ReferencedObject):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

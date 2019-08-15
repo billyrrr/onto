@@ -1,5 +1,5 @@
-from .firestore_object import FirestoreObject
+from .firestore_object import PrimaryObject
 
 
-class DomainModel(FirestoreObject):
+class DomainModel(PrimaryObject):
     pass
