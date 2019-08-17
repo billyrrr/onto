@@ -58,6 +58,12 @@ class ReferencedObject(FirestoreObject):
 
     @classmethod
     def get(cls, doc_ref, transaction: Transaction = None):
+        """ Returns an instance from firestore document reference.
+
+        :param doc_ref: firestore document reference
+        :param transaction: firestore transaction
+        :return:
+        """
         obj = cls(doc_ref=doc_ref)
         if transaction is None:
             d = obj.doc_ref.get().to_dict()
@@ -70,17 +76,38 @@ class ReferencedObject(FirestoreObject):
 class PrimaryObject(FirestoreObject):
     """
     Primary Object is placed in a collection in root directory only.
+
+    Attributes
+    ----------
+    _collection_name : str
+        the name of the collection for the object. Note that different
+            types of objects may share one collection.
+
     """
+
+    _collection_name = None
 
     @property
     def collection_name(self):
-        if type(self) == FirestoreObject:
-            raise ValueError("collection_name is read from class name, "
-                             "only subclass is supported. ")
-        return self.__class__.__name__
+        """ Returns the root collection name of the class of objects.
+                If cls._collection_name is not specified, then the collection
+                name will be inferred from the class name.
+
+        :return:
+        """
+        # if type(self) == FirestoreObject:
+        #     raise ValueError("collection_name is read from class name, "
+        #                      "only subclass is supported. ")
+        if self._collection_name is None:
+            self._collection_name = self.__class__.__name__
+        return self._collection_name
 
     @property
     def collection(self):
+        """ Returns the firestore collection of the current object
+
+        :return:
+        """
         return CTX.db.collection(self.collection_name)
 
     @property
@@ -94,13 +121,18 @@ class PrimaryObject(FirestoreObject):
         return self.collection.document(self.doc_id)
 
     def __init__(self, doc_id=None):
+        """
+
+        :param doc_id: the document will be stored in
+            self.collection.document(doc_id)
+        """
         super().__init__()
         self._doc_id = doc_id
 
     @classmethod
     def create(cls, doc_id=None):
         """
-        Create an instance of object and assign a Firestore
+        Creates an instance of object and assign a firestore
             reference with random id to the instance.
         :return:
         """
@@ -111,6 +143,12 @@ class PrimaryObject(FirestoreObject):
 
     @classmethod
     def get(cls, doc_id, transaction: Transaction=None):
+        """ Returns the instance from doc_id.
+
+        :param doc_id: gets the instance from self.collection.document(doc_id)
+        :param transaction: firestore transaction
+        :return:
+        """
         obj = cls(doc_id=doc_id)
         if transaction is None:
             d = obj.doc_ref.get().to_dict()
