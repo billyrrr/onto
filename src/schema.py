@@ -1,11 +1,45 @@
 import warnings
 
 from . import fields
-from marshmallow import Schema, post_load
+import marshmallow
+from marshmallow import post_load
 from inflection import camelize, underscore
 from functools import partial
 
 import inspect
+
+
+def obj_type_serialize(obj: object):
+    """ Returns class name. To be used with Schema.obj_type field.
+
+    :param obj:
+    :return:
+    """
+
+    return obj.__class__.__name__
+
+
+def obj_type_deserialize(value):
+    """ Returns class name. To be used with Schema.obj_type field.
+
+    :param value:
+    :return:
+    """
+
+    return value
+
+
+class Schema(marshmallow.Schema):
+    """
+    Attributes:
+    ============
+    obj_type: fields.Function
+        Exports and imports class name of an instance for differentiating
+            different subclasses of PrimaryObject in the same collection.
+    """
+
+    obj_type = fields.Function(
+        serialize=obj_type_serialize, deserialize=obj_type_deserialize)
 
 
 attr_name_to_firestore_key = partial(camelize, uppercase_first_letter=False)

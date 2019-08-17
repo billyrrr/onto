@@ -34,7 +34,8 @@ if __name__ == "__main__":
 
     d_a = {
             "luggage_type": "large",
-            "weight_in_lbs": 20
+            "weight_in_lbs": 20,
+            "obj_type": "LuggageItem"
         }
     id_a = "luggage_id_a"
     obj_a = LuggageItem.create(id_a)
@@ -43,7 +44,8 @@ if __name__ == "__main__":
 
     d_b = {
             "luggage_type": "medium",
-            "weight_in_lbs": 15
+            "weight_in_lbs": 15,
+            "obj_type": "LuggageItem"
         }
     id_b = "luggage_id_b"
     obj_b = LuggageItem.create(id_b)
@@ -78,7 +80,8 @@ if __name__ == "__main__":
                 }
             ],
             "total_weight": 35,
-            "total_count": 2
+            "total_count": 2,
+            "obj_type": "Luggages"
         }
 
     assert vm.to_dict() == {
@@ -93,7 +96,8 @@ if __name__ == "__main__":
             }
         ],
         "total_weight": 35,
-        "total_count": 2
+        "total_count": 2,
+        "obj_type": "Luggages"
     }
 
     # Change the weight on one of the luggages
