@@ -18,7 +18,7 @@ class FirestoreObject(Serializable):
 
     def _import_doc(self, d):
         # TODO: handle errors
-        deserialized, _ = self._schema.load(d)
+        deserialized, _ = self.schema_obj.load(d)
         self._import_properties(deserialized)
 
     def save(self, transaction: Transaction=None):

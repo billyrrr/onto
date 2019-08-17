@@ -21,5 +21,6 @@ class ViewModel(ReferencedObject):
         raise NotImplementedError
 
     def to_dict(self):
-        mres: MarshalResult = self._schema.dump(self)
+        mres: MarshalResult = self.schema_obj.dump(self)
         return mres.data
+

@@ -8,7 +8,22 @@ from .schema import generate_schema
 class Serializable(object):
 
     _fields = None
-    _schema = None
+    _schema_cls = None
+    _schema_obj = None
+
+    @property
+    def schema_obj(self):
+        if self._schema_obj is None:
+            self._schema_obj = self._schema_cls()
+        return self._schema_obj
+
+    @property
+    def schema_cls(self):
+        return self._schema_cls
+
+    @classmethod
+    def get_schema_cls(cls):
+        return cls._schema_cls
 
     def __init_subclass__(cls, serializable_fields=None, **kwargs):
         """
@@ -66,11 +81,13 @@ class Serializable(object):
     #     return instance
 
     def _export_as_dict(self) -> dict:
-        mres: MarshalResult = self._schema.dump(self)
+        print(self.schema_obj)
+        print(self)
+        mres: MarshalResult = self.schema_obj.dump(self)
         return mres.data
 
     def _import_properties(self, d: dict) -> None:
-        deserialized = self._schema.load(d).data
+        deserialized = self.schema_obj.load(d).data
         for key, val in deserialized.items():
             setattr(self, key, val)
 

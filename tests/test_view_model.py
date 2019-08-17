@@ -18,7 +18,7 @@ def test_bind_to():
 
     class TestDomainObject1(DomainModel):
 
-        _schema = TestDomainSchema1()
+        _schema_cls = TestDomainSchema1
 
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
@@ -29,7 +29,7 @@ def test_bind_to():
 
     class TestDomainObject2(DomainModel):
 
-        _schema = TestDomainSchema2()
+        _schema_cls = TestDomainSchema2
 
         def __init__(self, **kwargs):
             super().__init__(**kwargs)

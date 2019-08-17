@@ -23,7 +23,7 @@ def test_create_obj():
 
     class TestObject(PrimaryObject):
 
-        _schema = TestObjectSchema()
+        _schema_cls = TestObjectSchema
 
         def __init__(self, doc_id=None):
             super().__init__(doc_id=doc_id)

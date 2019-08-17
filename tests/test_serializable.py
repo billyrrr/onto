@@ -43,10 +43,10 @@ def test_singleton_schema():
             self.int_a = 0
 
     a = ModelA()
-    assert a._schema
+    assert a.schema_obj
 
     a1, a2 = ModelA(), ModelA()
-    assert a1._schema is a2._schema
+    assert a1.schema_obj is a2.schema_obj
 
 
 def test_generate_schema():
@@ -99,7 +99,7 @@ def test__export_as_dict():
 
     class ModelA(serializable.Serializable,
                  serializable_fields=["int_a", "int_b"]):
-        _schema = ModelASchema()
+        _schema_cls = ModelASchema
 
         def __init__(self):
             super().__init__()
