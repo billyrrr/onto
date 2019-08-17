@@ -41,9 +41,9 @@ class ViewModel(ReferencedObject):
         if key in self._on_update_funcs:
             # Release the previous on_snapshot functions
             #   https://firebase.google.com/docs/firestore/query-data/listen
-            f = self._on_update_funcs[key]
+            f, doc_watch = self._on_update_funcs[key]
 
-            f.unsubscribe()
+            doc_watch.unsubscribe()
 
         dm_id, dm, upd_func = self.business_properties[key]
 
@@ -62,9 +62,9 @@ class ViewModel(ReferencedObject):
 
             self.save()
 
-        self._on_update_funcs[key] = on_update
         dm_ref: DocumentReference = dm.doc_ref
-        dm_ref.on_snapshot(on_update)
+        doc_watch = dm_ref.on_snapshot(on_update)
+        self._on_update_funcs[key] = (on_update, doc_watch)
 
     def to_dict(self):
         # TODO: delete
