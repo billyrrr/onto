@@ -11,6 +11,7 @@ from src import fields
 from src.schema import Schema
 from src.view_model import ViewModel
 from google.cloud import firestore
+from functools import partial
 
 from src.config import Config
 from src.context import Context as CTX
@@ -67,8 +68,28 @@ if __name__ == "__main__":
     app = Flask(__name__)
     swagger = Swagger(app)
 
+    def _mapper(path_str_template: str, _kwargs):
+        """
 
-    def register_view_model(app, view_model_cls):
+        :param path_str_template: example "company/{}"
+        :param args: example ["users"]
+        :return: DocumentReference for "company/users"
+        """
+        """
+        Maps a list of arguments from flask.View().get(args) to
+            a firestore reference that is used to construct
+            the ReferencedObject document
+        :return:
+        """
+        path_str = path_str_template.format(**_kwargs)
+        print(path_str)
+        path = CTX.db.document(path_str)
+        print(path)
+        return path
+
+    palette_doc_mapper = partial(_mapper, "palettes/{doc_id}")
+
+    def register_view_model(app, view_model_cls, mapper):
         # Note that there are better ways of implementing this
         _proxy_view_cls_name = "{}ProxyView".format(view_model_cls.__name__)
 
@@ -91,9 +112,8 @@ if __name__ == "__main__":
             }
         ]
 
-        def get(self, doc_id):
-            doc_ref: firestore.DocumentReference = \
-                CTX.db.collection("palettes").document(doc_id)
+        def get(self, **kwargs):
+            doc_ref: firestore.DocumentReference = mapper(kwargs)
 
             obj = self._view_model_cls.get(doc_ref)
             return jsonify(obj.to_dict())
@@ -115,6 +135,8 @@ if __name__ == "__main__":
         )
 
 
-    register_view_model(app, PaletteViewModel)
+    register_view_model(app,
+                        view_model_cls=PaletteViewModel,
+                        mapper=palette_doc_mapper)
 
     app.run(debug=True)
