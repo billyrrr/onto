@@ -2,6 +2,12 @@
 
 Flask-boiler helps you build fast-prototype of your backend. 
 
+## Architecture Diagram
+
+You may structure your project in this way:
+
+![architecture diagrama](https://www.lucidchart.com/publicSegments/view/76e8c8d4-a356-46ed-af95-e079d38a7bd7/image.png)
+
 ## Advantages
 
 ### Decoupled Domain Model and View Model
