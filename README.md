@@ -8,6 +8,97 @@ You may structure your project in this way:
 
 ![architecture diagrama](https://www.lucidchart.com/publicSegments/view/76e8c8d4-a356-46ed-af95-e079d38a7bd7/image.png)
 
+## Features
+
+### Context Management
+
+In ```__init__``` of your project source root: 
+```python
+import os
+
+from flask_boiler import context
+from flask_boiler import config
+
+Config = config.Config
+
+testing_config = Config(app_name="your_app_name",
+                        debug=True,
+                        testing=True,
+                        certificate_path=os.path.curdir + "/../your_project/config_jsons/your_certificate.json")
+
+CTX = context.Context
+CTX.read(testing_config)
+```
+
+Note that initializing ```Config``` with ```certificate_path``` is unstable and 
+may be changed later. 
+
+In your project code, 
+
+```python
+from flask_boiler import context
+
+CTX = context.Context
+
+# Retrieves firestore database instance 
+CTX.db
+
+# Retrieves firebase app instance 
+CTX.firebase_app
+
+```
+
+### ORM
+
+```python
+
+# Creates a schema for serializing and deserializing to firestore database
+class TestObjectSchema(schema.Schema):
+    
+    # Describes how obj.int_a is read from and stored to a document in firestore 
+    int_a = fields.Raw(
+        load_from="intA", # reads obj.int_a from firestore document field "intA" 
+        dump_to="intA" # stores the value of obj.int_a to firestore document field "intA" 
+        )
+    int_b = fields.Raw(load_from="intB", dump_to="intB")
+
+
+# Declares the object 
+class TestObject(PrimaryObject):
+
+    _schema_cls = TestObjectSchema
+
+    def __init__(self, doc_id=None):
+        super().__init__(doc_id=doc_id)
+        
+        # Initializes default values of your instance variables 
+        self.int_a = 0
+        self.int_b = 0
+
+# Creates an object with default values with reference: "TestObject/testObjId1" 
+#   (but not saved to database)
+obj = TestObject.create(doc_id="testObjId1")
+assert obj.doc_id == "testObjId1"
+assert obj.collection_name == "TestObject"
+
+# Assigns value to the newly created object 
+obj.int_a = 1
+obj.int_b = 2
+
+# Saves to firestore "TestObject/testObjId1" 
+obj.save()
+
+# Gets the object from firestore "TestObject/testObjId1" 
+retrieved_obj = TestObject.get(doc_id="testObjId1")
+
+# Access values of the object retrieved 
+assert retrieved_obj.int_a == 1
+assert retrieved_obj.int_b == 2
+
+# Deletes the object from firestore "TestObject/testObjId1" 
+retrieved_obj.delete()
+```
+
 ## Advantages
 
 ### Decoupled Domain Model and View Model
