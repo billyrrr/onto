@@ -114,3 +114,43 @@ def test__export_as_dict():
         "intA": 1,
         "intB": 2
     }
+
+
+def test_separate_class():
+    """
+    Tests experimental code for decorator pattern implementation
+
+    :return:
+    """
+
+    class ModelASchema(schema.Schema):
+        int_a = schema.fields.Integer(load_from="intA", dump_to="intA")
+        int_b = schema.fields.Integer(load_from="intB", dump_to="intB")
+
+    class ModelASerializable(serializable.Serializable):
+        _schema_cls = ModelASchema
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+
+    class ModelAModel(object):
+
+        def __init__(self):
+            self.int_a = 0
+            self.int_b = 0
+
+    class ModelA(ModelAModel, ModelASerializable):
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+
+    a = ModelA()
+    a.int_a = 1
+    a.int_b = 2
+
+    assert a._export_as_dict() == {
+        "intA": 1,
+        "intB": 2,
+        "obj_type": "ModelA"
+    }
+
