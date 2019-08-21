@@ -105,13 +105,17 @@ retrieved_obj.delete()
 
 There are 2+ ways to run the view layer. 
 1. Document-As-View: Persist all view models to firestore, and client reads/writes to firestore. 
-        - Document is refreshed every time the bounding domain models change 
-        - Firestore serves Document at near 0 latency (cached) if the client attaches a listener 
-            to the view model  
+
+    * Document is refreshed every time the bounding domain models change 
+    * Firestore serves Document at near 0 latency (cached) if the client attaches a listener 
+            to the view model
+    * Performance depends on **how often the domain model is changed**
         
 2. Flask-As-View: only the binding structure is persisted, and client reads/writes to flask REST API resources. 
-        - Bounding domain models are read every time the client requests the resource 
-        - May experience latency, but overall lower in server cost since the ViewModel is not cached
+
+    * Bounding domain models are read every time the client requests the resource 
+    * May experience latency, but overall lower in server cost since the ViewModel is not persisted
+    * Performance depends on **how often the view model is read** 
         
 3. A combination of 1 and 2: build read-intensive microservices with Document-As-View 
             and change-intensive microservices with Flask-As-View. 
@@ -123,6 +127,19 @@ for view layer. This does not mean that flask-boiler is not runtime efficient,
 but that simplicity is always a compromise and firestore can be expensive.  
 
 ### Performance 
+
+Document-As-View has better performance if data is read more than it's changed, and 
+the view models served are limited or specific to a user. 
+
+Flask-As-View has better performance when the domain model is 
+changed often, and the client rarely reads all data available 
+to a specific user. 
+
+Flask-boiler is not a well-tested concept, but criticisms are welcomed. 
+At least, we can strive to build a backend framework that is simple and 
+friendly to beginners who want to prototype their backend easily 
+so that they can focus on transforming ideas. 
+
 
 ## Advantages
 
