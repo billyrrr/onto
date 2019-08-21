@@ -1,4 +1,4 @@
-from google.cloud.firestore import Transaction
+from google.cloud.firestore import Transaction, CollectionReference, DocumentSnapshot
 from marshmallow import Schema, MarshalResult
 
 from .schema import generate_schema
@@ -98,9 +98,13 @@ class PrimaryObject(FirestoreObject):
         # if type(self) == FirestoreObject:
         #     raise ValueError("collection_name is read from class name, "
         #                      "only subclass is supported. ")
-        if self._collection_name is None:
-            self._collection_name = self.__class__.__name__
-        return self._collection_name
+        return self._get_collection_name()
+
+    @classmethod
+    def _get_collection_name(cls):
+        if cls._collection_name is None:
+            cls._collection_name = cls.__name__
+        return cls._collection_name
 
     @property
     def collection(self):
@@ -108,7 +112,11 @@ class PrimaryObject(FirestoreObject):
 
         :return:
         """
-        return CTX.db.collection(self.collection_name)
+        return self._get_collection()
+
+    @classmethod
+    def _get_collection(cls):
+        return CTX.db.collection(cls._get_collection_name())
 
     @property
     def doc_id(self):
@@ -119,6 +127,20 @@ class PrimaryObject(FirestoreObject):
     @property
     def doc_ref(self):
         return self.collection.document(self.doc_id)
+
+    @classmethod
+    def all(cls):
+        """ Generator for all objects in the collection
+
+        :return:
+        """
+        docs_ref: CollectionReference = cls._get_collection()
+        docs = docs_ref.stream()
+        for doc in docs:
+            assert isinstance(doc, DocumentSnapshot)
+            obj = cls.create(doc_id=doc.id)
+            obj._import_doc(doc.to_dict())
+            yield obj
 
     def __init__(self, doc_id=None):
         """
