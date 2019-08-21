@@ -99,6 +99,31 @@ assert retrieved_obj.int_b == 2
 retrieved_obj.delete()
 ```
 
+## Architecture Discussion
+
+### Disambiguation 
+
+There are 2+ ways to run the view layer. 
+1. Document-As-View: Persist all view models to firestore, and client reads/writes to firestore. 
+        - Document is refreshed every time the bounding domain models change 
+        - Firestore serves Document at near 0 latency (cached) if the client attaches a listener 
+            to the view model  
+        
+2. Flask-As-View: only the binding structure is persisted, and client reads/writes to flask REST API resources. 
+        - Bounding domain models are read every time the client requests the resource 
+        - May experience latency, but overall lower in server cost since the ViewModel is not cached
+        
+3. A combination of 1 and 2: build read-intensive microservices with Document-As-View 
+            and change-intensive microservices with Flask-As-View. 
+
+Flask-boiler is mostly for building a fast prototype of your backend. As you keep 
+developing your product, we recommend that you switch to a relational database for 
+your domain model layer if your data has many references, and WebSocket/REST API 
+for view layer. This does not mean that flask-boiler is not runtime efficient, 
+but that simplicity is always a compromise and firestore can be expensive.  
+
+### Performance 
+
 ## Advantages
 
 ### Decoupled Domain Model and View Model
