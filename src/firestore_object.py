@@ -171,10 +171,21 @@ class PrimaryObject(FirestoreObject):
         :param transaction: firestore transaction
         :return:
         """
-        obj = cls(doc_id=doc_id)
+        doc_ref = cls._get_collection().document(doc_id)
         if transaction is None:
-            d = obj.doc_ref.get().to_dict()
+            d = doc_ref.get().to_dict()
         else:
-            d = obj.doc_ref.get(transaction=transaction).to_dict()
+            d = doc_ref.get(transaction=transaction).to_dict()
+
+        obj_type = d["obj_type"]
+        if obj_type not in globals():
+            raise ValueError("Cannot read obj_type: {} Make sure that the" \
+                             " subclass is imported into the current code "
+                             .format(obj_type))
+
+        obj_cls = globals()[obj_type]
+        assert issubclass(obj_cls, cls)
+        obj = obj_cls.create(doc_id=doc_id)
+
         obj._import_doc(d)
         return obj
