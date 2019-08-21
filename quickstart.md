@@ -107,7 +107,7 @@ CTX.read(testing_config)
 ```
 
 Replace ```[PATH]``` with the file path of the JSON file that contains your service account key, 
-and ```[YOUR_APP_NAME]``` with the filename. 
+and ```[YOUR_APP_NAME]``` with the name of your firebase app.  
 
 ## Add data
 
