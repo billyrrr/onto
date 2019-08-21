@@ -73,6 +73,40 @@ class ReferencedObject(FirestoreObject):
         return obj
 
 
+def snapshot_to_obj(snapshot: DocumentSnapshot, super_cls=None):
+    d = snapshot.to_dict()
+
+    obj_type = d["obj_type"]
+    obj_cls = super_cls.get_subclass_cls(obj_type)
+
+    if obj_cls is None:
+        raise ValueError("Cannot read obj_type: {}. "
+                         "Make sure that obj_type is a subclass of {}. "
+                         .format(obj_type, super_cls))
+
+    if super_cls is not None:
+        assert issubclass(obj_cls, super_cls)
+
+    obj = obj_cls.create(doc_id=snapshot.id)
+    obj._import_doc(d)
+    return obj
+
+
+def convert_query_ref(func):
+    """ Converts a generator of firestore DocumentSnapshot's to a generator
+        of objects
+
+    :param super_cls:
+    :return:
+    """
+    def call(cls, *args, **kwargs):
+        query_ref = func(cls, *args, **kwargs)
+        for res in query_ref.stream():
+            assert isinstance(res, DocumentSnapshot)
+            yield snapshot_to_obj(snapshot=res, super_cls=cls)
+    return call
+
+
 class PrimaryObject(FirestoreObject):
     """
     Primary Object is placed in a collection in root directory only.
@@ -142,6 +176,11 @@ class PrimaryObject(FirestoreObject):
             obj._import_doc(doc.to_dict())
             yield obj
 
+    @classmethod
+    @convert_query_ref
+    def where(cls, *args, **kwargs):
+        return cls._get_collection().where(*args, **kwargs)
+
     def __init__(self, doc_id=None):
         """
 
@@ -173,9 +212,10 @@ class PrimaryObject(FirestoreObject):
         """
         doc_ref = cls._get_collection().document(doc_id)
         if transaction is None:
-            d = doc_ref.get().to_dict()
+            snapshot = doc_ref.get()
         else:
-            d = doc_ref.get(transaction=transaction).to_dict()
+            snapshot = doc_ref.get(transaction=transaction)
+        d = snapshot.to_dict()
 
         obj_type = d["obj_type"]
         if obj_type not in globals():

@@ -11,6 +11,8 @@ class Serializable(object):
     _schema_cls = None
     _schema_obj = None
 
+    _registry = dict()  # classname: cls
+
     @property
     def schema_obj(self):
         if self._schema_obj is None:
@@ -33,10 +35,20 @@ class Serializable(object):
         :return:
         """
         super().__init_subclass__(**kwargs)
-
+        cls._registry[cls.__name__] = cls
         cls._fields = serializable_fields
         # if cls._schema is None:
         #     cls._schema = generate_schema(cls)
+
+    @classmethod
+    def get_subclass_cls(cls, obj_type):
+        """ Returns cls from obj_type (classname string)
+        obj_type must be a subclass of cls in current class/object
+        """
+        if obj_type in cls._registry:
+            return cls._registry[obj_type]
+        else:
+            return None
 
     @classmethod
     def _infer_fields(cls) -> list:
