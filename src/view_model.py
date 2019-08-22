@@ -7,7 +7,7 @@ from .domain_model import DomainModel
 from .firestore_object import ReferencedObject
 from .serializable import Serializable
 
-from src.context import Context as CTX
+from .context import Context as CTX
 
 
 class ViewModel(ReferencedObject):

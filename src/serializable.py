@@ -3,15 +3,20 @@ import warnings
 from marshmallow import MarshalResult
 
 from .schema import generate_schema
+from .model_registry import BaseRegisteredModel
+from importlib import import_module
 
 
-class Serializable(object):
+class Serializable(BaseRegisteredModel):
 
     _fields = None
     _schema_cls = None
     _schema_obj = None
 
     _registry = dict()  # classname: cls
+
+    def __init__(self, *args, **kwargs):
+        pass
 
     @property
     def schema_obj(self):
@@ -40,15 +45,7 @@ class Serializable(object):
         # if cls._schema is None:
         #     cls._schema = generate_schema(cls)
 
-    @classmethod
-    def get_subclass_cls(cls, obj_type):
-        """ Returns cls from obj_type (classname string)
-        obj_type must be a subclass of cls in current class/object
-        """
-        if obj_type in cls._registry:
-            return cls._registry[obj_type]
-        else:
-            return None
+
 
     @classmethod
     def _infer_fields(cls) -> list:
@@ -66,7 +63,6 @@ class Serializable(object):
                     res.append(key)
 
         return res
-
 
     @classmethod
     def get_fields(cls) -> list:
@@ -101,6 +97,11 @@ class Serializable(object):
     def _import_properties(self, d: dict) -> None:
         deserialized = self.schema_obj.load(d).data
         for key, val in deserialized.items():
+            # if isinstance(val, dict) and "obj_type" in val:
+            #     obj_type = val["obj_type"]
+            #     raise NotImplementedError
+            #     # TODO: implement
+
             setattr(self, key, val)
 
     def to_dict(self):
