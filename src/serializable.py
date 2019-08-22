@@ -89,20 +89,28 @@ class Serializable(BaseRegisteredModel):
     #     return instance
 
     def _export_as_dict(self) -> dict:
-        print(self.schema_obj)
-        print(self)
         mres: MarshalResult = self.schema_obj.dump(self)
-        return mres.data
+        d = mres.data
+
+        res = dict()
+        for key, val in d.items():
+            if isinstance(val, Serializable):
+                res[key] = val._export_as_dict()
+            else:
+                res[key] = val
+        return res
 
     def _import_properties(self, d: dict) -> None:
         deserialized = self.schema_obj.load(d).data
         for key, val in deserialized.items():
-            # if isinstance(val, dict) and "obj_type" in val:
-            #     obj_type = val["obj_type"]
-            #     raise NotImplementedError
-            #     # TODO: implement
-
-            setattr(self, key, val)
+            if isinstance(val, dict) and "obj_type" in val:
+                # Deserialize nested object
+                obj_type = val["obj_type"]
+                # TODO: check hierarchy
+                #   (_registry is a singleton dictionary and flat for now)
+                BaseRegisteredModel.get_subclass_cls(obj_type)
+            else:
+                setattr(self, key, val)
 
     def to_dict(self):
         return self._export_as_dict()
