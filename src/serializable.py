@@ -45,8 +45,6 @@ class Serializable(BaseRegisteredModel):
         # if cls._schema is None:
         #     cls._schema = generate_schema(cls)
 
-
-
     @classmethod
     def _infer_fields(cls) -> list:
         res = list()
@@ -89,6 +87,10 @@ class Serializable(BaseRegisteredModel):
     #     return instance
 
     def _export_as_dict(self) -> dict:
+        """
+        TODO: implement iterable support
+        :return:
+        """
         mres: MarshalResult = self.schema_obj.dump(self)
         d = mres.data
 
@@ -101,6 +103,11 @@ class Serializable(BaseRegisteredModel):
         return res
 
     def _import_properties(self, d: dict) -> None:
+        """ TODO: implement iterable support
+
+        :param d:
+        :return:
+        """
         deserialized = self.schema_obj.load(d).data
         for key, val in deserialized.items():
             if isinstance(val, dict) and "obj_type" in val:
@@ -110,10 +117,29 @@ class Serializable(BaseRegisteredModel):
                 #   (_registry is a singleton dictionary and flat for now)
                 BaseRegisteredModel.get_subclass_cls(obj_type)
             else:
-                setattr(self, key, val)
+                if key != "obj_type":
+                    setattr(self, key, val)
 
     def to_dict(self):
         return self._export_as_dict()
+
+    def _export_as_view_dict(self) -> dict:
+        """
+        TODO: implement iterable support
+        :return:
+        """
+
+        mres: MarshalResult = self.schema_obj.dump(self)
+        d = mres.data
+
+        res = dict()
+        for key, val in d.items():
+            if isinstance(val, Serializable):
+                res[key] = val._export_as_view_dict()
+            else:
+                if key != "obj_type":
+                    res[key] = val
+        return res
 
     @classmethod
     def from_dict(cls, d, **kwargs):

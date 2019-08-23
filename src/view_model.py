@@ -66,8 +66,12 @@ class ViewModel(ReferencedObject):
         doc_watch = dm_ref.on_snapshot(on_update)
         self._on_update_funcs[key] = (on_update, doc_watch)
 
-    def to_dict(self):
-        # TODO: delete
-        mres: MarshalResult = self.schema_obj.dump(self)
-        return mres.data
+    @classmethod
+    def get(cls, *args, **kwargs):
+        raise NotImplementedError
 
+    def to_view_dict(self):
+        return self._export_as_view_dict()
+
+    def to_dict(self):
+        return self.to_view_dict()
