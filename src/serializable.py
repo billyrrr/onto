@@ -13,7 +13,7 @@ class Serializable(BaseRegisteredModel):
     _schema_cls = None
     _schema_obj = None
 
-    _registry = dict()  # classname: cls
+    # _registry = dict()  # classname: cls
 
     def __init__(self, *args, **kwargs):
         pass
@@ -40,7 +40,7 @@ class Serializable(BaseRegisteredModel):
         :return:
         """
         super().__init_subclass__(**kwargs)
-        cls._registry[cls.__name__] = cls
+        # cls._registry[cls.__name__] = cls
         cls._fields = serializable_fields
         # if cls._schema is None:
         #     cls._schema = generate_schema(cls)
