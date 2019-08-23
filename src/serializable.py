@@ -1,6 +1,8 @@
 import warnings
+from collections import Iterable
 
 from marshmallow import MarshalResult
+from marshmallow.utils import is_iterable_but_not_string
 
 from .schema import generate_schema
 from .model_registry import BaseRegisteredModel
@@ -87,19 +89,28 @@ class Serializable(BaseRegisteredModel):
     #     return instance
 
     def _export_as_dict(self) -> dict:
-        """
+        """ Map/dict is only supported at root level for now
         TODO: implement iterable support
         :return:
         """
         mres: MarshalResult = self.schema_obj.dump(self)
         d = mres.data
 
+        def export_val(val):
+            if isinstance(val, Serializable):
+                return val._export_as_dict()
+            elif is_iterable_but_not_string(val):
+                if not isinstance(val, list):
+                    raise NotImplementedError
+                val_list = [export_val(elem) for elem in val]
+                return val_list
+            else:
+                return val
+
         res = dict()
         for key, val in d.items():
-            if isinstance(val, Serializable):
-                res[key] = val._export_as_dict()
-            else:
-                res[key] = val
+            res[key] = export_val(val)
+
         return res
 
     def _import_properties(self, d: dict) -> None:
@@ -109,16 +120,29 @@ class Serializable(BaseRegisteredModel):
         :return:
         """
         deserialized = self.schema_obj.load(d).data
-        for key, val in deserialized.items():
+
+        def import_val(val):
             if isinstance(val, dict) and "obj_type" in val:
                 # Deserialize nested object
                 obj_type = val["obj_type"]
                 # TODO: check hierarchy
                 #   (_registry is a singleton dictionary and flat for now)
-                BaseRegisteredModel.get_subclass_cls(obj_type)
+                obj_cls = BaseRegisteredModel.get_subclass_cls(obj_type)
+
+                obj = obj_cls.create(doc_id=val.get("doc_id", None))
+                obj._import_properties(val)
+
+            elif is_iterable_but_not_string(val):
+                if not isinstance(val, list):
+                    raise NotImplementedError
+                val_list = [import_val(elem) for elem in val]
+                return val_list
             else:
-                if key != "obj_type":
-                    setattr(self, key, val)
+                return val
+
+        for key, val in deserialized.items():
+            # if key not in self.__get_dump_only_fields__():
+            setattr(self, key, import_val(val))
 
     def to_dict(self):
         return self._export_as_dict()
@@ -132,13 +156,22 @@ class Serializable(BaseRegisteredModel):
         mres: MarshalResult = self.schema_obj.dump(self)
         d = mres.data
 
+        def export_val(val):
+            if isinstance(val, Serializable):
+                return val._export_as_view_dict()
+            elif is_iterable_but_not_string(val):
+                if not isinstance(val, list):
+                    raise NotImplementedError
+                val_list = [export_val(elem) for elem in val]
+                return val_list
+            else:
+                return val
+
         res = dict()
         for key, val in d.items():
-            if isinstance(val, Serializable):
-                res[key] = val._export_as_view_dict()
-            else:
-                if key != "obj_type":
-                    res[key] = val
+            if key not in self.schema_cls._get_reserved_fieldnames():
+                res[key] = export_val(val)
+
         return res
 
     @classmethod

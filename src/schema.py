@@ -36,10 +36,45 @@ class Schema(marshmallow.Schema):
     obj_type: fields.Function
         Exports and imports class name of an instance for differentiating
             different subclasses of PrimaryObject in the same collection.
+    doc_id: firestore document id
+        Caution: probable pitfall; doc_id won't be valid if obj is
+            not a subclass of firestore object; watch out for strange
+            behaviors such as doc_id being setted twice.
+            A possible mistake can be setting doc_id after doc_id is
+            read, since two doc_id for the same object can be observed.
     """
 
     obj_type = fields.Function(
         serialize=obj_type_serialize, deserialize=obj_type_deserialize)
+
+    doc_id = fields.Str(
+        dump_to="doc_id", dump_only=True, required=False
+    )
+
+    doc_ref = fields.Str(
+        attribute="doc_ref_str",
+        dump_to="doc_ref",
+        dump_only=True,
+        required=False
+    )
+
+    # @classmethod
+    # def _get_dump_only_fieldnames(cls):
+    #
+    #     for x in dir(cls):
+    #         v = getattr(cls, x)
+    #         if isinstance(v, fields.Field):
+    #             if v.dump_only:
+    #                 yield v
+
+    @classmethod
+    def _get_reserved_fieldnames(cls):
+        """ Returns a list of fieldnames to hide when calling
+            "to_view_dict" on view model
+
+        :return:
+        """
+        return {"obj_type", "doc_id", "doc_ref"}
 
 
 attr_name_to_firestore_key = partial(camelize, uppercase_first_letter=False)

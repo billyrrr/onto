@@ -1,4 +1,5 @@
 from google.cloud.firestore import Transaction, CollectionReference, DocumentSnapshot
+from google.cloud.firestore import DocumentReference
 from marshmallow import Schema, MarshalResult
 
 from .schema import generate_schema
@@ -10,11 +11,18 @@ from .utils import random_id
 class FirestoreObject(Serializable):
 
     @property
-    def doc_ref(self):
+    def doc_ref(self) -> DocumentReference:
         """
         Must be implemented in subclass
         """
         raise NotImplementedError
+
+    @property
+    def doc_ref_str(self):
+        """
+        Used for serializing the object
+        """
+        return self.doc_ref.path
 
     def _import_doc(self, d):
         # TODO: handle errors
