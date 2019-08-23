@@ -2,6 +2,25 @@ from flasgger import SwaggerView
 from flask import jsonify
 from .view_model import ViewModel
 from google.cloud import firestore
+from .context import Context as CTX
+
+
+def default_mapper(path_str_template: str, _kwargs):
+    """
+
+    :param path_str_template: example "company/{}"
+    :param args: example ["users"]
+    :return: DocumentReference for "company/users"
+    """
+    """
+    Maps a list of arguments from flask.View().get(args) to
+        a firestore reference that is used to construct
+        the ReferencedObject document
+    :return:
+    """
+    path_str = path_str_template.format(**_kwargs)
+    path = CTX.db.document(path_str)
+    return path
 
 
 def register_view_model(app, view_model_cls, mapper, description=None):

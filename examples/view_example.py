@@ -6,7 +6,7 @@ See: https://github.com/flasgger/flasgger/blob/master/LICENSE
 
 from flask import Flask, jsonify
 from flasgger import Swagger, SwaggerView
-from src.view import GenericView, register_view_model
+from src.view import GenericView, register_view_model, default_mapper
 from src import fields
 from src.schema import Schema
 from src.view_model import ViewModel
@@ -68,26 +68,7 @@ if __name__ == "__main__":
     app = Flask(__name__)
     swagger = Swagger(app)
 
-    def _mapper(path_str_template: str, _kwargs):
-        """
-
-        :param path_str_template: example "company/{}"
-        :param args: example ["users"]
-        :return: DocumentReference for "company/users"
-        """
-        """
-        Maps a list of arguments from flask.View().get(args) to
-            a firestore reference that is used to construct
-            the ReferencedObject document
-        :return:
-        """
-        path_str = path_str_template.format(**_kwargs)
-        print(path_str)
-        path = CTX.db.document(path_str)
-        print(path)
-        return path
-
-    palette_doc_mapper = partial(_mapper, "palettes/{doc_id}")
+    palette_doc_mapper = partial(default_mapper, "palettes/{doc_id}")
 
     register_view_model(app,
                         view_model_cls=PaletteViewModel,
