@@ -94,7 +94,7 @@ class ViewModel(ReferencedObject, Persistable):
         """
         obj_cls: DomainModel = Serializable.get_subclass_cls(obj_type)
 
-        update_func = obj_cls.get_update_func(obj_type=obj_type)
+        update_func = self.get_update_func(dm_cls=obj_cls)
 
         self._structure[key] = (obj_type, doc_id, update_func)
         self.__subscribe_to(
@@ -124,15 +124,20 @@ class ViewModel(ReferencedObject, Persistable):
             doc = docs[0]
             updated_dm = dm_cls.create(doc_id=dm_doc_id)
             updated_dm._import_properties(doc.to_dict())
-            update_func(self, updated_dm)
+            update_func(vm=self, dm=updated_dm)
 
             self.business_properties[key] = updated_dm
 
             self.save()
 
-        dm_ref: DocumentReference = dm_cls.collection.document(dm_doc_id)
+        dm_ref: DocumentReference = dm_cls._get_collection().document(dm_doc_id)
         doc_watch = dm_ref.on_snapshot(on_update)
         self._on_update_funcs[key] = (on_update, doc_watch)
+
+    def get_update_func(self, dm_cls, *args, **kwargs) -> Callable:
+        """ Returns a function for updating a view
+        """
+        raise NotImplementedError
 
     def bind_to(self, key, obj_type, doc_id):
         """ Binds to a domain model so that this view model changes
