@@ -23,17 +23,22 @@ def default_mapper(path_str_template: str, _kwargs):
     return path
 
 
-def register_view_model(app, view_model_cls, mapper, description=None):
+def document_as_view(view_model_cls,
+                     app,
+                     endpoint,
+                     mapper,
+                     description=None):
     """ Registers a view model as a REST API resource and generate
             corresponding documentation.
 
-    :param app: flask app instance
     :param view_model_cls: class of view model
+    :param app: flask app instance
     :param mapper: function which receives kwargs from REST endpoint and
                     returns a firestore document reference
+    :param endpoint: Flask app endpoint for add_url_rule
     :param description: description of the REST API resource for generating
                     flasgger documentations
-    :return:
+    :return: proxy flask view
     """
 
 
@@ -69,21 +74,27 @@ def register_view_model(app, view_model_cls, mapper, description=None):
         obj = self._view_model_cls.get(doc_ref)
         return jsonify(obj.to_dict())
 
+    def __new__(cls, *args, **kwargs):
+        instance = super().__new__(*args, **kwargs)
+        app.add_url_rule(
+            endpoint=endpoint,
+            view_func=proxy_view_cls.as_view(cls.__name__),
+            methods=['GET']
+        )
+        return instance
+
     # Dynamically construct a proxy class that has responses static var
     proxy_view_cls = type(_proxy_view_cls_name,  # class name
                           (SwaggerView,),
-                          dict(responses=responses,
+                          dict(__new__=__new__,
+                               responses=responses,
                                parameters=parameters,
                                _view_model_cls=view_model_cls,
                                get=get
                                )
                           )
 
-    app.add_url_rule(
-        '/palettes/<doc_id>',
-        view_func=proxy_view_cls.as_view('colors'),
-        methods=['GET']
-    )
+    return proxy_view_cls
 
 
 class GenericView(SwaggerView):

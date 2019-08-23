@@ -6,7 +6,7 @@ See: https://github.com/flasgger/flasgger/blob/master/LICENSE
 
 from flask import Flask, jsonify
 from flasgger import Swagger, SwaggerView
-from src.view import GenericView, register_view_model, default_mapper
+from src.view import GenericView, document_as_view, default_mapper
 from src import fields
 from src.schema import Schema
 from src.view_model import ViewModel
@@ -70,8 +70,10 @@ if __name__ == "__main__":
 
     palette_doc_mapper = partial(default_mapper, "palettes/{doc_id}")
 
-    register_view_model(app,
+    obj = document_as_view(
                         view_model_cls=PaletteViewModel,
+                        app=app,
+                        endpoint="palettes/<doc_id:string>",
                         mapper=palette_doc_mapper)
 
     app.run(debug=True)

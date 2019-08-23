@@ -1,32 +1,11 @@
 import warnings
 
+from .utils import obj_type_serialize, obj_type_deserialize
 from . import fields
 import marshmallow
 from marshmallow import post_load
 from inflection import camelize, underscore
 from functools import partial
-
-import inspect
-
-
-def obj_type_serialize(obj: object):
-    """ Returns class name. To be used with Schema.obj_type field.
-
-    :param obj:
-    :return:
-    """
-
-    return obj.__class__.__name__
-
-
-def obj_type_deserialize(value):
-    """ Returns class name. To be used with Schema.obj_type field.
-
-    :param value:
-    :return:
-    """
-
-    return value
 
 
 class Schema(marshmallow.Schema):
