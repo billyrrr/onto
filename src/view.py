@@ -1,5 +1,6 @@
 from flasgger import SwaggerView
 from flask import jsonify
+
 from .view_model import ViewModel
 from google.cloud import firestore
 from .context import Context as CTX
@@ -74,25 +75,24 @@ def document_as_view(view_model_cls,
         obj = self._view_model_cls.get(doc_ref)
         return jsonify(obj.to_dict())
 
-    def __new__(cls, *args, **kwargs):
-        instance = super().__new__(*args, **kwargs)
-        app.add_url_rule(
-            endpoint=endpoint,
-            view_func=proxy_view_cls.as_view(cls.__name__),
-            methods=['GET']
-        )
-        return instance
-
     # Dynamically construct a proxy class that has responses static var
     proxy_view_cls = type(_proxy_view_cls_name,  # class name
                           (SwaggerView,),
-                          dict(__new__=__new__,
+                          dict(
                                responses=responses,
                                parameters=parameters,
                                _view_model_cls=view_model_cls,
                                get=get
                                )
                           )
+
+    rule = endpoint
+
+    app.add_url_rule(
+        rule,
+        view_func=proxy_view_cls.as_view(proxy_view_cls.__name__),
+        methods=['GET']
+    )
 
     return proxy_view_cls
 

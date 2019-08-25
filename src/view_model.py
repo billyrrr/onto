@@ -153,10 +153,6 @@ class ViewModel(ReferencedObject, Persistable):
             obj_type=obj_type,
             doc_id=doc_id)
 
-    @classmethod
-    def get(cls, *args, **kwargs):
-        raise NotImplementedError
-
     def to_view_dict(self):
         return self._export_as_view_dict()
 
