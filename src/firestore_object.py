@@ -187,7 +187,39 @@ class PrimaryObject(FirestoreObject):
     @classmethod
     @convert_query_ref
     def where(cls, *args, **kwargs):
-        return cls._get_collection().where(*args, **kwargs)
+        """ Note that indexes may need to be added from the link provided
+                by firestore in the error messages
+
+        TODO: add error handling and argument checking
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
+
+        if len(args) == 0 and len(kwargs) == 0:
+            raise ValueError("Empty where")
+
+        cur_where = cls._get_collection()
+
+        if len(args) != 0:
+            if len(args) % 3 != 0:
+                raise ValueError
+            else:
+                arg_stack = list( args )
+
+                while len(arg_stack) != 0:
+
+                    cur_where = cur_where.where(
+                        arg_stack.pop(0),
+                        arg_stack.pop(0),
+                        arg_stack.pop(0)
+                    )
+
+        for key, val in kwargs.items():
+            cur_where = cur_where.where(key, "==", val)
+
+        return cur_where
 
     def __init__(self, doc_id=None):
         """
