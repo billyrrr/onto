@@ -24,47 +24,49 @@ config = Config(
 CTX.read(config)
 assert CTX.firebase_app.project_id == "gravitate-dive-testing"
 
-def test_subclass_same_collection():
-    """
-    Tests that subclasses of a class can be stored in the same collection.
-    :return:
-    """
 
-    class CitySchema(Schema):
-        city_name = fields.Raw(load_from="name", dump_to="name")
+class CitySchema(Schema):
+    city_name = fields.Raw(load_from="name", dump_to="name")
 
-        country = fields.Raw(load_from="country", dump_to="country")
-        capital = fields.Raw(load_from="capital", dump_to="capital")
+    country = fields.Raw(load_from="country", dump_to="country")
+    capital = fields.Raw(load_from="capital", dump_to="capital")
 
-    class CityBase(DomainModel):
 
-        _collection_name = "City"
+class CityBase(DomainModel):
+    _collection_name = "City"
 
-        _schema_cls = CitySchema
+    _schema_cls = CitySchema
 
-        def __init__(self, doc_id=None):
-            super().__init__(doc_id=doc_id)
-            self.city_name = None
-            self.country = None
-            self.capital = None
+    def __init__(self, doc_id=None):
+        super().__init__(doc_id=doc_id)
+        self.city_name = None
+        self.country = None
+        self.capital = None
 
-    class MunicipalitySchema(CitySchema):
-        pass
 
-    class Municipality(CityBase):
-        _schema_cls = MunicipalitySchema
+class MunicipalitySchema(CitySchema):
+    pass
 
-    class StandardCitySchema(CitySchema):
-        city_state = fields.Raw(load_from="state", dump_to="state")
-        regions = fields.Raw(many=True)
 
-    class StandardCity(CityBase):
-        _schema_cls = StandardCitySchema
+class Municipality(CityBase):
+    _schema_cls = MunicipalitySchema
 
-        def __init__(self, doc_id=None):
-            super().__init__(doc_id=doc_id)
-            self.city_state = None
-            self.regions = list()
+
+class StandardCitySchema(CitySchema):
+    city_state = fields.Raw(load_from="state", dump_to="state")
+    regions = fields.Raw(many=True)
+
+
+class StandardCity(CityBase):
+    _schema_cls = StandardCitySchema
+
+    def __init__(self, doc_id=None):
+        super().__init__(doc_id=doc_id)
+        self.city_state = None
+        self.regions = list()
+
+
+def setup_cities():
 
     sf = StandardCity.create(doc_id="SF")
     sf.city_name, sf.city_state, sf.country, sf.capital, sf.regions = \
@@ -88,6 +90,13 @@ def test_subclass_same_collection():
     beijing.city_name, beijing.country, beijing.capital = \
         'Beijing', 'China', True
     beijing.save()
+
+
+def test_subclass_same_collection():
+    """
+    Tests that subclasses of a class can be stored in the same collection.
+    :return:
+    """
 
     expected_dict = {
         'Washington D.C.': {
@@ -118,6 +127,49 @@ def test_subclass_same_collection():
     res_dict = dict()
 
     for obj in CityBase.where("country", "==", "USA"):
+        d = obj.to_dict()
+        res_dict[d["name"]] = d
+
+    assert res_dict['Washington D.C.'] == expected_dict['Washington D.C.']
+    assert res_dict['San Francisco'] == expected_dict['San Francisco']
+    assert res_dict['Los Angeles'] == expected_dict['Los Angeles']
+
+
+def test_where_with_kwargs():
+    """
+    Tests that subclasses of a class can be stored in the same collection.
+    :return:
+    """
+
+    expected_dict = {
+        'Washington D.C.': {
+            'name': 'Washington D.C.',
+            'country': 'USA',
+            'capital': True,
+            'obj_type': "Municipality"
+        },
+        'San Francisco': {
+            'name': 'San Francisco',
+            'state': 'CA',
+            'country': 'USA',
+            'capital': False,
+            'regions': ['west_coast', 'norcal'],
+            'obj_type': "StandardCity"
+        },
+        'Los Angeles': {
+            'name': 'Los Angeles',
+            'state': 'CA',
+            'country': 'USA',
+            'capital': False,
+            'regions': ['west_coast', 'socal'],
+            'obj_type': "StandardCity"
+        }
+
+    }
+
+    res_dict = dict()
+
+    for obj in CityBase.where(country="USA"):
         d = obj.to_dict()
         res_dict[d["name"]] = d
 
