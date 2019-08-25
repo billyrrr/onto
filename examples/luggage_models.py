@@ -6,6 +6,10 @@ Schema = schema.Schema
 class LuggageItemSchema(Schema):
     luggage_type = fields.Str(load_from="luggage_type", dump_to="luggage_type")
     weight_in_lbs = fields.Integer(load_from="weight_in_lbs", dump_to="weight_in_lbs")
+    # owner_id = fields.Str(
+    #     load_from="owner_id",
+    #     dump_to="owner_id",
+    #     required=False)
 
 
 class LuggageCollectionSchema(Schema):
@@ -22,6 +26,7 @@ class LuggageItem(domain_model.DomainModel):
         super().__init__(*args, **kwargs)
         self.luggage_type = str()
         self.weight_in_lbs = int()
+        self.owner_id = str()
 
 
 class Luggages(view_model.ViewModel):
