@@ -1,6 +1,6 @@
 Flask>=0.10
 google-auth==1.5.1
-google-cloud-datastore
+google-cloud-datastore>=1.4.0
 google-api-python-client
 firebase-admin
 
@@ -12,7 +12,5 @@ marshmallow
 
 # Provides conversion between "CamelCase" and "snake_case"
 inflection
-
-marshmallow>=2.20.1
 
 apispec>=2.0.2
