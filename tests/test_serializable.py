@@ -1,5 +1,31 @@
 from src import serializable
-from src import view_model, schema
+from src import view_model, schema, fields
+
+
+def test_cls_factory():
+
+    class ModelAFactory(serializable.SerializableClsFactory):
+
+        int_a = fields.Integer(load_from="intA", dump_to="intA")
+        int_b = fields.Integer(load_from="intB", dump_to="intB")
+
+    model_a_cls = ModelAFactory.create("ModelA")
+
+    obj = model_a_cls()
+    assert obj.int_a == 0
+    assert obj.int_b == 0
+
+    obj.int_a = 1
+    obj.int_b = 2
+
+    assert obj.int_a == 1
+    assert obj.int_b == 2
+
+    assert obj.to_dict() == {
+        "intA": 1,
+        "intB": 2,
+        "obj_type": "ModelA"
+    }
 
 
 def test__additional_fields():

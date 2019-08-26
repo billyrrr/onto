@@ -1,9 +1,14 @@
+import inspect
 import warnings
 
 from marshmallow import MarshalResult
 from marshmallow.utils import is_iterable_but_not_string
 
+from . import fields
 from .model_registry import BaseRegisteredModel
+from . import schema
+
+
 # from abc import ABC, abstractmethod
 
 
@@ -22,7 +27,8 @@ class Schemed(object):
     _schema_obj = None
     _schema_cls = None
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._schema_obj = self._schema_cls()
 
     @classmethod
@@ -160,66 +166,66 @@ class Exportable(SchemedBase):
         return self._export_as_dict()
 
 
-class Serializable(BaseRegisteredModel, Schemed, Importable, Exportable):
-
-    _fields = None
-
-    # _registry = dict()  # classname: cls
-
-    # def __init__(self, *args, **kwargs):
-    #     pass
-
-    def __init_subclass__(cls, serializable_fields=None, **kwargs):
-        """
-        See: https://docs.python.org/3/reference/datamodel.html#object.__init_subclass__
-        :param serializable_fields:
-        :param kwargs:
-        :return:
-        """
-        super().__init_subclass__(**kwargs)
-        # cls._registry[cls.__name__] = cls
-        cls._fields = serializable_fields
-        # if cls._schema is None:
-        #     cls._schema = generate_schema(cls)
+class Fielded(object):
 
     @classmethod
-    def _infer_fields(cls) -> list:
-        res = list()
-
-        def is_private_var_name(var_name):
-            if len(var_name) == 0:
-                raise ValueError
-            else:
-                return var_name[0] == "_"
-
-        for key, val in cls.__dict__.items():
-            if not is_private_var_name(key):
-                if not callable(val):
-                    res.append(key)
-
+    def _get_fields(cls):
+        m = inspect.getmembers(cls)
+        res = dict()
+        for name, value in m:
+            if isinstance(value, fields.Field):
+                res[name] = value
         return res
 
+
+def initializer(obj, d):
+    for key, val in d.items():
+        assert isinstance(val, fields.Field)
+        setattr(obj, key, val.default_value)
+
+
+class AutoInitialized(object):
+    _fields = None
+
     @classmethod
-    def get_fields(cls) -> list:
-        """
-        Returns a list of fields that are serialized and deserialized.
+    def _get_fields(cls):
+        return cls._fields
 
-        :return:
-        """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        initializer(self, self._get_fields())
 
-        if cls._fields is None:
-            warnings.warn("Inferring fields to serialize and deserialize "
-                          "by variable name. "
-                          "serializable_fields should rather " +
-                          "be specified. Eg. " +
-                          "class SubclassOfViewModel(" +
-                          "ViewModel, serializable_fields=['property_a'])")
-            return cls._infer_fields()
+
+class Serializable(BaseRegisteredModel,
+                   Schemed,
+                   Importable,
+                   Exportable,
+                   AutoInitialized, ):
+    pass
+
+
+class SerializableClsFactory(Fielded):
+
+    @classmethod
+    def _get_schema(cls, name):
+        schema_name = name + "Schema"
+        new_schema_cls = type(schema_name,  # class name
+                           (schema.Schema, ),
+                            cls._get_fields()
+                           )
+        return new_schema_cls
+
+    @classmethod
+    def create(cls, name, *args, **kwargs):
+        existing = BaseRegisteredModel.get_subclass_cls(name)
+        if existing is None:
+            new_cls = type(name,  # class name
+                           (Serializable, ),
+                           dict(
+                               _fields=cls._get_fields(),
+                               _schema_cls=cls._get_schema(name=name)
+                           )
+                           )
+            return new_cls
         else:
-            return cls._fields
-
-    # def __new__(cls, *args, **kwargs):
-    #
-    #     instance = super().__new__(cls, *args, **kwargs)
-    #     return instance
-
+            return existing
