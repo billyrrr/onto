@@ -100,10 +100,16 @@ class Serializable(BaseRegisteredModel):
             if isinstance(val, Serializable):
                 return val._export_as_dict()
             elif is_iterable_but_not_string(val):
-                if not isinstance(val, list):
+                if isinstance(val, list):
+                    val_list = [export_val(elem) for elem in val]
+                    return val_list
+                elif isinstance(val, dict):
+                    val_d = dict()
+                    for k, v in val.items():
+                        val_d[k] = export_val(v)
+                    return val_d
+                else:
                     raise NotImplementedError
-                val_list = [export_val(elem) for elem in val]
-                return val_list
             else:
                 return val
 
@@ -115,6 +121,9 @@ class Serializable(BaseRegisteredModel):
 
     def _import_properties(self, d: dict) -> None:
         """ TODO: implement iterable support
+        TODO: test
+        TODO: note that this method is not well-tested and most likely
+                will fail for nested structures
 
         :param d:
         :return:
@@ -133,10 +142,17 @@ class Serializable(BaseRegisteredModel):
                 obj._import_properties(val)
 
             elif is_iterable_but_not_string(val):
-                if not isinstance(val, list):
+                if isinstance(val, list):
+                    val_list = [import_val(elem) for elem in val]
+                    return val_list
+                elif isinstance(val, dict):
+                    val_d = dict()
+                    for k, v in val.items():
+                        val_d[k] = import_val(v)
+                    return val_d
+                else:
                     raise NotImplementedError
-                val_list = [import_val(elem) for elem in val]
-                return val_list
+
             else:
                 return val
 
@@ -160,10 +176,16 @@ class Serializable(BaseRegisteredModel):
             if isinstance(val, Serializable):
                 return val._export_as_view_dict()
             elif is_iterable_but_not_string(val):
-                if not isinstance(val, list):
+                if isinstance(val, list):
+                    val_list = [export_val(elem) for elem in val]
+                    return val_list
+                elif isinstance(val, dict):
+                    val_d = dict()
+                    for k, v in val.items():
+                        val_d[k] = export_val(v)
+                    return val_d
+                else:
                     raise NotImplementedError
-                val_list = [export_val(elem) for elem in val]
-                return val_list
             else:
                 return val
 
