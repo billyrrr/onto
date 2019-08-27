@@ -1,5 +1,6 @@
 import inspect
 import warnings
+from typing import TypeVar, Union
 
 from marshmallow import MarshalResult
 from marshmallow.utils import is_iterable_but_not_string
@@ -44,6 +45,15 @@ class Schemed(object):
         if self._schema_obj is None:
             self._schema_obj = self._schema_cls()
         return self._schema_obj
+
+    @classmethod
+    def _get_fields(cls):
+        """ TODO: find ways of collecting fields without reading
+                    private attribute on Marshmallow.Schema
+
+        :return:
+        """
+        return cls._schema_cls._declared_fields
 
 
 class Importable(SchemedBase):
@@ -166,18 +176,6 @@ class Exportable(SchemedBase):
         return self._export_as_dict()
 
 
-class Fielded(object):
-
-    @classmethod
-    def _get_fields(cls):
-        m = inspect.getmembers(cls)
-        res = dict()
-        for name, value in m:
-            if isinstance(value, fields.Field):
-                res[name] = value
-        return res
-
-
 def initializer(obj, d):
     for key, val in d.items():
         assert isinstance(val, fields.Field)
@@ -185,11 +183,10 @@ def initializer(obj, d):
 
 
 class AutoInitialized(object):
-    _fields = None
 
     @classmethod
     def _get_fields(cls):
-        return cls._fields
+        raise NotImplementedError
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -204,26 +201,20 @@ class Serializable(BaseRegisteredModel,
     pass
 
 
-class SerializableClsFactory(Fielded):
+T = TypeVar('T')
+
+
+class SerializableClsFactory:
 
     @classmethod
-    def _get_schema(cls, name):
-        schema_name = name + "Schema"
-        new_schema_cls = type(schema_name,  # class name
-                           (schema.Schema, ),
-                            cls._get_fields()
-                           )
-        return new_schema_cls
+    def create(cls, name, schema: T) -> Union[T, Serializable]:
 
-    @classmethod
-    def create(cls, name, *args, **kwargs):
         existing = BaseRegisteredModel.get_subclass_cls(name)
         if existing is None:
             new_cls = type(name,  # class name
                            (Serializable, ),
                            dict(
-                               _fields=cls._get_fields(),
-                               _schema_cls=cls._get_schema(name=name)
+                               _schema_cls=schema
                            )
                            )
             return new_cls

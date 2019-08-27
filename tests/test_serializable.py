@@ -4,14 +4,15 @@ from src import view_model, schema, fields
 
 def test_cls_factory():
 
-    class ModelAFactory(serializable.SerializableClsFactory):
+    class ModelASchema(schema.Schema):
 
         int_a = fields.Integer(load_from="intA", dump_to="intA")
         int_b = fields.Integer(load_from="intB", dump_to="intB")
 
-    model_a_cls = ModelAFactory.create("ModelA")
+    ModelA = serializable.SerializableClsFactory.create(name="ModelA", schema=ModelASchema)
 
-    obj = model_a_cls()
+    obj: ModelA = ModelA()
+
     assert obj.int_a == 0
     assert obj.int_b == 0
 
