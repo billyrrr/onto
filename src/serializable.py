@@ -179,7 +179,8 @@ class Exportable(SchemedBase):
 def initializer(obj, d):
     for key, val in d.items():
         assert isinstance(val, fields.Field)
-        setattr(obj, key, val.default_value)
+        if not hasattr(obj, key):
+            setattr(obj, key, val.default_value)
 
 
 class AutoInitialized(object):

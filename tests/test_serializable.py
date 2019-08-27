@@ -30,32 +30,65 @@ def test_cls_factory():
 
 
 def test__additional_fields():
-    class ModelA(view_model.ViewModel, serializable_fields=["int_a"]):
-        int_a = 0
+    class ModelASchema(schema.Schema):
+        int_a = fields.Integer(load_from="intA", dump_to="intA")
 
-    class ModelAA(ModelA, serializable_fields=["int_a", "int_aa"]):
-        int_aa = 0
+    class ModelAASchema(ModelASchema):
+        int_aa = fields.Integer(load_from="intAA", dump_to="intAA")
 
-    assert ModelA._fields == ["int_a"]
-    assert ModelAA._fields == ["int_a", "int_aa"]
+    ModelA = serializable.SerializableClsFactory.create(
+        name="ModelA",
+        schema=ModelASchema
+    )
+
+    obj_a = ModelA()
+
+    assert hasattr(obj_a, "int_a")
+    assert not hasattr(obj_a, "int_aa")
+
+    ModelAA = serializable.SerializableClsFactory.create(
+        name="ModelAA",
+        schema=ModelAASchema
+    )
+    obj_aa = ModelAA()
+    assert hasattr(obj_aa, "int_a")
+    assert hasattr(obj_aa, "int_aa")
 
 
-def test_infer_fields():
-    class ModelA(view_model.ViewModel, serializable_fields=None):
-        int_a = 0
+def test_default_value():
+    class ModelASchema(schema.Schema):
+        int_a = fields.Integer(load_from="intA", dump_to="intA")
 
-    assert ModelA._infer_fields() == ["int_a"]
+    ModelA = serializable.SerializableClsFactory.create(
+        name="ModelA",
+        schema=ModelASchema
+    )
+
+    obj_a = ModelA()
+
+    assert obj_a.int_a == 0
 
 
-def test_infer_property_fields():
-    class ModelAp(view_model.ViewModel, serializable_fields=None):
-        int_a = 0
+def test_property_fields():
 
-        @property
-        def some_property(self):
-            return 0
+    class ModelASchema(schema.Schema):
+        some_property = fields.Function(dump_only=True)
 
-    assert ModelAp._infer_fields() == ["int_a", "some_property"]
+    def fget(self):
+        return 8
+
+    sp = property(fget=fget)
+
+    ModelA = serializable.SerializableClsFactory.create(
+        name="ModelA",
+        schema=ModelASchema
+    )
+
+    ModelA.some_property = sp
+
+    obj_a = ModelA()
+
+    assert obj_a.some_property == 8
 
 
 def test_singleton_schema():
@@ -89,22 +122,19 @@ def test_generate_schema():
 
 
 def test_multiple_inheritance():
-    class ModelA(view_model.ViewModel):
+    class ModelASchema(schema.Schema):
+        int_a = fields.Integer(load_from="intA", dump_to="intA")
 
-        def __init__(self):
-            super().__init__()
-            self.int_a = 0
+    class ModelBSchema(schema.Schema):
+        int_b = fields.Integer(load_from="intB", dump_to="intB")
 
-    class ModelB(view_model.ViewModel):
+    class ModelABSchema(ModelASchema, ModelBSchema):
+        pass
 
-        def __init__(self):
-            super().__init__()
-            self.int_b = 1
-
-    class ModelAB(ModelA, ModelB):
-
-        def __init__(self):
-            super().__init__()
+    ModelAB = serializable.SerializableClsFactory.create(
+        name="ModelAB",
+        schema=ModelABSchema
+    )
 
     ab = ModelAB()
     ab.int_a = 1
@@ -113,10 +143,10 @@ def test_multiple_inheritance():
     assert ab.int_a == 1
     assert ab.int_b == 2
 
-    assert ab._export_as_dict() == {
+    assert ab._export_as_dict().items() >= {
         "intA": 1,
         "intB": 2
-    }
+    }.items()
 
 
 def test__export_as_dict():
