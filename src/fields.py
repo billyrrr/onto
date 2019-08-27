@@ -59,7 +59,11 @@ class Function(fields.Function, Field):
     @property
     def default_value(self):
         _x = None
-        return property(fget=lambda: _x, fset=lambda x: _x)
+
+        def fset(x):
+            _x = x
+
+        return property(fget=lambda: _x, fset=fset)
 
 
 class String(fields.String, Field):
