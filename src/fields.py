@@ -3,6 +3,20 @@ from marshmallow import fields
 
 class Field(fields.Field):
 
+    def __init__(self, *args, read_only=False, **kwargs):
+        self.read_only = read_only
+        if read_only:
+            super().__init__(
+                *args,
+                dump_only=True,
+                **kwargs
+            )
+        else:
+            super().__init__(
+                *args,
+                **kwargs
+            )
+
     @property
     def default_value(self):
         return None

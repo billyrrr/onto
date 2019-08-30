@@ -53,7 +53,11 @@ class Schemed(object):
 
         :return:
         """
-        return cls._schema_cls._declared_fields
+        res = dict()
+        for name, declared_field in cls._schema_cls._declared_fields.items():
+            if not declared_field.read_only:
+                res[name] = declared_field
+        return res
 
 
 class Importable(SchemedBase):
@@ -203,17 +207,18 @@ class Serializable(BaseRegisteredModel,
 
 
 T = TypeVar('T')
+U = TypeVar('U')
 
 
 class SerializableClsFactory:
 
     @classmethod
-    def create(cls, name, schema: T) -> Union[T, Serializable]:
+    def create(cls, name, schema: T, base:U=Serializable) -> Union[T, U]:
 
         existing = BaseRegisteredModel.get_subclass_cls(name)
         if existing is None:
             new_cls = type(name,  # class name
-                           (Serializable, ),
+                           (base, ),
                            dict(
                                _schema_cls=schema
                            )

@@ -1,6 +1,8 @@
 from google.cloud.firestore import Transaction, CollectionReference, DocumentSnapshot
 from google.cloud.firestore import DocumentReference
 from marshmallow import Schema, MarshalResult
+import warnings
+
 
 from .schema import generate_schema
 from .serializable import Serializable
@@ -9,6 +11,10 @@ from .utils import random_id
 
 
 class FirestoreObject(Serializable):
+
+    def get_firestore_ref(self):
+        warnings.warn("Please use .doc_ref instead. ", DeprecationWarning)
+        return self.doc_ref
 
     @property
     def doc_ref(self) -> DocumentReference:

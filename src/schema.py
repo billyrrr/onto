@@ -24,16 +24,18 @@ class Schema(marshmallow.Schema):
     """
 
     obj_type = fields.Function(
+        read_only=True,
         serialize=obj_type_serialize, deserialize=obj_type_deserialize)
 
     doc_id = fields.Str(
-        dump_to="doc_id", dump_only=True, required=False
+        read_only=True,
+        dump_to="doc_id", required=False
     )
 
     doc_ref = fields.Str(
+        read_only=True,
         attribute="doc_ref_str",
         dump_to="doc_ref",
-        dump_only=True,
         required=False
     )
 
