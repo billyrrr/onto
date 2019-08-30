@@ -30,21 +30,25 @@ class Schemed(object):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._schema_obj = self._schema_cls()
+        # self._schema_obj = self._schema_cls()
 
     @classmethod
     def get_schema_cls(cls):
         return cls._schema_cls
 
+    @classmethod
+    def get_schema_obj(cls):
+        if cls._schema_obj is None:
+            cls._schema_obj = cls._schema_cls()
+        return cls._schema_obj
+
     @property
     def schema_cls(self):
-        return self._schema_cls
+        return self.get_schema_cls()
 
     @property
     def schema_obj(self):
-        if self._schema_obj is None:
-            self._schema_obj = self._schema_cls()
-        return self._schema_obj
+        return self.get_schema_obj()
 
     @classmethod
     def _get_fields(cls):

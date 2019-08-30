@@ -1,3 +1,9 @@
+"""
+Note that test setup is UNRELIABLE.
+Class may persist in registry (of metaclass) across tests.
+
+"""
+
 from src import serializable
 from src import view_model, schema, fields
 
@@ -27,6 +33,26 @@ def test_cls_factory():
         "intB": 2,
         "obj_type": "ModelA"
     }
+
+
+def test_from_dict():
+
+    class ModelASchema(schema.Schema):
+
+        int_a = fields.Integer(load_from="intA", dump_to="intA")
+        int_b = fields.Integer(load_from="intB", dump_to="intB")
+
+    ModelA = serializable.SerializableClsFactory.create(name="ModelA", schema=ModelASchema)
+
+    obj = ModelA.from_dict( {
+        "intA": 1,
+        "intB": 2,
+        "obj_type": "ModelA"
+    })
+
+    assert isinstance(obj, ModelA)
+    assert obj.int_a == 1
+    assert obj.int_b == 2
 
 
 def test__additional_fields():
@@ -91,36 +117,6 @@ def test_property_fields():
     assert obj_a.some_property == 8
 
 
-def test_singleton_schema():
-    """
-    Tests that many instances of the same class is initialized
-        with one same schema.
-    """
-
-    class ModelA(view_model.ViewModel):
-
-        def __init__(self):
-            self.int_a = 0
-
-    a = ModelA()
-    assert a.schema_obj
-
-    a1, a2 = ModelA(), ModelA()
-    assert a1.schema_obj is a2.schema_obj
-
-
-def test_generate_schema():
-    class ModelA(serializable.Serializable,
-                 serializable_fields=["int_a", "int_b"]):
-
-        def __init__(self):
-            super().__init__()
-            self.int_a = 0
-            self.int_b = 0
-
-    a = ModelA()
-
-
 def test_multiple_inheritance():
     class ModelASchema(schema.Schema):
         int_a = fields.Integer(load_from="intA", dump_to="intA")
@@ -151,17 +147,14 @@ def test_multiple_inheritance():
 
 def test__export_as_dict():
     class ModelASchema(schema.Schema):
-        int_a = schema.fields.Integer(load_from="intA", dump_to="intA")
-        int_b = schema.fields.Integer(load_from="intB", dump_to="intB")
 
-    class ModelA(serializable.Serializable,
-                 serializable_fields=["int_a", "int_b"]):
-        _schema_cls = ModelASchema
+        int_a = fields.Integer(load_from="intA", dump_to="intA")
+        int_b = fields.Integer(load_from="intB", dump_to="intB")
 
-        def __init__(self):
-            super().__init__()
-            self.int_a = 0
-            self.int_b = 0
+    ModelA = serializable.SerializableClsFactory.create(
+        name="ModelA",
+        schema=ModelASchema
+    )
 
     a = ModelA()
     a.int_a = 1
@@ -169,7 +162,8 @@ def test__export_as_dict():
 
     assert a._export_as_dict() == {
         "intA": 1,
-        "intB": 2
+        "intB": 2,
+        "obj_type": "ModelA"
     }
 
 
