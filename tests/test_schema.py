@@ -33,7 +33,7 @@ def test__get_instance_vars_nested_init():
     obj_cls = TestObject
 
     res = schema._get_instance_variables(obj_cls)
-    print(res)
+    # print(res)
     assert res == ["int_a", "int_b", "int_c"]
 
 
@@ -96,7 +96,7 @@ def test_set_attr():
 
     s = schema.generate_schema(TestObject)
 
-    print(s)
+    # print(s)
 
     obj = s.load({
         "intA": 1,
