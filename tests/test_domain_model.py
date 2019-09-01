@@ -11,6 +11,7 @@ from google.cloud.firestore import Query
 from src.config import Config
 from src.context import Context as CTX
 
+from src.firestore_object import FirestoreObjectClsFactory
 from src.domain_model import DomainModel
 from src.schema import Schema
 from src import fields
@@ -35,21 +36,16 @@ class CitySchema(Schema):
 class CityBase(DomainModel):
     _collection_name = "City"
 
-    _schema_cls = CitySchema
-
-    def __init__(self, doc_id=None):
-        super().__init__(doc_id=doc_id)
-        self.city_name = None
-        self.country = None
-        self.capital = None
-
 
 class MunicipalitySchema(CitySchema):
     pass
 
 
-class Municipality(CityBase):
-    _schema_cls = MunicipalitySchema
+Municipality = FirestoreObjectClsFactory.create(
+    name="Municipality",
+    schema=MunicipalitySchema,
+    base=CityBase,
+)
 
 
 class StandardCitySchema(CitySchema):
@@ -57,13 +53,11 @@ class StandardCitySchema(CitySchema):
     regions = fields.Raw(many=True)
 
 
-class StandardCity(CityBase):
-    _schema_cls = StandardCitySchema
-
-    def __init__(self, doc_id=None):
-        super().__init__(doc_id=doc_id)
-        self.city_state = None
-        self.regions = list()
+StandardCity = FirestoreObjectClsFactory.create(
+    name="StandardCity",
+    schema=StandardCitySchema,
+    base=CityBase
+)
 
 
 def setup_cities():
@@ -103,7 +97,9 @@ def test_subclass_same_collection():
             'name': 'Washington D.C.',
             'country': 'USA',
             'capital': True,
-            'obj_type': "Municipality"
+            'obj_type': "Municipality",
+            'doc_id': 'DC',
+            'doc_ref': 'City/DC'
         },
         'San Francisco': {
             'name': 'San Francisco',
@@ -111,7 +107,9 @@ def test_subclass_same_collection():
             'country': 'USA',
             'capital': False,
             'regions': ['west_coast', 'norcal'],
-            'obj_type': "StandardCity"
+            'obj_type': "StandardCity",
+            'doc_id': 'SF',
+            'doc_ref': 'City/SF'
         },
         'Los Angeles': {
             'name': 'Los Angeles',
@@ -119,7 +117,9 @@ def test_subclass_same_collection():
             'country': 'USA',
             'capital': False,
             'regions': ['west_coast', 'socal'],
-            'obj_type': "StandardCity"
+            'obj_type': "StandardCity",
+            'doc_id': 'LA',
+            'doc_ref': 'City/LA'
         }
 
     }
@@ -146,7 +146,9 @@ def test_where_with_kwargs():
             'name': 'Washington D.C.',
             'country': 'USA',
             'capital': True,
-            'obj_type': "Municipality"
+            'obj_type': "Municipality",
+            'doc_id': 'DC',
+            'doc_ref': 'City/DC'
         },
         'San Francisco': {
             'name': 'San Francisco',
@@ -154,7 +156,9 @@ def test_where_with_kwargs():
             'country': 'USA',
             'capital': False,
             'regions': ['west_coast', 'norcal'],
-            'obj_type': "StandardCity"
+            'obj_type': "StandardCity",
+            'doc_id': 'SF',
+            'doc_ref': 'City/SF'
         },
         'Los Angeles': {
             'name': 'Los Angeles',
@@ -162,7 +166,9 @@ def test_where_with_kwargs():
             'country': 'USA',
             'capital': False,
             'regions': ['west_coast', 'socal'],
-            'obj_type': "StandardCity"
+            'obj_type': "StandardCity",
+            'doc_id': 'LA',
+            'doc_ref': 'City/LA'
         }
 
     }

@@ -6,7 +6,7 @@ from src import fields
 def test_basic_schema():
 
     class BasicSchema(Schema):
-        integer_field = fields.Integer
+        integer_field = fields.Integer()
 
     class BasicObj:
 
@@ -17,7 +17,7 @@ def test_basic_schema():
     bo = BasicObj()
     bo.integer_field = 1
 
-    d = bs.dump(bo)
+    d = bs.dump(bo).data
     assert d == {
         "integer_field": 1
     }

@@ -4,7 +4,8 @@ from testfixtures import compare
 from src import schema, fields
 from src.context import Context as CTX
 from src.config import Config
-from src.firestore_object import FirestoreObject, PrimaryObject
+from src.firestore_object import FirestoreObject, PrimaryObject, \
+    FirestoreObjectClsFactory
 
 config = Config(
     app_name="gravitate-dive-testing",
@@ -29,15 +30,11 @@ class TestObjectSchema(schema.Schema):
 
 
 # Declares the object
-class TestObject(PrimaryObject):
-    _schema_cls = TestObjectSchema
-
-    def __init__(self, doc_id=None):
-        super().__init__(doc_id=doc_id)
-
-        # Initializes default values of your instance variables
-        self.int_a = 0
-        self.int_b = 0
+TestObject = FirestoreObjectClsFactory.create(
+    name="TestObject",
+    schema=TestObjectSchema,
+    base=PrimaryObject
+)
 
 
 def test_create_obj():
@@ -99,11 +96,11 @@ def test_stream_objects():
 
     for obj in TestObject.all():
         assert obj.doc_id in {"testObjId1", "testObjId2"}
-        assert obj.to_dict() == {
+        assert obj.to_dict().items() >= {
             "intA": 1,
             "intB": 2,
             "obj_type": "TestObject"
-        }
+        }.items()
 
     for obj in TestObject.all():
         obj.delete()

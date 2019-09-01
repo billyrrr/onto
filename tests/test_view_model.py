@@ -2,46 +2,56 @@ from src import fields
 from src.schema import Schema
 from src.domain_model import DomainModel
 from src.view_model import ViewModel
+from src.firestore_object import FirestoreObjectClsFactory
+
+import pytest
+
+from .fixtures import CTX
 
 
-def test_bind_to():
+@pytest.mark.usefixtures("CTX")
+def test_create(CTX):
 
-    class TestViewObject(ViewModel):
+    class EmptySchema(Schema):
+        pass
 
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
+    # TestViewObject = FirestoreObjectClsFactory.create(
+    #     name="TestViewObject",
+    #     schema=EmptySchema,
+    #     base=ViewModel
+    # )
 
-    obj = TestViewObject.create("viewId1")
+    # obj = TestViewObject.create("viewId1")
 
-    class TestDomainSchema1(Schema):
+    class DomainObjectBase(DomainModel):
+        _collection_name = "tst_domain_objs"
+
+    class DomainSchema1(Schema):
         property_a = fields.Raw(load_from="propertyA", dump_to="propertyA")
 
-    class TestDomainObject1(DomainModel):
+    DomainObject1 = FirestoreObjectClsFactory.create(
+        name="DomainObject1",
+        schema=DomainSchema1,
+        base=DomainObjectBase
+    )
 
-        _schema_cls = TestDomainSchema1
-
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
-            self.property_a = "hello"
-
-    class TestDomainSchema2(Schema):
+    class DomainSchema2(Schema):
         property_b = fields.Raw(load_from="propertyB", dump_to="propertyB")
 
-    class TestDomainObject2(DomainModel):
+    DomainObject2 = FirestoreObjectClsFactory.create(
+        name="DomainObject2",
+        schema=DomainSchema2,
+        base=DomainObjectBase
+    )
 
-        _schema_cls = TestDomainSchema2
+    dependent_obj_1 = DomainObject1.create("dependentId1")
+    ref_1_str: str = dependent_obj_1.doc_ref.path
+    assert ref_1_str == "tst_domain_objs/dependentId1"
 
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
-            self.property_b = "world"
 
-    dependent_obj_1 = TestDomainObject1.create("dependentId1")
-    ref_1: str = dependent_obj_1.doc_ref.path
-    obj.bind_to(ref_1)
-
-    dependent_obj_2 = TestDomainObject2.create("dependentId2")
-    ref_2: str = dependent_obj_2.doc_ref.path
-    obj.bind_to(ref_2)
+    dependent_obj_2 = DomainObject2.create("dependentId2")
+    ref_2_str: str = dependent_obj_2.doc_ref.path
+    assert ref_2_str == "tst_domain_objs/dependentId2"
 
     # TODO: implement
 
