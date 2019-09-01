@@ -52,6 +52,10 @@ CTX.firebase_app
 
 ```python
 
+from flask_boiler.factory import ClsFactory
+from flask_boiler import schema, fields 
+
+
 # Creates a schema for serializing and deserializing to firestore database
 class TestObjectSchema(schema.Schema):
     
@@ -63,23 +67,19 @@ class TestObjectSchema(schema.Schema):
     int_b = fields.Raw(load_from="intB", dump_to="intB")
 
 
-# Declares the object 
-class TestObject(PrimaryObject):
-
-    _schema_cls = TestObjectSchema
-
-    def __init__(self, doc_id=None):
-        super().__init__(doc_id=doc_id)
-        
-        # Initializes default values of your instance variables 
-        self.int_a = 0
-        self.int_b = 0
+# Declares the object
+TestObject = ClsFactory.create(
+    name="TestObject",
+    schema=TestObjectSchema,
+    # Either MyDomainModelBase (specify cls._collection_id)
+    #  or SubclassOfViewModel 
+    # TODO: ADD MORE DOCS 
+    base=PrimaryObject  
+)
 
 # Creates an object with default values with reference: "TestObject/testObjId1" 
 #   (but not saved to database)
 obj = TestObject.create(doc_id="testObjId1")
-assert obj.doc_id == "testObjId1"
-assert obj.collection_name == "TestObject"
 
 # Assigns value to the newly created object 
 obj.int_a = 1

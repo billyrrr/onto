@@ -133,16 +133,15 @@ default value.
 ```python
 
 # Declares the object 
-class TestObject(DomainModel):
-
-    _schema_cls = TestObjectSchema
-
-    def __init__(self, doc_id=None):
-        super().__init__(doc_id=doc_id)
-        
-        # Initializes default values of your instance variables 
-        self.int_a = 0
-        self.int_b = 0
+# Declares the object
+TestObject = ClsFactory.create(
+    name="TestObject",
+    schema=TestObjectSchema,
+    # Either MyDomainModelBase (specify cls._collection_id)
+    #  or SubclassOfViewModel 
+    # TODO: ADD MORE DOCS 
+    base=PrimaryObject  
+)
 
 ```
 
@@ -152,8 +151,6 @@ Now, you can create the object and assign values to it
 # Creates an object with default values with reference: "TestObject/testObjId1" 
 #   (but not saved to database)
 obj = TestObject.create(doc_id="testObjId1")
-assert obj.doc_id == "testObjId1"
-assert obj.collection_name == "TestObject"
 
 # Assigns value to the newly created object 
 obj.int_a = 1

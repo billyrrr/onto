@@ -18,6 +18,11 @@ from src.config import Config
 from src.context import Context as CTX
 
 if __name__ == "__main__":
+    """
+    Go to http://127.0.0.1:5000/apidocs/ for the auto-generated 
+        documentations. 
+    """
+
     config = Config(
         app_name="gravitate-dive-testing",
         debug=True,
@@ -43,15 +48,6 @@ if __name__ == "__main__":
     )
 
     description = "A list of colors (may be filtered by palette)"
-
-    # class PaletteView(GenericView):
-
-    # def __new__(cls, *args, **kwargs):
-    #     instance = super().__new__(cls,
-    #                                view_model_cls=PaletteViewModel,
-    #                                description="A list of colors (may be filtered by palette)"
-    #                                )
-    #     return instance
 
     # Create palette document in firestore
     vm = PaletteViewModel.create(
