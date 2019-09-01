@@ -9,6 +9,7 @@ from flasgger import Swagger, SwaggerView
 from src.view import GenericView, document_as_view, default_mapper
 from src import fields
 from src.schema import Schema
+from src.firestore_object import FirestoreObjectClsFactory
 from src.view_model import ViewModel
 from google.cloud import firestore
 from functools import partial
@@ -35,9 +36,11 @@ if __name__ == "__main__":
         palette_name = fields.Str()
         colors = fields.Nested(Color, many=True)
 
-    class PaletteViewModel(ViewModel):
-        _schema_cls = Palette
-
+    PaletteViewModel = FirestoreObjectClsFactory.create(
+        name="PaletteViewModel",
+        schema=Palette,
+        base=ViewModel
+    )
 
     description = "A list of colors (may be filtered by palette)"
 
@@ -73,7 +76,7 @@ if __name__ == "__main__":
     obj = document_as_view(
                         view_model_cls=PaletteViewModel,
                         app=app,
-                        endpoint="palettes/<doc_id:string>",
+                        endpoint="/palettes/<string:doc_id>",
                         mapper=palette_doc_mapper)
 
     app.run(debug=True)

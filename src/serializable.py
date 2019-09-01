@@ -187,7 +187,8 @@ class Exportable(SchemedBase):
 def initializer(obj, d):
     for key, val in d.items():
         assert isinstance(val, fields.Field)
-        if not hasattr(obj, key):
+        # if not hasattr(obj, key):
+        if key not in dir(obj):
             setattr(obj, key, val.default_value)
 
 

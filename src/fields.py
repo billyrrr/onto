@@ -87,4 +87,11 @@ class String(fields.String, Field):
         return str()
 
 
+class Nested(fields.Nested, Field):
+
+    @property
+    def default_value(self):
+        return None
+
+
 Str = String

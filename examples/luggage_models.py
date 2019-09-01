@@ -1,4 +1,5 @@
 from src import serializable, schema, fields, domain_model, view_model
+from src.firestore_object import FirestoreObjectClsFactory
 
 Schema = schema.Schema
 
@@ -18,22 +19,21 @@ class LuggageCollectionSchema(Schema):
     total_weight = fields.Integer(dump_to="total_weight", dump_only=True)
 
 
-class LuggageItem(domain_model.DomainModel):
+class LuggageItemBase(domain_model.DomainModel):
 
-    _schema_cls = LuggageItemSchema
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.luggage_type = str()
-        self.weight_in_lbs = int()
-        self.owner_id = str()
+    _collection_name = "LuggageItem"
 
 
-class Luggages(view_model.ViewModel):
+LuggageItem = FirestoreObjectClsFactory.create(
+    name="LuggageItem",
+    schema=LuggageItemSchema,
+    base=LuggageItemBase
+)
+
+
+class LuggagesBase(view_model.ViewModel):
     """ Keeps track of luggage amount
     """
-
-    _schema_cls = LuggageCollectionSchema
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -90,3 +90,8 @@ class Luggages(view_model.ViewModel):
         return weight
 
 
+Luggages = FirestoreObjectClsFactory.create(
+    name="Luggages",
+    schema=LuggageCollectionSchema,
+    base=LuggagesBase
+)
