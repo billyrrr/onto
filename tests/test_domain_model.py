@@ -8,13 +8,13 @@ Some examples are inspired by firestore documentations, some copyright
 import pytest
 from google.cloud.firestore import Query
 
-from src.config import Config
-from src.context import Context as CTX
+from flask_boiler.config import Config
+from flask_boiler.context import Context as CTX
 
-from src.firestore_object import FirestoreObjectClsFactory
-from src.domain_model import DomainModel
-from src.schema import Schema
-from src import fields
+from flask_boiler.firestore_object import FirestoreObjectClsFactory
+from flask_boiler.domain_model import DomainModel
+from flask_boiler.schema import Schema
+from flask_boiler import fields
 
 config = Config(
     app_name="gravitate-dive-testing",

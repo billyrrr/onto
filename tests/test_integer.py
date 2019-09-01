@@ -1,6 +1,6 @@
 import pytest
 from marshmallow import Schema
-from src import fields
+from flask_boiler import fields
 
 
 def test_basic_schema():

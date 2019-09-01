@@ -6,16 +6,16 @@ See: https://github.com/flasgger/flasgger/blob/master/LICENSE
 
 from flask import Flask, jsonify
 from flasgger import Swagger, SwaggerView
-from src.view import GenericView, document_as_view, default_mapper
-from src import fields
-from src.schema import Schema
-from src.firestore_object import FirestoreObjectClsFactory
-from src.view_model import ViewModel
+from flask_boiler.view import GenericView, document_as_view, default_mapper
+from flask_boiler import fields
+from flask_boiler.schema import Schema
+from flask_boiler.firestore_object import FirestoreObjectClsFactory
+from flask_boiler.view_model import ViewModel
 from google.cloud import firestore
 from functools import partial
 
-from src.config import Config
-from src.context import Context as CTX
+from flask_boiler.config import Config
+from flask_boiler.context import Context as CTX
 
 if __name__ == "__main__":
     """

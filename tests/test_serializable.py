@@ -4,8 +4,8 @@ Class may persist in registry (of metaclass) across tests.
 
 """
 
-from src import serializable
-from src import view_model, schema, fields
+from flask_boiler import serializable
+from flask_boiler import view_model, schema, fields
 
 
 def test_cls_factory():

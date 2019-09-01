@@ -1,7 +1,7 @@
 import pytest
 from testfixtures import compare
 
-from src import schema, fields
+from flask_boiler import schema, fields
 
 
 def test__get_instance_vars():

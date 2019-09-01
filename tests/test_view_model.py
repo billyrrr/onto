@@ -1,8 +1,8 @@
-from src import fields
-from src.schema import Schema
-from src.domain_model import DomainModel
-from src.view_model import ViewModel
-from src.firestore_object import FirestoreObjectClsFactory
+from flask_boiler import fields
+from flask_boiler.schema import Schema
+from flask_boiler.domain_model import DomainModel
+from flask_boiler.view_model import ViewModel
+from flask_boiler.firestore_object import FirestoreObjectClsFactory
 
 import pytest
 

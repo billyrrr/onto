@@ -9,8 +9,8 @@ def CTX():
     :return:
     """
 
-    from src.context import Context as TST_CTX
-    from src.config import Config
+    from flask_boiler.context import Context as TST_CTX
+    from flask_boiler.config import Config
 
     config = Config(
         app_name="gravitate-dive-testing",

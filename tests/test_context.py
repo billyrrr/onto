@@ -1,5 +1,5 @@
-from src import config
-from src import context
+from flask_boiler import config
+from flask_boiler import context
 
 
 Config = config.Config
