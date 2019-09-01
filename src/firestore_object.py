@@ -5,12 +5,27 @@ import warnings
 
 
 from .schema import generate_schema
-from .serializable import Serializable
+from .serializable import Serializable, SerializableClsFactory
 from .context import Context as CTX
 from .utils import random_id
 
 
+class FirestoreObjectClsFactory(SerializableClsFactory):
+    pass
+
+
 class FirestoreObject(Serializable):
+
+    def __init__(self, doc_ref=None):
+        super().__init__()
+        self._doc_ref = doc_ref
+
+    @classmethod
+    def create(cls, doc_ref=None):
+        if doc_ref is None:
+            raise ValueError
+        obj = cls(doc_ref=doc_ref)
+        return obj
 
     def get_firestore_ref(self):
         warnings.warn("Please use .doc_ref instead. ", DeprecationWarning)
@@ -59,16 +74,6 @@ class ReferencedObject(FirestoreObject):
     def doc_ref(self):
         return self._doc_ref
 
-    def __init__(self, doc_ref=None):
-        super().__init__()
-        self._doc_ref = doc_ref
-
-    @classmethod
-    def create(cls, doc_ref=None):
-        if doc_ref is None:
-            raise ValueError
-        obj = cls(doc_ref=doc_ref)
-        return obj
 
     @classmethod
     def get(cls, doc_ref, transaction: Transaction = None):
@@ -124,6 +129,8 @@ def convert_query_ref(func):
 class PrimaryObject(FirestoreObject):
     """
     Primary Object is placed in a collection in root directory only.
+    the document will be stored in and accessed from
+            self.collection.document(doc_id)
 
     Attributes
     ----------
@@ -168,13 +175,11 @@ class PrimaryObject(FirestoreObject):
 
     @property
     def doc_id(self):
-        if self._doc_id is None:
-            self._doc_id = random_id()
-        return self._doc_id
+        return self.doc_ref.id
 
     @property
     def doc_ref(self):
-        return self.collection.document(self.doc_id)
+        return self._doc_ref
 
     @classmethod
     def all(cls):
@@ -227,15 +232,6 @@ class PrimaryObject(FirestoreObject):
 
         return cur_where
 
-    def __init__(self, doc_id=None):
-        """
-
-        :param doc_id: the document will be stored in
-            self.collection.document(doc_id)
-        """
-        super().__init__()
-        self._doc_id = doc_id
-
     @classmethod
     def create(cls, doc_id=None):
         """
@@ -245,18 +241,27 @@ class PrimaryObject(FirestoreObject):
         """
         if doc_id is None:
             doc_id = random_id()
-        obj = cls(doc_id=doc_id)
+        doc_ref = cls._get_collection().document(doc_id)
+        obj = super().create(doc_ref=doc_ref)
         return obj
 
     @classmethod
-    def get(cls, doc_id, transaction: Transaction=None):
+    def get(cls, *, doc_ref_str=None, doc_ref=None, doc_id=None,
+            transaction: Transaction=None):
         """ Returns the instance from doc_id.
 
         :param doc_id: gets the instance from self.collection.document(doc_id)
         :param transaction: firestore transaction
         :return:
         """
-        doc_ref = cls._get_collection().document(doc_id)
+
+        if doc_ref_str is not None:
+            doc_ref = CTX.db.document(doc_ref_str)
+
+        if doc_ref is None:
+            doc_ref = cls._get_collection().document(doc_id)
+
+
         if transaction is None:
             snapshot = doc_ref.get()
         else:
