@@ -3,9 +3,6 @@ testfixtures
 
 pytest
 
-# Auto-generated REST API docs
-flasgger
-
 # Dependencies for flasgger + marshmallow use case
 marshmallow
 apispec

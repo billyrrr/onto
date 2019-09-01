@@ -14,3 +14,6 @@ marshmallow
 inflection
 
 apispec>=2.0.2
+
+# Auto-generated REST API docs
+flasgger
