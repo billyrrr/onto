@@ -6,14 +6,14 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="flask_boiler",
     # Alpha release
-    version="0.0.1a2",
+    version="0.0.1a3",
     author="Bill Rao",
     author_email="billrao@me.com",
     description="Build flask project with Firebase ",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/billyrrr/flask-boiler",
-    download_url="https://github.com/billyrrr/flask-boiler/archive/v0.0.1a2"
+    download_url="https://github.com/billyrrr/flask-boiler/archive/v0.0.1a3"
                  ".tar.gz",
     keywords=["firebase", "firestore", "ORM", "flasgger", "flask",
               "backend", "nosql"],
