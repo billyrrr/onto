@@ -140,7 +140,19 @@ class PrimaryObject(FirestoreObject):
 
     """
 
+    # Abstract property: MUST OVERRIDE
+    # TODO: add abstract property decorator
     _collection_name = None
+
+    def __init__(self, doc_id=None, doc_ref=None):
+        if doc_ref is None:
+            doc_ref = self._doc_ref_from_id(doc_id=doc_id)
+
+        super().__init__(doc_ref=doc_ref)
+
+    @classmethod
+    def _doc_ref_from_id(cls, doc_id):
+        return cls._get_collection().document(doc_id)
 
     @property
     def collection_name(self):
@@ -179,6 +191,8 @@ class PrimaryObject(FirestoreObject):
 
     @property
     def doc_ref(self):
+        if self._doc_ref is None:
+            self._doc_ref = self.collection.document(random_id())
         return self._doc_ref
 
     @classmethod

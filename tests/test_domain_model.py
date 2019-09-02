@@ -6,7 +6,8 @@ Some examples are inspired by firestore documentations, some copyright
 """
 
 import pytest
-from google.cloud.firestore import Query
+from google.cloud.firestore import Query, DocumentReference, \
+    CollectionReference
 
 from flask_boiler.config import Config
 from flask_boiler.context import Context as CTX
@@ -16,14 +17,10 @@ from flask_boiler.domain_model import DomainModel
 from flask_boiler.schema import Schema
 from flask_boiler import fields
 
-config = Config(
-    app_name="gravitate-dive-testing",
-    debug=True,
-    testing=True,
-    certificate_filename="gravitate-dive-testing-firebase-adminsdk-g1ybn-2dde9daeb0.json"
-)
-CTX.read(config)
-assert CTX.firebase_app.project_id == "gravitate-dive-testing"
+# For pytest, DO NOT DELETE
+from .fixtures import *
+
+from .utils import _delete_all
 
 
 class CitySchema(Schema):
@@ -60,7 +57,13 @@ StandardCity = FirestoreObjectClsFactory.create(
 )
 
 
-def setup_cities():
+@pytest.fixture
+def setup_cities(request, CTX):
+
+    def fin():
+        _delete_all(collection_name="City", CTX=CTX)
+
+    request.addfinalizer(fin)
 
     sf = StandardCity.create(doc_id="SF")
     sf.city_name, sf.city_state, sf.country, sf.capital, sf.regions = \
@@ -86,7 +89,8 @@ def setup_cities():
     beijing.save()
 
 
-def test_subclass_same_collection():
+@pytest.mark.usefixtures("setup_cities")
+def test_subclass_same_collection(CTX):
     """
     Tests that subclasses of a class can be stored in the same collection.
     :return:
@@ -135,7 +139,8 @@ def test_subclass_same_collection():
     assert res_dict['Los Angeles'] == expected_dict['Los Angeles']
 
 
-def test_where_with_kwargs():
+@pytest.mark.usefixtures("setup_cities")
+def test_where_with_kwargs(CTX):
     """
     Tests that subclasses of a class can be stored in the same collection.
     :return:
@@ -182,4 +187,51 @@ def test_where_with_kwargs():
     assert res_dict['Washington D.C.'] == expected_dict['Washington D.C.']
     assert res_dict['San Francisco'] == expected_dict['San Francisco']
     assert res_dict['Los Angeles'] == expected_dict['Los Angeles']
+
+
+@pytest.fixture
+def setup_and_finalize(request, CTX):
+
+    # Clear City collection before test
+    _delete_all(collection_name="City", CTX=CTX)
+
+    # Clear City collection after test
+    def fin():
+        _delete_all(collection_name="City", CTX=CTX)
+
+    request.addfinalizer(fin)
+
+@pytest.mark.usefixtures("setup_and_finalize")
+def test_from_dict(CTX):
+    sf = StandardCity.from_dict(
+        {
+            'name': 'San Francisco',
+            'state': 'CA',
+            'country': 'USA',
+            'capital': False,
+            'regions': ['west_coast', 'norcal'],
+        },
+    )
+    sf.save()
+
+
+@pytest.mark.usefixtures("setup_and_finalize")
+def test_from_dict_and_doc_id(CTX):
+    sf = StandardCity.from_dict(
+        {
+            'name': 'San Francisco',
+            'state': 'CA',
+            'country': 'USA',
+            'capital': False,
+            'regions': ['west_coast', 'norcal'],
+        }, doc_id="SF"
+    )
+
+    sf.save()
+
+    assert sf.doc_id == "SF"
+    assert sf.doc_ref.path == "City/SF"
+
+    # tear down steps
+    sf.delete()
 
