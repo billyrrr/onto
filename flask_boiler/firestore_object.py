@@ -94,7 +94,6 @@ class ReferencedObject(FirestoreObject):
 
 def snapshot_to_obj(snapshot: DocumentSnapshot, super_cls=None):
     d = snapshot.to_dict()
-
     obj_type = d["obj_type"]
     obj_cls = super_cls.get_subclass_cls(obj_type)
 

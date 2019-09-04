@@ -3,6 +3,13 @@ from marshmallow import fields
 
 class Field(fields.Field):
 
+    @property
+    def default_value(self):
+        return None
+
+
+class FieldMixin:
+
     def __init__(self,
                  *args,
                  attribute=None,
@@ -20,21 +27,21 @@ class Field(fields.Field):
         """
 
         # attribute
-        if attribute is None:
-            raise NotImplementedError("Must specify attribute from kwargs. ")
+        if read_only is not None or fieldname_mapper is not None:
+            if attribute is None:
+                raise NotImplementedError("Must specify attribute "
+                                          "from kwargs. ")
 
         # read_only
         if read_only is None:
             read_only = False
         else:
             if read_only:
-                if "dump_only" in kwargs or "read_only" in kwargs:
-                    raise ValueError("dump_only and or read_only is specified "
+                if "dump_only" in kwargs or "load_only" in kwargs:
+                    raise ValueError("dump_only and or load_only is specified "
                                      "which is not supported "
                                      "when read_only is True. ")
 
-        if fieldname_mapper is None:
-            fieldname_mapper = lambda x: x
 
         # # fieldname_mapper and reverse_fieldname_mapper
         # if fieldname_mapper is None and reverse_fieldname_mapper is None:
@@ -66,10 +73,20 @@ class Field(fields.Field):
             new_kwargs["dump_only"] = True
             new_kwargs["load_only"] = False
 
-        # Firestore document fieldname
-        fieldname = fieldname_mapper(attribute)
-        new_kwargs["load_from"] = fieldname
-        new_kwargs["dump_to"] = fieldname
+        if fieldname_mapper is not None:
+            if "dump_to" in kwargs or "load_from" in kwargs:
+                raise ValueError("dump_to and or load_from is specified "
+                                     "which is not supported "
+                                     "when fieldname_mapper is set. ")
+
+            # Firestore document fieldname
+            fieldname = fieldname_mapper(attribute)
+            new_kwargs["load_from"] = fieldname
+            new_kwargs["dump_to"] = fieldname
+        else:
+            new_kwargs.setdefault("load_from", attribute)
+            new_kwargs.setdefault("dump_to", attribute)
+
 
         super().__init__(
             *args,
@@ -78,18 +95,11 @@ class Field(fields.Field):
 
         self.read_only = read_only
 
-    @property
-    def default_value(self):
-        return None
 
-
-class Boolean(fields.Bool, Field):
+class Boolean(FieldMixin, fields.Bool, Field):
     """Field that serializes to a boolean and deserializes
         to a boolean.
     """
-
-    def __init__(self, *args, **kwargs):
-        Field.__init__(self, *args, **kwargs)
 
     @property
     def default_value(self):
@@ -102,13 +112,10 @@ class Boolean(fields.Bool, Field):
         return value
 
 
-class Integer(fields.Integer, Field):
+class Integer(FieldMixin, fields.Integer, Field):
     """Field that serializes to an integer and deserializes
             to an integer.
     """
-
-    def __init__(self, *args, **kwargs):
-        Field.__init__(self, *args, **kwargs)
 
     @property
     def default_value(self):
@@ -121,30 +128,21 @@ class Integer(fields.Integer, Field):
         return value
 
 
-class Raw(fields.Raw, Field):
-
-    def __init__(self, *args, **kwargs):
-        Field.__init__(self, *args, **kwargs)
+class Raw(FieldMixin, fields.Raw, Field):
 
     @property
     def default_value(self):
         return None
 
 
-class List(fields.Raw, Field):
-
-    def __init__(self, *args, **kwargs):
-        Field.__init__(self, *args, **kwargs)
+class List(FieldMixin, fields.Raw, Field):
 
     @property
     def default_value(self):
         return list()
 
 
-class Function(fields.Function, Field):
-
-    def __init__(self, *args, **kwargs):
-        Field.__init__(self, *args, **kwargs)
+class Function(FieldMixin, fields.Function, Field):
 
     @property
     def default_value(self):
@@ -156,20 +154,14 @@ class Function(fields.Function, Field):
         return property(fget=lambda: _x, fset=fset)
 
 
-class String(fields.String, Field):
-
-    def __init__(self, *args, **kwargs):
-        Field.__init__(self, *args, **kwargs)
+class String(FieldMixin, fields.String, Field):
 
     @property
     def default_value(self):
         return str()
 
 
-class Nested(fields.Nested, Field):
-
-    def __init__(self, *args, **kwargs):
-        Field.__init__(self, *args, **kwargs)
+class Nested(FieldMixin, fields.Nested, Field):
 
     @property
     def default_value(self):
