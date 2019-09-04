@@ -1,11 +1,11 @@
 import warnings
 
+from flask_boiler.utils import attr_name_to_firestore_key, \
+    firestore_key_to_attr_name
 from .utils import obj_type_serialize, obj_type_deserialize
 from . import fields
 import marshmallow
 from marshmallow import post_load
-from inflection import camelize, underscore
-from functools import partial
 
 
 class Schema(marshmallow.Schema):
@@ -24,17 +24,21 @@ class Schema(marshmallow.Schema):
     """
 
     obj_type = fields.Function(
+        attribute="obj_type",
         read_only=True,
-        serialize=obj_type_serialize, deserialize=obj_type_deserialize)
+        serialize=obj_type_serialize,
+        deserialize=obj_type_deserialize)
 
     doc_id = fields.Str(
+        attribute="doc_id",
         read_only=True,
-        dump_to="doc_id", required=False
+        dump_to="doc_id",
+        required=False
     )
 
     doc_ref = fields.Str(
-        read_only=True,
         attribute="doc_ref_str",
+        read_only=True,
         dump_to="doc_ref",
         required=False
     )
@@ -56,10 +60,6 @@ class Schema(marshmallow.Schema):
         :return:
         """
         return {"obj_type", "doc_id", "doc_ref"}
-
-
-attr_name_to_firestore_key = partial(camelize, uppercase_first_letter=False)
-firestore_key_to_attr_name = underscore
 
 
 def _get_field(variable_key) -> fields.Field:

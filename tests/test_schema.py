@@ -1,6 +1,7 @@
 import pytest
 from testfixtures import compare
 
+import flask_boiler.utils
 from flask_boiler import schema, fields
 
 
@@ -115,8 +116,8 @@ def test_conversion():
         target instance variable names.
     """
 
-    res = schema.firestore_key_to_attr_name("intA")
+    res = flask_boiler.utils.firestore_key_to_attr_name("intA")
     assert res == "int_a"
 
-    r_res = schema.attr_name_to_firestore_key("int_a")
+    r_res = flask_boiler.utils.attr_name_to_firestore_key("int_a")
     assert r_res == "intA"
