@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from testfixtures import compare
 
@@ -121,3 +123,45 @@ def test_conversion():
 
     r_res = flask_boiler.utils.attr_name_to_firestore_key("int_a")
     assert r_res == "intA"
+
+
+@pytest.fixture
+def location_schema_fields():
+
+    coordinates_field = fields.Raw()
+    coordinates_field.deserialize = mock.MagicMock()
+    address_field = fields.Raw()
+    address_field.deserialize = mock.MagicMock()
+
+    class LocationSchema(schema.Schema):
+        coordinates = coordinates_field
+        address = address_field
+
+    return LocationSchema(), coordinates_field, address_field
+
+
+def test_raw():
+    coordinates_field = fields.Raw()
+    address_field = fields.Raw()
+
+    class LocationSchema(schema.Schema):
+        coordinates = coordinates_field
+        address = address_field
+
+    location_schema = LocationSchema()
+
+    serialized = {
+        "coordinates": {
+            "latitude": 36.98765,
+            "longitude": 100.12345,
+        },
+
+        "address": "9500 Gilman Dr."
+    }
+
+    mres = location_schema.load(serialized)
+
+    deserialized_dict = mres.data
+
+    assert deserialized_dict == serialized
+

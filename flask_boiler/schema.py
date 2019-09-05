@@ -5,10 +5,36 @@ from flask_boiler.utils import attr_name_to_firestore_key, \
 from .utils import obj_type_serialize, obj_type_deserialize
 from . import fields
 import marshmallow
-from marshmallow import post_load
+from marshmallow import post_dump, pre_load, post_load
 
 
-class Schema(marshmallow.Schema):
+class SchemaMixin:
+
+    f = staticmethod(attr_name_to_firestore_key)
+    g = staticmethod(firestore_key_to_attr_name)
+
+    @pre_load
+    def map_namespace(self, data, **kwargs):
+        res = dict()
+        for key, val in data.items():
+            if key not in self._get_reserved_fieldnames():
+                res[self.g(key)] = val
+            else:
+                res[key] = val
+        return res
+
+    @post_dump
+    def unmap_namespace(self, data, **kwargs):
+        res = dict()
+        for key, val in data.items():
+            if key not in self._get_reserved_fieldnames():
+                res[self.f(key)] = val
+            else:
+                res[key] = val
+        return res
+
+
+class Schema(SchemaMixin, marshmallow.Schema):
     """
     Attributes:
     ============
