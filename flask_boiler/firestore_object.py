@@ -3,7 +3,7 @@ from google.cloud.firestore import DocumentReference
 from marshmallow import Schema, MarshalResult
 import warnings
 
-
+from flask_boiler.helpers import RelationshipReference
 from .schema import generate_schema
 from .serializable import Serializable, SerializableClsFactory
 from .context import Context as CTX
@@ -19,6 +19,7 @@ class FirestoreObject(Serializable):
     def __init__(self, doc_ref=None):
         super().__init__()
         self._doc_ref = doc_ref
+        self.transaction = None
 
     @classmethod
     def create(cls, doc_ref=None):
@@ -50,6 +51,9 @@ class FirestoreObject(Serializable):
         deserialized, _ = self.schema_obj.load(d)
         self._import_properties(deserialized)
 
+    def get(self, *, doc_ref=None, **kwargs):
+        raise NotImplementedError("Must implement in subclass. ")
+
     def save(self, transaction: Transaction=None):
         d = self._export_as_dict()
         if transaction is None:
@@ -64,6 +68,35 @@ class FirestoreObject(Serializable):
         else:
             transaction.delete(reference=self.doc_ref)
 
+    def _import_properties(self, d: dict):
+
+        def is_nested_relationship(val):
+            return isinstance(val, RelationshipReference) and val.nested
+
+        def is_ref_only_relationship(val):
+            return isinstance(val, RelationshipReference) and not val.nested
+
+        def nest_relationship(val: RelationshipReference):
+            res = None
+            if self.transaction is None:
+                res = val.doc_ref.get().to_dict()
+            else:
+                res = val.doc_ref.get(transaction=self.transaction).to_dict()
+            return res
+
+        medium = dict()
+
+        for key, val in d.items():
+
+            if is_nested_relationship(val):
+                medium[key] = nest_relationship(val)
+            elif is_ref_only_relationship(val):
+                medium[key] = val.doc_ref
+            else:
+                medium[key] = val
+
+        super()._import_properties(medium)
+
 
 class ReferencedObject(FirestoreObject):
     """
@@ -74,9 +107,8 @@ class ReferencedObject(FirestoreObject):
     def doc_ref(self):
         return self._doc_ref
 
-
     @classmethod
-    def get(cls, doc_ref, transaction: Transaction = None):
+    def get(cls, *, doc_ref=None, transaction: Transaction = None):
         """ Returns an instance from firestore document reference.
 
         :param doc_ref: firestore document reference
@@ -87,6 +119,7 @@ class ReferencedObject(FirestoreObject):
         if transaction is None:
             d = obj.doc_ref.get().to_dict()
         else:
+            obj.transaction = transaction
             d = obj.doc_ref.get(transaction=transaction).to_dict()
         obj._import_doc(d)
         return obj
@@ -263,6 +296,8 @@ class PrimaryObject(FirestoreObject):
             transaction: Transaction=None):
         """ Returns the instance from doc_id.
 
+        :param doc_ref_str: DocumentReference path string
+        :param doc_ref: DocumentReference
         :param doc_id: gets the instance from self.collection.document(doc_id)
         :param transaction: firestore transaction
         :return:

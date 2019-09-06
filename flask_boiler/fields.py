@@ -1,4 +1,7 @@
+from google.cloud.firestore import DocumentReference
 from marshmallow import fields
+
+from flask_boiler.helpers import RelationshipReference
 
 
 class Field(fields.Field):
@@ -166,6 +169,29 @@ class Nested(FieldMixin, fields.Nested, Field):
     @property
     def default_value(self):
         return None
+
+
+class Relationship(FieldMixin, fields.Str, Field):
+
+    def __init__(self, *args, nested=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.nested = nested
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        if value is None:
+            raise ValueError
+        # Note that AssertionError is not always thrown
+        assert isinstance(value, DocumentReference)
+        return value
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            raise ValueError
+        assert isinstance(value, DocumentReference)
+        return RelationshipReference(
+            doc_ref=value,
+            nested=self.nested
+        )
 
 
 Str = String
