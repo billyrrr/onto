@@ -37,6 +37,81 @@ TestObject = FirestoreObjectClsFactory.create(
 )
 
 
+def test_relationship_not_nested():
+    referenced_obj = TestObject.create(doc_id="testObjId1")
+
+    # Assigns value to the newly created object
+    referenced_obj.int_a = 1
+    referenced_obj.int_b = 2
+
+    # Saves to firestore "TestObject/testObjId1"
+    referenced_obj.save()
+
+    class MasterObjectSchema(schema.Schema):
+        # Describes how obj.int_a is read from and stored to a document in firestore
+        nested_ref = fields.Relationship(nested=False)
+
+    MasterObject = FirestoreObjectClsFactory.create(
+        name="MasterObject",
+        schema=MasterObjectSchema,
+        base=PrimaryObject
+    )
+
+    master_obj = MasterObject.create(doc_id="masterObjId1")
+    master_obj.nested_ref = referenced_obj.doc_ref
+    assert master_obj._export_as_dict() == {
+        'doc_id': 'masterObjId1',
+        'doc_ref': 'MasterObject/masterObjId1',
+        'obj_type': 'MasterObject',
+        "nestedRef": CTX.db.document("TestObject/testObjId1")
+    }
+
+    master_obj.delete()
+    CTX.db.document("TestObject/testObjId1").delete()
+
+
+def test_relationship_nested():
+    referenced_obj = TestObject.create(doc_id="testObjId3")
+
+    # Assigns value to the newly created object
+    referenced_obj.int_a = 1
+    referenced_obj.int_b = 2
+
+    class MasterObjectSchemaNested(schema.Schema):
+        # Describes how obj.int_a is read from and stored to a document in firestore
+        nested_obj = fields.Relationship(nested=True)
+
+    MasterObjectNested = FirestoreObjectClsFactory.create(
+        name="MasterObjectNested",
+        schema=MasterObjectSchemaNested,
+        base=PrimaryObject
+    )
+
+    master_obj = MasterObjectNested.create(doc_id="masterObjIdNested1")
+    master_obj.nested_obj = referenced_obj
+
+    assert master_obj._export_as_dict(to_save=True) == {
+        'doc_id': 'masterObjIdNested1',
+        'doc_ref': 'MasterObjectNested/masterObjIdNested1',
+        'obj_type': 'MasterObjectNested',
+        "nestedObj": referenced_obj.doc_ref
+    }
+
+    master_obj.save()
+
+    assert CTX.db.document("TestObject/testObjId3").get().to_dict() == \
+           {
+               "intA": 1,
+               "intB": 2,
+               "obj_type": "TestObject",
+               'doc_id': 'testObjId3',
+               'doc_ref': "TestObject/testObjId3"
+           }
+
+    master_obj.delete()
+    CTX.db.document("TestObject/testObjId3").delete()
+
+
 def test_create_obj():
 
     # Creates an object with default values with reference: "TestObject/testObjId1"

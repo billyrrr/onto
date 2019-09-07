@@ -7,7 +7,6 @@ from marshmallow import fields as marshmallow_fields
 from unittest import mock
 
 
-
 @pytest.fixture
 def mfunc(monkeypatch):
     F = marshmallow_fields.Field

@@ -171,7 +171,7 @@ class Nested(FieldMixin, fields.Nested, Field):
         return None
 
 
-class Relationship(FieldMixin, fields.Str, Field):
+class Relationship(FieldMixin, fields.Raw, Field):
 
     def __init__(self, *args, nested=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -181,8 +181,12 @@ class Relationship(FieldMixin, fields.Str, Field):
         if value is None:
             raise ValueError
         # Note that AssertionError is not always thrown
-        assert isinstance(value, DocumentReference)
-        return value
+        if self.nested:
+            return value
+        else:
+            assert isinstance(value, DocumentReference)
+            return RelationshipReference(doc_ref=value,
+                                         nested=False)
 
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
@@ -190,7 +194,7 @@ class Relationship(FieldMixin, fields.Str, Field):
         assert isinstance(value, DocumentReference)
         return RelationshipReference(
             doc_ref=value,
-            nested=self.nested
+            nested=self.nested,
         )
 
 
