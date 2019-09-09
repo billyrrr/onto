@@ -1,5 +1,7 @@
 # flask-boiler
 
+[![Build Status](https://travis-ci.com/billyrrr/flask-boiler.svg?branch=master)](https://travis-ci.com/billyrrr/flask-boiler)
+
 Flask-boiler helps you build fast-prototype of your backend. 
 
 ## Architecture Diagram
