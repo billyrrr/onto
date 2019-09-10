@@ -7,6 +7,7 @@ before_install:
   - tar xvf credentials.tar.gz -C tests/config_jsons
 install:
   - pip install -r requirements.txt
+  - pip install -r dev-requirements.txt
 # command to run tests
 script:
   - pytest tests
