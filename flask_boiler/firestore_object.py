@@ -261,7 +261,7 @@ class PrimaryObject(FirestoreObject):
         for doc in docs:
             assert isinstance(doc, DocumentSnapshot)
             obj = cls.create(doc_id=doc.id)
-            obj._import_doc(doc.to_dict())
+            obj._import_properties(doc.to_dict())
             yield obj
 
     @classmethod

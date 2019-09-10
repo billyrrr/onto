@@ -1,4 +1,4 @@
-from unittest import mock
+from unittest import mock, skip
 
 import pytest
 from testfixtures import compare
@@ -41,6 +41,7 @@ def test__get_instance_vars_nested_init():
     assert res == ["int_a", "int_b", "int_c"]
 
 
+@pytest.mark.skip
 def test__get_field_vars():
     """
     Tests that _get_field_vars returns a dictionary of expected Field objects.

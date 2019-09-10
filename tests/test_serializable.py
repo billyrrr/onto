@@ -31,7 +31,8 @@ def test_cls_factory():
     assert obj.to_dict() == {
         "intA": 1,
         "intB": 2,
-        "obj_type": "ModelA"
+        "obj_type": "ModelA",
+        'doc_id': ''  # Tmp
     }
 
 
@@ -44,10 +45,10 @@ def test_from_dict():
 
     ModelA = serializable.SerializableClsFactory.create(name="ModelA", schema=ModelASchema)
 
-    obj = ModelA.from_dict( {
+    obj = ModelA.from_dict({
         "intA": 1,
         "intB": 2,
-        "obj_type": "ModelA"
+        "obj_type": "ModelA",
     })
 
     assert isinstance(obj, ModelA)
@@ -163,7 +164,8 @@ def test__export_as_dict():
     assert a._export_as_dict() == {
         "intA": 1,
         "intB": 2,
-        "obj_type": "ModelA"
+        "obj_type": "ModelA",
+        "doc_id": ""
     }
 
 
