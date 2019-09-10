@@ -11,6 +11,8 @@ install:
 # command to run tests
 script:
   - cd tests
-  - pytest
+  - pytest --cov=flask_boiler
+after_success:
+  - coveralls
 notifications:
   email: false
