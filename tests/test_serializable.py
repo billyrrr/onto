@@ -148,8 +148,8 @@ def test_multiple_inheritance():
 def test__export_as_dict():
     class ModelASchema(schema.Schema):
 
-        int_a = fields.Integer(load_from="intA", dump_to="intA")
-        int_b = fields.Integer(load_from="intB", dump_to="intB")
+        int_a = fields.Integer()
+        int_b = fields.Integer()
 
     ModelA = serializable.SerializableClsFactory.create(
         name="ModelA",
@@ -165,6 +165,26 @@ def test__export_as_dict():
         "intB": 2,
         "obj_type": "ModelA"
     }
+
+
+def test__import_properties():
+    class ModelASchema(schema.Schema):
+        int_a = fields.Integer()
+        int_b = fields.Integer()
+
+    ModelA = serializable.SerializableClsFactory.create(
+        name="ModelA",
+        schema=ModelASchema
+    )
+
+    a = ModelA()
+    a._import_properties({
+        "intA": 1,
+        "intB": 2,
+    })
+
+    assert a.int_a == 1
+    assert a.int_b == 2
 
 
 def test_separate_class():

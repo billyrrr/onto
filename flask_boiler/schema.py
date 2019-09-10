@@ -5,7 +5,7 @@ from flask_boiler.utils import attr_name_to_firestore_key, \
 from .utils import obj_type_serialize, obj_type_deserialize
 from . import fields
 import marshmallow
-from marshmallow import post_dump, pre_load, post_load
+from marshmallow import post_dump, pre_load, post_load, EXCLUDE
 
 
 class SchemaMixin:
@@ -13,25 +13,44 @@ class SchemaMixin:
     f = staticmethod(attr_name_to_firestore_key)
     g = staticmethod(firestore_key_to_attr_name)
 
-    @pre_load
-    def map_namespace(self, data, **kwargs):
-        res = dict()
-        for key, val in data.items():
-            if key not in self._get_reserved_fieldnames():
-                res[self.g(key)] = val
-            else:
-                res[key] = val
-        return res
+    def on_bind_field(self, field_name, field_obj):
+        """Hook to modify a field when it is bound to the `Schema`.
 
-    @post_dump
-    def unmap_namespace(self, data, **kwargs):
-        res = dict()
-        for key, val in data.items():
-            if key not in self._get_reserved_fieldnames():
-                res[self.f(key)] = val
-            else:
-                res[key] = val
-        return res
+        No-op by default.
+        """
+
+        if field_obj.attribute is None:
+            field_obj.attribute = field_name
+
+        if field_obj.data_key is None:
+            default_data_key = self.f(field_obj.attribute)
+            field_obj.data_key = default_data_key
+
+    #
+    # @pre_load
+    # def map_namespace(self, data, **kwargs):
+    #     res = dict()
+    #     for key, val in data.items():
+    #         if key not in self._get_reserved_fieldnames() and \
+    #             key in self.fields and \
+    #                 not self.fields[key].attribute:
+    #                     res[self.g(key)] = val
+    #         else:
+    #             res[key] = val
+    #     return res
+    #
+    # @post_dump
+    # def unmap_namespace(self, data, **kwargs):
+    #     res = dict()
+    #     for key, val in data.items():
+    #         if key not in self._get_reserved_fieldnames():
+    #             res[self.f(key)] = val
+    #         else:
+    #             res[key] = val
+    #     return res
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, unknown=EXCLUDE, **kwargs)
 
 
 class Schema(SchemaMixin, marshmallow.Schema):
@@ -51,21 +70,22 @@ class Schema(SchemaMixin, marshmallow.Schema):
 
     obj_type = fields.Function(
         attribute="obj_type",
-        read_only=True,
+        data_key="obj_type",
+        dump_only=True,
         serialize=obj_type_serialize,
         deserialize=obj_type_deserialize)
 
     doc_id = fields.Str(
         attribute="doc_id",
-        read_only=True,
-        dump_to="doc_id",
+        dump_only=True,
+        data_key="doc_id",
         required=False
     )
 
     doc_ref = fields.Str(
         attribute="doc_ref_str",
-        read_only=True,
-        dump_to="doc_ref",
+        dump_only=True,
+        data_key="doc_ref",
         required=False
     )
 

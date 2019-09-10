@@ -24,18 +24,23 @@ from .utils import _delete_all
 
 
 class CitySchema(Schema):
-    city_name = fields.Raw(load_from="name", dump_to="name")
+    city_name = fields.Raw()
 
-    country = fields.Raw(load_from="country", dump_to="country")
-    capital = fields.Raw(load_from="capital", dump_to="capital")
-
-
-class CityBase(DomainModel):
-    _collection_name = "City"
+    country = fields.Raw()
+    capital = fields.Raw()
 
 
 class MunicipalitySchema(CitySchema):
     pass
+
+
+class StandardCitySchema(CitySchema):
+    city_state = fields.Raw()
+    regions = fields.Raw(many=True)
+
+
+class CityBase(DomainModel):
+    _collection_name = "City"
 
 
 Municipality = FirestoreObjectClsFactory.create(
@@ -43,11 +48,6 @@ Municipality = FirestoreObjectClsFactory.create(
     schema=MunicipalitySchema,
     base=CityBase,
 )
-
-
-class StandardCitySchema(CitySchema):
-    city_state = fields.Raw(load_from="state", dump_to="state")
-    regions = fields.Raw(many=True)
 
 
 StandardCity = FirestoreObjectClsFactory.create(
@@ -98,7 +98,7 @@ def test_subclass_same_collection(CTX):
 
     expected_dict = {
         'Washington D.C.': {
-            'name': 'Washington D.C.',
+            'cityName': 'Washington D.C.',
             'country': 'USA',
             'capital': True,
             'obj_type': "Municipality",
@@ -106,8 +106,8 @@ def test_subclass_same_collection(CTX):
             'doc_ref': 'City/DC'
         },
         'San Francisco': {
-            'name': 'San Francisco',
-            'state': 'CA',
+            'cityName': 'San Francisco',
+            'cityState': 'CA',
             'country': 'USA',
             'capital': False,
             'regions': ['west_coast', 'norcal'],
@@ -116,8 +116,8 @@ def test_subclass_same_collection(CTX):
             'doc_ref': 'City/SF'
         },
         'Los Angeles': {
-            'name': 'Los Angeles',
-            'state': 'CA',
+            'cityName': 'Los Angeles',
+            'cityState': 'CA',
             'country': 'USA',
             'capital': False,
             'regions': ['west_coast', 'socal'],
@@ -132,7 +132,8 @@ def test_subclass_same_collection(CTX):
 
     for obj in CityBase.where("country", "==", "USA"):
         d = obj.to_dict()
-        res_dict[d["name"]] = d
+        # print(d)
+        res_dict[d["cityName"]] = d
 
     assert res_dict['Washington D.C.'] == expected_dict['Washington D.C.']
     assert res_dict['San Francisco'] == expected_dict['San Francisco']
@@ -148,7 +149,7 @@ def test_where_with_kwargs(CTX):
 
     expected_dict = {
         'Washington D.C.': {
-            'name': 'Washington D.C.',
+            'cityName': 'Washington D.C.',
             'country': 'USA',
             'capital': True,
             'obj_type': "Municipality",
@@ -156,8 +157,8 @@ def test_where_with_kwargs(CTX):
             'doc_ref': 'City/DC'
         },
         'San Francisco': {
-            'name': 'San Francisco',
-            'state': 'CA',
+            'cityName': 'San Francisco',
+            'cityState': 'CA',
             'country': 'USA',
             'capital': False,
             'regions': ['west_coast', 'norcal'],
@@ -166,8 +167,8 @@ def test_where_with_kwargs(CTX):
             'doc_ref': 'City/SF'
         },
         'Los Angeles': {
-            'name': 'Los Angeles',
-            'state': 'CA',
+            'cityName': 'Los Angeles',
+            'cityState': 'CA',
             'country': 'USA',
             'capital': False,
             'regions': ['west_coast', 'socal'],
@@ -182,7 +183,7 @@ def test_where_with_kwargs(CTX):
 
     for obj in CityBase.where(country="USA"):
         d = obj.to_dict()
-        res_dict[d["name"]] = d
+        res_dict[obj.city_name] = d
 
     assert res_dict['Washington D.C.'] == expected_dict['Washington D.C.']
     assert res_dict['San Francisco'] == expected_dict['San Francisco']
@@ -201,26 +202,44 @@ def setup_and_finalize(request, CTX):
 
     request.addfinalizer(fin)
 
+
 @pytest.mark.usefixtures("setup_and_finalize")
 def test_from_dict(CTX):
     sf = StandardCity.from_dict(
         {
-            'name': 'San Francisco',
-            'state': 'CA',
+            'cityName': 'San Francisco',
+            'cityState': 'CA',
             'country': 'USA',
             'capital': False,
             'regions': ['west_coast', 'norcal'],
         },
     )
+    assert sf.city_state == "CA"
     sf.save()
+
+
+def test_to_dict(CTX):
+    sf = StandardCity.create(doc_id="SF")
+    sf.city_name, sf.city_state, sf.country, sf.capital, sf.regions = \
+        'San Francisco', 'CA', 'USA', False, ['west_coast', 'norcal']
+    assert sf.to_dict() == {
+        'cityName': 'San Francisco',
+        'cityState': 'CA',
+        'country': 'USA',
+        'capital': False,
+        'regions': ['west_coast', 'norcal'],
+        'doc_id': 'SF',
+        'doc_ref': 'City/SF',
+        'obj_type': 'StandardCity'
+    }
 
 
 @pytest.mark.usefixtures("setup_and_finalize")
 def test_from_dict_and_doc_id(CTX):
     sf = StandardCity.from_dict(
         {
-            'name': 'San Francisco',
-            'state': 'CA',
+            'cityName': 'San Francisco',
+            'cityState': 'CA',
             'country': 'USA',
             'capital': False,
             'regions': ['west_coast', 'norcal'],

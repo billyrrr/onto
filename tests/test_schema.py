@@ -5,6 +5,7 @@ from testfixtures import compare
 
 import flask_boiler.utils
 from flask_boiler import schema, fields
+from flask_boiler.schema import Schema
 
 
 def test__get_instance_vars():
@@ -104,7 +105,7 @@ def test_set_attr():
     obj = s.load({
         "intA": 1,
         "intB": 2
-    }).data
+    })
 
     assert obj.int_a == 1
     assert obj.int_b == 2
@@ -161,7 +162,111 @@ def test_raw():
 
     mres = location_schema.load(serialized)
 
-    deserialized_dict = mres.data
+    deserialized_dict = mres
 
     assert deserialized_dict == serialized
+
+
+def test_schema_new():
+    class CitySchema(schema.Schema):
+        city_name = fields.Raw(data_key="name")
+
+        country = fields.Raw(data_key="country")
+        capital = fields.Raw(data_key="capital")
+
+    class MunicipalitySchema(CitySchema):
+        pass
+
+    class StandardCitySchema(CitySchema):
+        city_state = fields.Raw(data_key="state")
+        regions = fields.Raw(many=True, data_key="regions")
+
+    assert set(CitySchema().fields.keys()) == {
+        "city_name", "country", "capital",
+        "doc_id", "doc_ref", "obj_type"
+    }
+
+    assert set(MunicipalitySchema().fields.keys()) == {
+        "city_name", "country", "capital",
+        "doc_id", "doc_ref", "obj_type"
+    }
+
+    assert set(StandardCitySchema().fields.keys()) == {
+        "city_state", "regions",
+        "city_name", "country", "capital",
+        "doc_id", "doc_ref", "obj_type"
+    }
+
+
+def test_schema_dump():
+
+    class CitySchema(Schema):
+        city_name = fields.Raw()
+
+        country = fields.Raw()
+        capital = fields.Raw()
+
+    class MunicipalitySchema(CitySchema):
+        pass
+
+    class StandardCitySchema(CitySchema):
+        city_state = fields.Raw()
+        regions = fields.Raw(many=True)
+
+    assert MunicipalitySchema().dump({
+        'city_name': 'Washington D.C.',
+        'country': 'USA',
+        'capital': True,
+        # 'obj_type': "Municipality",
+        # 'doc_id': 'DC',
+        # 'doc_ref': 'City/DC'
+    }) == {
+        'cityName': 'Washington D.C.',
+        'country': 'USA',
+        'capital': True,
+        'obj_type': "dict",
+        # 'doc_id': 'DC',
+        # 'doc_ref': 'City/DC'
+    }
+
+
+def test_schema_load():
+
+    class CitySchema(Schema):
+        city_name = fields.Raw()
+
+        country = fields.Raw()
+        capital = fields.Raw()
+
+    class MunicipalitySchema(CitySchema):
+        pass
+
+    class StandardCitySchema(CitySchema):
+        city_state = fields.Raw()
+        regions = fields.Raw(many=True)
+
+    assert MunicipalitySchema().load({
+        'cityName': 'Washington D.C.',
+        'country': 'USA',
+        'capital': True,
+        'obj_type': "Municipality",
+        # 'obj_type': "Municipality",
+        # 'doc_id': 'DC',
+        # 'doc_ref': 'City/DC'
+    }) == {
+        'city_name': 'Washington D.C.',
+        'country': 'USA',
+        'capital': True,
+        'obj_type': "Municipality",
+
+        # 'doc_id': 'DC',
+        # 'doc_ref': 'City/DC'
+    }
+
+
+
+# def test_read_only_fields():
+#
+#     class TrivialSchema
+#
 

@@ -17,7 +17,7 @@ def test_basic_schema():
     bo = BasicObj()
     bo.integer_field = 1
 
-    d = bs.dump(bo).data
+    d = bs.dump(bo)
     assert d == {
         "integer_field": 1
     }

@@ -2,7 +2,6 @@ import inspect
 import warnings
 from typing import TypeVar, Union
 
-from marshmallow import MarshalResult
 from marshmallow.utils import is_iterable_but_not_string
 
 from . import fields
@@ -52,16 +51,17 @@ class Schemed(object):
 
     @classmethod
     def _get_fields(cls):
-        """ TODO: find ways of collecting fields without reading
-                    private attribute on Marshmallow.Schema
-
-        :return:
-        """
-        res = dict()
-        for name, declared_field in cls._schema_cls._declared_fields.items():
-            if not declared_field.read_only:
-                res[name] = declared_field
-        return res
+        return cls.get_schema_obj().fields
+    #     """ TODO: find ways of collecting fields without reading
+    #                 private attribute on Marshmallow.Schema
+    #
+    #     :return:
+    #     """
+    #     res = dict()
+    #     for name, declared_field in cls.get_schema_obj().fields.items():
+    #         if not declared_field.dump_only:
+    #             res[name] = declared_field
+    #     return res
 
 
 class Importable(SchemedBase):
@@ -156,8 +156,7 @@ class Exportable(SchemedBase):
         :return:
         """
 
-        mres: MarshalResult = self.schema_obj.dump(self)
-        d = mres.data
+        d = self.schema_obj.dump(self)
 
         def export_val(val):
             if isinstance(val, Serializable):

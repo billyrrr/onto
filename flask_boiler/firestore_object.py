@@ -1,6 +1,5 @@
 from google.cloud.firestore import Transaction, CollectionReference, DocumentSnapshot
 from google.cloud.firestore import DocumentReference
-from marshmallow import Schema, MarshalResult
 import warnings
 
 from marshmallow.utils import is_iterable_but_not_string

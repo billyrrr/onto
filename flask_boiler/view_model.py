@@ -1,7 +1,6 @@
 from typing import Dict, Tuple, Callable
 
 from google.cloud.firestore import DocumentReference, Watch
-from marshmallow import MarshalResult
 
 from .domain_model import DomainModel
 from .firestore_object import ReferencedObject, FirestoreObject

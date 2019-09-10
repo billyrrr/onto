@@ -8,7 +8,7 @@ firebase-admin
 flask_restful
 
 # Serializes and deserializes data
-marshmallow
+marshmallow>=3.0.3
 
 # Provides conversion between "CamelCase" and "snake_case"
 inflection
