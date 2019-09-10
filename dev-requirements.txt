@@ -2,6 +2,7 @@
 testfixtures
 
 pytest
+pytest-cov
 
 # Dependencies for flasgger + marshmallow use case
 marshmallow

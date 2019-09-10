@@ -1,6 +1,7 @@
 # flask-boiler
 
 [![Build Status](https://travis-ci.com/billyrrr/flask-boiler.svg?branch=master)](https://travis-ci.com/billyrrr/flask-boiler)
+[![Coverage Status](https://coveralls.io/repos/github/billyrrr/flask-boiler/badge.svg?branch=master)](https://coveralls.io/github/billyrrr/flask-boiler?branch=master)
 
 Flask-boiler helps you build fast-prototype of your backend. 
 
