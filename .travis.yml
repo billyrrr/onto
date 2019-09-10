@@ -12,4 +12,3 @@ script:
   - pytest tests
 notifications:
   email: false
-

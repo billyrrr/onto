@@ -72,7 +72,7 @@ class Nested(fields.Nested, Field):
         return None
 
 
-class Relationship(FieldMixin, fields.Raw, Field):
+class Relationship(fields.Str, Field):
 
     def __init__(self, *args, nested=False, **kwargs):
         super().__init__(*args, **kwargs)

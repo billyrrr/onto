@@ -2,8 +2,6 @@ from google.cloud.firestore import Transaction, CollectionReference, DocumentSna
 from google.cloud.firestore import DocumentReference
 import warnings
 
-from marshmallow.utils import is_iterable_but_not_string
-
 from flask_boiler.helpers import RelationshipReference
 from .schema import generate_schema
 from .serializable import Serializable, SerializableClsFactory
@@ -47,16 +45,11 @@ class FirestoreObject(Serializable):
         """
         return self.doc_ref.path
 
-    def _import_doc(self, d, to_get=False):
-        # TODO: handle errors
-        deserialized, _ = self.schema_obj.load(d)
-        self._import_properties(deserialized, to_get=to_get)
-
     def get(self, *, doc_ref=None, **kwargs):
         raise NotImplementedError("Must implement in subclass. ")
 
     def save(self, transaction: Transaction=None):
-        d = self._export_as_dict(to_save=True)
+        d = self._export_as_dict()
         if transaction is None:
             self.doc_ref.set(document_data=d)
         else:
@@ -69,7 +62,7 @@ class FirestoreObject(Serializable):
         else:
             transaction.delete(reference=self.doc_ref)
 
-    def _import_val(self, val, to_get=False):
+    def _import_properties(self, d: dict):
 
         def is_nested_relationship(val):
             return isinstance(val, RelationshipReference) and val.nested
@@ -85,40 +78,18 @@ class FirestoreObject(Serializable):
                 res = val.doc_ref.get(transaction=self.transaction).to_dict()
             return res
 
-        if is_nested_relationship(val):
-            if to_get:
-                return nest_relationship(val)
+        medium = dict()
+
+        for key, val in d.items():
+
+            if is_nested_relationship(val):
+                medium[key] = nest_relationship(val)
+            elif is_ref_only_relationship(val):
+                medium[key] = val.doc_ref
             else:
-                return val
-        elif is_ref_only_relationship(val):
-            return val.doc_ref
-        else:
-            return super()._import_val(val)
+                medium[key] = val
 
-    def _export_val(self, val, to_save=False):
-
-        def is_nested_relationship(val):
-            return isinstance(val, FirestoreObject)
-
-        def is_ref_only_relationship(val):
-            return isinstance(val, RelationshipReference) and not val.nested
-
-        def nest_relationship(obj):
-            if self.transaction is None:
-                obj.save()
-            else:
-                obj.save(transaction=self.transaction)
-            return obj.doc_ref
-
-        if is_nested_relationship(val):
-            if to_save:
-                return nest_relationship(val)
-            else:
-                return val
-        elif is_ref_only_relationship(val):
-            return val.doc_ref
-        else:
-            return super()._export_val(val, to_save=to_save)
+        super()._import_properties(medium)
 
 
 class ReferencedObject(FirestoreObject):
@@ -144,7 +115,7 @@ class ReferencedObject(FirestoreObject):
         else:
             obj.transaction = transaction
             d = obj.doc_ref.get(transaction=transaction).to_dict()
-        obj._import_doc(d, to_get=True)
+        obj._import_doc(d)
         return obj
 
 
@@ -162,7 +133,7 @@ def snapshot_to_obj(snapshot: DocumentSnapshot, super_cls=None):
         assert issubclass(obj_cls, super_cls)
 
     obj = obj_cls.create(doc_id=snapshot.id)
-    obj._import_doc(d, to_get=True)
+    obj._import_properties(d)
     return obj
 
 
@@ -331,6 +302,7 @@ class PrimaryObject(FirestoreObject):
 
         if doc_ref is None:
             doc_ref = cls._get_collection().document(doc_id)
+
 
         if transaction is None:
             snapshot = doc_ref.get()
