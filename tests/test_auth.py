@@ -1,6 +1,7 @@
 import flask
 import pytest
 
+from flask import Flask
 from flask_boiler import auth
 import flask_restful
 from flask_restful import Resource, ResponseBase
@@ -29,9 +30,10 @@ def test_auth(CTX):
         def get(self, uid):
             assert uid == "test_user_id_2"
 
-    app = flask_restful.app.Flask(__name__).test_client()
-
-    app.add_resource("int_resource/", IntegerResource)
+    flask_app = flask.app.Flask(__name__)
+    api = flask_restful.Api(flask_app)
+    api.add_resource(IntegerResource, "/int_resource")
+    app = flask_app.test_client()
 
     app.get(
         path="int_resource/",
