@@ -6,7 +6,7 @@ import warnings
 from functools import wraps, partial
 
 from firebase_admin import auth
-from flask import request
+from flask import request, Response
 from flask_restful import abort
 
 from .context import Context
@@ -70,6 +70,14 @@ def authenticate(func):
     def wrapper(*args, **kwargs):
         if not getattr(func, 'authenticated', True):
             return func(*args, **kwargs)
+
+        if "Authorization" not in request.headers:
+            abort(
+                Response(
+                    status=401,
+                    response='Unauthorized'
+                )
+            )
 
         id_token = request.headers['Authorization'].split(' ').pop()
         uid, status_code = default_authentication(id_token)  # custom account lookup function
