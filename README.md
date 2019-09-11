@@ -56,51 +56,73 @@ CTX.firebase_app
 ```python
 
 from flask_boiler.factory import ClsFactory
-from flask_boiler import schema, fields 
+from flask_boiler import schema, fields
+from flask_boiler.domain_model import DomainModel
+
+class TestObjectBase(DomainModel):
+
+    # Declares the root collection to store primary object to in firestore 
+    _collection_name = "TestObject"
 
 
 # Creates a schema for serializing and deserializing to firestore database
 class TestObjectSchema(schema.Schema):
     
-    # Describes how obj.int_a is read from and stored to a document in firestore 
-    int_a = fields.Raw(
-        load_from="intA", # reads obj.int_a from firestore document field "intA" 
-        dump_to="intA" # stores the value of obj.int_a to firestore document field "intA" 
-        )
-    int_b = fields.Raw(load_from="intB", dump_to="intB")
+    # Describes how obj.int_a is read from and stored to a document in firestore
+    int_a = fields.Raw()
+    int_b = fields.Raw()
 
 
 # Declares the object
 TestObject = ClsFactory.create(
     name="TestObject",
     schema=TestObjectSchema,
-    # Either MyDomainModelBase (specify cls._collection_id)
-    #  or SubclassOfViewModel 
-    # TODO: ADD MORE DOCS 
-    base=PrimaryObject  
+    base=TestObjectBase
 )
 
-# Creates an object with default values with reference: "TestObject/testObjId1" 
+# Creates an object with default values with reference: "TestObject/testObjId1"
 #   (but not saved to database)
 obj = TestObject.create(doc_id="testObjId1")
 
-# Assigns value to the newly created object 
+# Assigns value to the newly created object
 obj.int_a = 1
 obj.int_b = 2
 
-# Saves to firestore "TestObject/testObjId1" 
+# Saves the object 
 obj.save()
 
-# Gets the object from firestore "TestObject/testObjId1" 
+# The document now stored in firestore collection "TestObject" / document "testObjId1"
+# {
+#   "intA": 1,
+#   "intB": 2,
+#   "doc_id": "testObjId1",
+#   "doc_ref": "TestObject/testObjId1",
+#   "obj_type": "TestObject"    
+# } 
+
+# Gets the object from firestore "TestObject/testObjId1"
 retrieved_obj = TestObject.get(doc_id="testObjId1")
 
-# Access values of the object retrieved 
+# Access values of the object retrieved
 assert retrieved_obj.int_a == 1
-assert retrieved_obj.int_b == 2
 
-# Deletes the object from firestore "TestObject/testObjId1" 
+# Deletes the object from firestore "TestObject/testObjId1"
 retrieved_obj.delete()
 ```
+
+### Business Properties Binding
+
+You can bind a view model to its business properties (underlying domain model). 
+See ```examples/binding_example.py```. 
+
+### Automatically Generated Swagger Docs
+
+You can enable auto-generated swagger docs. See: ```examples/view_example.py```
+
+### Create Flask View
+
+You can create a flask view to specify how a view model is read and changed. 
+
 
 ## Architecture Discussion
 

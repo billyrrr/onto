@@ -5,8 +5,8 @@ Schema = schema.Schema
 
 
 class LuggageItemSchema(Schema):
-    luggage_type = fields.Str(load_from="luggage_type", dump_to="luggage_type")
-    weight_in_lbs = fields.Integer(load_from="weight_in_lbs", dump_to="weight_in_lbs")
+    luggage_type = fields.Str(data_key="luggage_type")
+    weight_in_lbs = fields.Integer(data_key="weight_in_lbs")
     # owner_id = fields.Str(
     #     load_from="owner_id",
     #     dump_to="owner_id",
@@ -14,9 +14,9 @@ class LuggageItemSchema(Schema):
 
 
 class LuggageCollectionSchema(Schema):
-    luggages = fields.Raw(many=True, load_from="luggages", dump_to="luggages")
-    total_count = fields.Integer(dump_to="total_count", dump_only=True)
-    total_weight = fields.Integer(dump_to="total_weight", dump_only=True)
+    luggages = fields.Raw(many=True, data_key="luggages")
+    total_count = fields.Integer(data_key="total_count", dump_only=True)
+    total_weight = fields.Integer(data_key="total_weight", dump_only=True)
 
 
 class LuggageItemBase(domain_model.DomainModel):

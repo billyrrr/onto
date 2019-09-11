@@ -77,7 +77,6 @@ if __name__ == "__main__":
     #         "total_count": 2,
     #         # "obj_type": "Luggages"
     #     }
-
     assert vm.to_dict() == {
         "luggages": [
             {
