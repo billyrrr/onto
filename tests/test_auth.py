@@ -10,6 +10,7 @@ from flask_boiler import auth
 import flask_restful
 from flask_restful import Resource, ResponseBase
 from firebase_admin import auth as firebase_admin_auth
+import firebase_admin
 
 from .fixtures import CTX
 
@@ -139,9 +140,7 @@ def test_authenticate_testing_config(CTX, vit):
 def vit_bomb(monkeypatch):
 
     def auth_bomb(*args, **kwargs):
-        raise firebase_admin_auth.AuthError(
-            'ID_TOKEN_REVOKED',
-            "mock messagge")
+        raise firebase_admin_auth.RevokedIdTokenError("mock message")
 
     verify_id_token = Mock(wraps=auth_bomb)
     monkeypatch.setattr(

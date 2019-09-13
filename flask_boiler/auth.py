@@ -5,6 +5,7 @@ Reference: flask-restful docs
 import warnings
 from functools import wraps, partial
 
+import firebase_admin
 from firebase_admin import auth
 from flask import request, Response
 from flask_restful import abort
@@ -49,13 +50,12 @@ def default_authentication(id_token) -> (str, int):
         # Token is valid and not revoked.
         uid = decoded_token['uid']
         return uid, 200
-    except auth.AuthError as exc:
-        if exc.code == 'ID_TOKEN_REVOKED':
-            # Token revoked, inform the user to re-authenticate or signOut().
-            return None, 401
-        else:
-            # Token is invalid
-            return None, 402
+    except firebase_admin.auth.RevokedIdTokenError:
+        # Token revoked, inform the user to re-authenticate or signOut().
+        return None, 401
+    except firebase_admin.auth.InvalidIdTokenError:
+        # Token is invalid
+        return None, 402
 
 
 def authenticate(func):
