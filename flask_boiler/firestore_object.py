@@ -7,13 +7,14 @@ from .schema import generate_schema
 from .serializable import Serializable, SerializableClsFactory
 from .context import Context as CTX
 from .utils import random_id
+from .collection_mixin import CollectionMixin
 
 
 class FirestoreObjectClsFactory(SerializableClsFactory):
     pass
 
 
-class FirestoreObject(Serializable):
+class FirestoreObject(Serializable, CollectionMixin):
 
     def __init__(self, doc_ref=None):
         super().__init__()
@@ -175,41 +176,6 @@ class PrimaryObject(FirestoreObject):
             doc_ref = self._doc_ref_from_id(doc_id=doc_id)
 
         super().__init__(doc_ref=doc_ref)
-
-    @classmethod
-    def _doc_ref_from_id(cls, doc_id):
-        return cls._get_collection().document(doc_id)
-
-    @property
-    def collection_name(self):
-        """ Returns the root collection name of the class of objects.
-                If cls._collection_name is not specified, then the collection
-                name will be inferred from the class name.
-
-        :return:
-        """
-        # if type(self) == FirestoreObject:
-        #     raise ValueError("collection_name is read from class name, "
-        #                      "only subclass is supported. ")
-        return self._get_collection_name()
-
-    @classmethod
-    def _get_collection_name(cls):
-        if cls._collection_name is None:
-            cls._collection_name = cls.__name__
-        return cls._collection_name
-
-    @property
-    def collection(self):
-        """ Returns the firestore collection of the current object
-
-        :return:
-        """
-        return self._get_collection()
-
-    @classmethod
-    def _get_collection(cls):
-        return CTX.db.collection(cls._get_collection_name())
 
     @property
     def doc_id(self):

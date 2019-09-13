@@ -2,6 +2,7 @@ from flask_boiler import fields
 from flask_boiler.schema import Schema
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.view_model import ViewModel
+from flask_boiler.collection_mixin import CollectionMixin
 from flask_boiler.firestore_object import FirestoreObjectClsFactory
 
 import pytest

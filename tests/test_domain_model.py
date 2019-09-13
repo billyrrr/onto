@@ -15,7 +15,7 @@ from flask_boiler.context import Context as CTX
 from flask_boiler.firestore_object import FirestoreObjectClsFactory
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.schema import Schema
-from flask_boiler import fields
+from flask_boiler import fields, collection_mixin
 
 # For pytest, DO NOT DELETE
 from .fixtures import *
@@ -39,21 +39,21 @@ class StandardCitySchema(CitySchema):
     regions = fields.Raw(many=True)
 
 
-class CityBase(DomainModel):
+class City(DomainModel):
     _collection_name = "City"
 
 
 Municipality = FirestoreObjectClsFactory.create(
     name="Municipality",
     schema=MunicipalitySchema,
-    base=CityBase,
+    base=City,
 )
 
 
 StandardCity = FirestoreObjectClsFactory.create(
     name="StandardCity",
     schema=StandardCitySchema,
-    base=CityBase
+    base=City
 )
 
 
@@ -130,7 +130,7 @@ def test_subclass_same_collection(CTX):
 
     res_dict = dict()
 
-    for obj in CityBase.where("country", "==", "USA"):
+    for obj in City.where("country", "==", "USA"):
         d = obj.to_dict()
         # print(d)
         res_dict[d["cityName"]] = d
@@ -181,7 +181,7 @@ def test_where_with_kwargs(CTX):
 
     res_dict = dict()
 
-    for obj in CityBase.where(country="USA"):
+    for obj in City.where(country="USA"):
         d = obj.to_dict()
         res_dict[obj.city_name] = d
 

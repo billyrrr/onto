@@ -72,12 +72,7 @@ def authenticate(func):
             return func(*args, **kwargs)
 
         if "Authorization" not in request.headers:
-            abort(
-                Response(
-                    status=401,
-                    response='Unauthorized'
-                )
-            )
+            abort(401)
 
         id_token = request.headers['Authorization'].split(' ').pop()
         uid, status_code = default_authentication(id_token)  # custom account lookup function
