@@ -4,7 +4,7 @@ from google.cloud.firestore import DocumentReference
 
 from .context import Context as CTX
 from .domain_model import DomainModel
-from .firestore_object import ReferencedObject
+from flask_boiler.referenced_object import ReferencedObject
 from .serializable import Serializable
 from .utils import random_id
 

@@ -3,9 +3,9 @@ from flask_boiler.config import Config
 
 from flask_boiler import schema, fields, utils
 
-from flask_boiler.firestore_object import FirestoreObject, PrimaryObject, \
+from flask_boiler.firestore_object import FirestoreObject, \
     FirestoreObjectClsFactory
-
+from flask_boiler.primary_object import PrimaryObject
 
 if __name__ == "__main__":
     config = Config(
