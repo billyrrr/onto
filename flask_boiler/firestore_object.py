@@ -1,13 +1,15 @@
-from google.cloud.firestore import Transaction, CollectionReference, DocumentSnapshot
-from google.cloud.firestore import DocumentReference
 import warnings
 
+from google.cloud.firestore import DocumentReference
+from google.cloud.firestore import Transaction, CollectionReference, \
+    DocumentSnapshot
+
 from flask_boiler.helpers import RelationshipReference
-from .schema import generate_schema
-from .serializable import Serializable, SerializableClsFactory
-from .context import Context as CTX
-from .utils import random_id
-from .collection_mixin import CollectionMixin
+# from flask_boiler.view_model import ViewModel
+from flask_boiler.collection_mixin import CollectionMixin
+from flask_boiler.context import Context as CTX
+from flask_boiler.serializable import Serializable, SerializableClsFactory
+from flask_boiler.utils import random_id
 
 
 class FirestoreObjectClsFactory(SerializableClsFactory):
@@ -46,11 +48,17 @@ class FirestoreObject(Serializable, CollectionMixin):
         """
         return self.doc_ref.path
 
-    def get(self, *, doc_ref=None, **kwargs):
-        raise NotImplementedError("Must implement in subclass. ")
+    @classmethod
+    def get(cls, *, doc_ref=None, transaction=None, **kwargs):
+        if transaction is None:
+            snapshot = doc_ref.get()
+        else:
+            snapshot = doc_ref.get(transaction=transaction)
+        obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
+        return obj
 
     def save(self, transaction: Transaction=None):
-        d = self._export_as_dict()
+        d = self._export_as_dict(to_save=True)
         if transaction is None:
             self.doc_ref.set(document_data=d)
         else:
@@ -63,7 +71,48 @@ class FirestoreObject(Serializable, CollectionMixin):
         else:
             transaction.delete(reference=self.doc_ref)
 
-    def _import_properties(self, d: dict):
+    def _export_val(self, val, to_save=False):
+
+        def is_nested_relationship(val):
+            return isinstance(val, RelationshipReference) and val.nested
+
+        def is_ref_only_relationship(val):
+            return isinstance(val, RelationshipReference) and not val.nested
+
+        def nest_relationship(obj):
+            if self.transaction is None:
+                obj.save()
+            else:
+                obj.save(transaction=self.transaction)
+            return obj.doc_ref
+
+        if is_nested_relationship(val):
+            if to_save:
+                return nest_relationship(val.obj)
+            else:
+                return val.obj.doc_ref
+        elif is_ref_only_relationship(val):
+            return val.doc_ref
+        else:
+            return super()._export_val(val, to_save=to_save)
+
+    def _export_val_view(self, val):
+
+        def get_vm(doc_ref):
+            obj = FirestoreObject.get(doc_ref=doc_ref, transaction=self.transaction)
+            return obj._export_as_view_dict()
+
+        if isinstance(val, RelationshipReference):
+            if val.obj is not None:
+                return val.obj._export_as_view_dict()
+            elif val.doc_ref is not None:
+                return get_vm(val.doc_ref)
+            else:
+                return val.doc_ref
+        else:
+            return super()._export_val_view(val)
+
+    def _import_val(self, val, to_get=False):
 
         def is_nested_relationship(val):
             return isinstance(val, RelationshipReference) and val.nested
@@ -79,18 +128,15 @@ class FirestoreObject(Serializable, CollectionMixin):
                 res = val.doc_ref.get(transaction=self.transaction).to_dict()
             return res
 
-        medium = dict()
-
-        for key, val in d.items():
-
-            if is_nested_relationship(val):
-                medium[key] = nest_relationship(val)
-            elif is_ref_only_relationship(val):
-                medium[key] = val.doc_ref
+        if is_nested_relationship(val):
+            if to_get:
+                return nest_relationship(val)
             else:
-                medium[key] = val
-
-        super()._import_properties(medium)
+                return val.doc_ref
+        elif is_ref_only_relationship(val):
+            return val.doc_ref
+        else:
+            return super()._import_val(val)
 
 
 class ReferencedObject(FirestoreObject):
@@ -103,21 +149,14 @@ class ReferencedObject(FirestoreObject):
         return self._doc_ref
 
     @classmethod
-    def get(cls, *, doc_ref=None, transaction: Transaction = None):
+    def get(cls, *, doc_ref=None, transaction: Transaction = None, **kwargs):
         """ Returns an instance from firestore document reference.
 
         :param doc_ref: firestore document reference
         :param transaction: firestore transaction
         :return:
         """
-        obj = cls(doc_ref=doc_ref)
-        if transaction is None:
-            d = obj.doc_ref.get().to_dict()
-        else:
-            obj.transaction = transaction
-            d = obj.doc_ref.get(transaction=transaction).to_dict()
-        obj._import_doc(d)
-        return obj
+        return super().get(doc_ref=doc_ref, transaction=transaction)
 
 
 def snapshot_to_obj(snapshot: DocumentSnapshot, super_cls=None):
@@ -133,7 +172,7 @@ def snapshot_to_obj(snapshot: DocumentSnapshot, super_cls=None):
     if super_cls is not None:
         assert issubclass(obj_cls, super_cls)
 
-    obj = obj_cls.create(doc_id=snapshot.id)
+    obj = obj_cls.create(doc_ref=snapshot.reference)
     obj._import_properties(d)
     return obj
 
@@ -239,17 +278,25 @@ class PrimaryObject(FirestoreObject):
         return cur_where
 
     @classmethod
-    def create(cls, doc_id=None):
+    def create(cls, doc_id=None, doc_ref=None):
         """
         Creates an instance of object and assign a firestore
             reference with random id to the instance.
         :return:
         """
-        if doc_id is None:
-            doc_id = random_id()
-        doc_ref = cls._get_collection().document(doc_id)
-        obj = super().create(doc_ref=doc_ref)
-        return obj
+        if doc_ref is None:
+
+            if doc_id is None:
+                doc_id = random_id()
+            doc_ref = cls._get_collection().document(doc_id)
+            obj = super().create(doc_ref=doc_ref)
+            return obj
+
+        else:
+
+            assert doc_id is None
+            obj = super().create(doc_ref=doc_ref)
+            return obj
 
     @classmethod
     def get(cls, *, doc_ref_str=None, doc_ref=None, doc_id=None,
@@ -269,12 +316,4 @@ class PrimaryObject(FirestoreObject):
         if doc_ref is None:
             doc_ref = cls._get_collection().document(doc_id)
 
-
-        if transaction is None:
-            snapshot = doc_ref.get()
-        else:
-            snapshot = doc_ref.get(transaction=transaction)
-
-        obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
-
-        return obj
+        return super().get(doc_ref=doc_ref, transaction=transaction)

@@ -1,6 +1,4 @@
-from typing import Callable
-
-from .firestore_object import PrimaryObject
+from flask_boiler.firestore_object import PrimaryObject
 
 
 class DomainModel(PrimaryObject):

@@ -1,12 +1,9 @@
-import inspect
-import warnings
 from typing import TypeVar, Union
 
 from marshmallow.utils import is_iterable_but_not_string
 
-from . import fields
+from flask_boiler import fields
 from .model_registry import BaseRegisteredModel
-from . import schema
 
 
 # from abc import ABC, abstractmethod
@@ -66,46 +63,48 @@ class Schemed(object):
 
 class Importable(SchemedBase):
 
-    def _import_properties(self, d: dict) -> None:
+    def _import_val(self, val, to_get=False):
+        if isinstance(val, dict) and "obj_type" in val:
+            # Deserialize nested object
+            obj_type = val["obj_type"]
+            # TODO: check hierarchy
+            #   (_registry is a singleton dictionary and flat for now)
+            obj_cls = BaseRegisteredModel.get_subclass_cls(obj_type)
+
+            obj = obj_cls.create(
+                doc_id=val.get("doc_id", None),
+                transaction=self.transaction
+            )
+            obj._import_properties(val, to_get=to_get)
+
+        elif is_iterable_but_not_string(val):
+            if isinstance(val, list):
+                val_list = [self._import_val(elem, to_get) for elem in val]
+                return val_list
+            elif isinstance(val, dict):
+                val_d = dict()
+                for k, v in val.items():
+                    val_d[k] = self._import_val(v, to_get)
+                return val_d
+            else:
+                raise NotImplementedError
+
+        else:
+            return val
+
+    def _import_properties(self, d: dict, to_get=False) -> None:
         """ TODO: implement iterable support
         TODO: test
         TODO: note that this method is not well-tested and most likely
                 will fail for nested structures
-
         :param d:
         :return:
         """
-        deserialized = self.schema_obj.load(d)
+        d = self.schema_obj.load(d)
 
-        def import_val(val):
-            if isinstance(val, dict) and "obj_type" in val:
-                # Deserialize nested object
-                obj_type = val["obj_type"]
-                # TODO: check hierarchy
-                #   (_registry is a singleton dictionary and flat for now)
-                obj_cls = BaseRegisteredModel.get_subclass_cls(obj_type)
-
-                obj = obj_cls.create(doc_id=val.get("doc_id", None))
-                obj._import_properties(val)
-
-            elif is_iterable_but_not_string(val):
-                if isinstance(val, list):
-                    val_list = [import_val(elem) for elem in val]
-                    return val_list
-                elif isinstance(val, dict):
-                    val_d = dict()
-                    for k, v in val.items():
-                        val_d[k] = import_val(v)
-                    return val_d
-                else:
-                    raise NotImplementedError
-
-            else:
-                return val
-
-        for key, val in deserialized.items():
+        for key, val in d.items():
             # if key not in self.__get_dump_only_fields__():
-            setattr(self, key, import_val(val))
+            setattr(self, key, self._import_val(val, to_get=to_get))
 
     @classmethod
     def from_dict(cls, d, **kwargs):
@@ -113,38 +112,108 @@ class Importable(SchemedBase):
         instance._import_properties(d)
         return instance
 
+#
+# class Importable(SchemedBase):
+#
+#     def _import_properties(self, d: dict) -> None:
+#         """ TODO: implement iterable support
+#         TODO: test
+#         TODO: note that this method is not well-tested and most likely
+#                 will fail for nested structures
+#
+#         :param d:
+#         :return:
+#         """
+#         deserialized = self.schema_obj.load(d)
+#
+#         def import_val(val):
+#             if isinstance(val, dict) and \
+#                     "obj_type" in val and \
+#                     val["obj_type"] != "dict":
+#                 # Deserialize nested object
+#                 obj_type = val["obj_type"]
+#                 # TODO: check hierarchy
+#                 #   (_registry is a singleton dictionary and flat for now)
+#                 obj_cls = BaseRegisteredModel.get_subclass_cls(obj_type)
+#
+#                 obj = obj_cls.create(doc_id=val.get("doc_id", None))
+#                 obj._import_properties(val)
+#
+#             elif is_iterable_but_not_string(val):
+#                 if isinstance(val, list):
+#                     val_list = [import_val(elem) for elem in val]
+#                     return val_list
+#                 elif isinstance(val, dict):
+#                     val_d = dict()
+#                     for k, v in val.items():
+#                         val_d[k] = import_val(v)
+#                     return val_d
+#                 else:
+#                     raise NotImplementedError
+#
+#             else:
+#                 return val
+#
+#         for key, val in deserialized.items():
+#             # if key not in self.__get_dump_only_fields__():
+#             setattr(self, key, import_val(val))
+#
+#     @classmethod
+#     def from_dict(cls, d, **kwargs):
+#         instance = cls(**kwargs)  # TODO: fix unexpected arguments
+#         instance._import_properties(d)
+#         return instance
+
 
 class Exportable(SchemedBase):
 
-    def _export_as_dict(self) -> dict:
+    def _export_val(self, val, to_save=False):
+        if isinstance(val, Serializable):
+            return val._export_as_dict(to_save=to_save)
+        elif is_iterable_but_not_string(val):
+            if isinstance(val, list):
+                val_list = [self._export_val(elem, to_save) for elem in val]
+                return val_list
+            elif isinstance(val, dict):
+                val_d = dict()
+                for k, v in val.items():
+                    val_d[k] = self._export_val(v, to_save)
+                return val_d
+            else:
+                raise NotImplementedError
+        else:
+            return val
+
+    def _export_as_dict(self, to_save=False) -> dict:
         """ Map/dict is only supported at root level for now
         TODO: implement iterable support
         :return:
         """
         d = self.schema_obj.dump(self)
 
-        def export_val(val):
-            if isinstance(val, Serializable):
-                return val._export_as_dict()
-            elif is_iterable_but_not_string(val):
-                if isinstance(val, list):
-                    val_list = [export_val(elem) for elem in val]
-                    return val_list
-                elif isinstance(val, dict):
-                    val_d = dict()
-                    for k, v in val.items():
-                        val_d[k] = export_val(v)
-                    return val_d
-                else:
-                    raise NotImplementedError
-            else:
-                return val
-
         res = dict()
         for key, val in d.items():
-            res[key] = export_val(val)
+            res[key] = self._export_val(val, to_save=to_save)
 
         return res
+
+    def _export_val_view(self, val):
+
+        if isinstance(val, Serializable):
+            return val._export_as_view_dict()
+        elif is_iterable_but_not_string(val):
+            if isinstance(val, list):
+                val_list = [self._export_val_view(elem) for elem in val]
+                return val_list
+            elif isinstance(val, dict):
+                val_d = dict()
+                for k, v in val.items():
+                    val_d[k] = self._export_val_view(v)
+                return val_d
+            else:
+                raise NotImplementedError
+        else:
+            return val
 
     def _export_as_view_dict(self) -> dict:
         """
@@ -154,33 +223,83 @@ class Exportable(SchemedBase):
 
         d = self.schema_obj.dump(self)
 
-        def export_val(val):
-            if isinstance(val, Serializable):
-                return val._export_as_view_dict()
-            elif is_iterable_but_not_string(val):
-                if isinstance(val, list):
-                    val_list = [export_val(elem) for elem in val]
-                    return val_list
-                elif isinstance(val, dict):
-                    val_d = dict()
-                    for k, v in val.items():
-                        val_d[k] = export_val(v)
-                    return val_d
-                else:
-                    raise NotImplementedError
-            else:
-                return val
-
         res = dict()
         for key, val in d.items():
             if key not in self.schema_cls._get_reserved_fieldnames():
-                res[key] = export_val(val)
+                res[key] = self._export_val_view(val)
 
         return res
 
     def to_dict(self):
         return self._export_as_dict()
 
+# class Exportable(SchemedBase):
+#
+#     def _export_as_dict(self) -> dict:
+#         """ Map/dict is only supported at root level for now
+#         TODO: implement iterable support
+#         :return:
+#         """
+#         d = self.schema_obj.dump(self)
+#
+#         def export_val(val):
+#             if isinstance(val, Serializable):
+#                 return val._export_as_dict()
+#             elif is_iterable_but_not_string(val):
+#                 if isinstance(val, list):
+#                     val_list = [export_val(elem) for elem in val]
+#                     return val_list
+#                 elif isinstance(val, dict):
+#                     val_d = dict()
+#                     for k, v in val.items():
+#                         val_d[k] = export_val(v)
+#                     return val_d
+#                 else:
+#                     raise NotImplementedError
+#             else:
+#                 return val
+#
+#         res = dict()
+#         for key, val in d.items():
+#             res[key] = export_val(val)
+#
+#         return res
+#
+#     def _export_as_view_dict(self) -> dict:
+#         """
+#         TODO: implement iterable support
+#         :return:
+#         """
+#
+#         d = self.schema_obj.dump(self)
+#
+#         def export_val(val):
+#             if isinstance(val, Serializable):
+#                 return val._export_as_view_dict()
+#             elif is_iterable_but_not_string(val):
+#                 if isinstance(val, list):
+#                     val_list = [export_val(elem) for elem in val]
+#                     return val_list
+#                 elif isinstance(val, dict):
+#                     val_d = dict()
+#                     for k, v in val.items():
+#                         val_d[k] = export_val(v)
+#                     return val_d
+#                 else:
+#                     raise NotImplementedError
+#             else:
+#                 return val
+#
+#         res = dict()
+#         for key, val in d.items():
+#             if key not in self.schema_cls._get_reserved_fieldnames():
+#                 res[key] = export_val(val)
+#
+#         return res
+#
+#     def to_dict(self):
+#         return self._export_as_dict()
+#
 
 def initializer(obj, d):
     for key, val in d.items():

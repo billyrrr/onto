@@ -137,7 +137,7 @@ def document_as_view(view_model_cls,
     def get(self, **kwargs):
         doc_ref: firestore.DocumentReference = mapper(kwargs)
 
-        obj = self._view_model_cls.get(doc_ref)
+        obj = self._view_model_cls.get(doc_ref=doc_ref)
         return jsonify(obj.to_dict())
 
     # Dynamically construct a proxy class that has responses static var

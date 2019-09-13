@@ -74,28 +74,61 @@ class Nested(fields.Nested, Field):
 
 class Relationship(fields.Str, Field):
 
-    def __init__(self, *args, nested=False, **kwargs):
+    def __init__(self, *args, nested=False, many=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.nested = nested
+        self.many = many
 
-    def _serialize(self, value, attr, obj, **kwargs):
+    # def _serialize(self, value, *args, **kwargs):
+    #     if isinstance(value, list) and self.many:
+    #         return [self._serialize(val, *args, **kwargs) for val in value]
+    #     else:
+    #         if value is None:
+    #             raise ValueError
+    #         # Note that AssertionError is not always thrown
+    #         if self.nested:
+    #             return value
+    #         else:
+    #             assert isinstance(value, DocumentReference)
+    #             return RelationshipReference(doc_ref=value,
+    #                                          nested=False)
+    #
+    # def _deserialize(self, value, *args, **kwargs):
+    #     if isinstance(value, list) and self.many:
+    #         return [self._deserialize(val, *args, **kwargs) for val in value]
+    #     else:
+    #         if value is None:
+    #             raise ValueError
+    #         assert isinstance(value, DocumentReference)
+    #         return RelationshipReference(
+    #             doc_ref=value,
+    #             nested=self.nested,
+    #         )
+
+    def _serialize(self, value, *args, **kwargs):
         if value is None:
             raise ValueError
-        # Note that AssertionError is not always thrown
-        if self.nested:
-            return value
+
+        if isinstance(value, list) and self.many:
+            return [self._serialize(val, *args, **kwargs) for val in value]
+
+        if isinstance(value, DocumentReference):
+            # Note that AssertionError is not always thrown
+            return RelationshipReference(doc_ref=value, nested=self.nested)
         else:
-            assert isinstance(value, DocumentReference)
-            return RelationshipReference(doc_ref=value,
-                                         nested=False)
+            return RelationshipReference(obj=value, nested=self.nested)
 
-    def _deserialize(self, value, attr, data, **kwargs):
+    def _deserialize(self, value, *args, **kwargs):
         if value is None:
             raise ValueError
+
+        if isinstance(value, list) and self.many:
+            return [self._deserialize(val, *args, *kwargs) for val in value]
+
         assert isinstance(value, DocumentReference)
         return RelationshipReference(
             doc_ref=value,
-            nested=self.nested,
+            nested=self.nested
         )
 
 

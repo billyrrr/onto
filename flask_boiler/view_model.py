@@ -1,13 +1,12 @@
 from typing import Dict, Tuple, Callable
 
-from google.cloud.firestore import DocumentReference, Watch
-
-from .domain_model import DomainModel
-from .firestore_object import ReferencedObject, FirestoreObject
-from .serializable import Serializable
-from .utils import obj_type_deserialize, random_id
+from google.cloud.firestore import DocumentReference
 
 from .context import Context as CTX
+from .domain_model import DomainModel
+from .firestore_object import ReferencedObject
+from .serializable import Serializable
+from .utils import random_id
 
 
 class Persistable:
