@@ -5,6 +5,8 @@ from flask_boiler.firestore_object import FirestoreObject
 from flask_boiler.query_mixin import QueryMixin
 from flask_boiler.utils import random_id
 
+from flask_boiler.schema import Schema
+
 
 class PrimaryObject(FirestoreObject, QueryMixin):
     """
@@ -23,6 +25,30 @@ class PrimaryObject(FirestoreObject, QueryMixin):
     # Abstract property: MUST OVERRIDE
     # TODO: add abstract property decorator
     _collection_name = None
+
+    @classmethod
+    def get_schema_cls(cls):
+        """ Returns schema_cls or the union of all schemas
+                of subclasses. Should only be used on the root
+                DomainModel.
+            Does not cache the result.
+        :return:
+        """
+        d = dict()
+        if cls._schema_cls is None:
+            for child in cls._get_children():
+                for key, val in child.get_schema_obj().fields.items():
+                    field_cls = val.__class__
+
+                    if key in d and d[key] != field_cls:
+                        raise ValueError
+
+                    d[key] = field_cls
+            tmp_schema = Schema.from_dict(d)
+            return tmp_schema
+        else:
+            return cls._schema_cls
+
 
     def __init__(self, doc_id=None, doc_ref=None):
         if doc_ref is None:

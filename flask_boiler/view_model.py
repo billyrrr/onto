@@ -90,7 +90,7 @@ class ViewModel(ReferencedObject, Persistable):
         :param doc_id:
         :return:
         """
-        obj_cls: DomainModel = Serializable.get_subclass_cls(obj_type)
+        obj_cls: DomainModel = Serializable.get_cls_from_name(obj_type)
 
         update_func = self.get_update_func(dm_cls=obj_cls)
 

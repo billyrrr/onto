@@ -8,6 +8,13 @@ from flask_boiler.serializable import T, Schemed, AutoInitialized, NewMixin, \
 class ClsFactory:
 
     @classmethod
+    def create_from_root(
+            cls, name, schema: T,
+            root_cls=None,
+            additional_base_tuple=None):
+        pass
+
+    @classmethod
     def create_customized(
             cls, name, schema: T,
             auto_initialized=True,
@@ -50,7 +57,7 @@ class ClsFactory:
                base:U=Serializable,
                base_tuple=None) -> Union[T, U]:
 
-        existing = BaseRegisteredModel.get_subclass_cls(name)
+        existing = BaseRegisteredModel.get_cls_from_name(name)
         if existing is None:
             new_cls = type(name,  # class name
                            base_tuple or (base, ),

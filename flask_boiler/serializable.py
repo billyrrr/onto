@@ -78,7 +78,7 @@ class Importable(SchemedBase):
             obj_type = val["obj_type"]
             # TODO: check hierarchy
             #   (_registry is a singleton dictionary and flat for now)
-            obj_cls = BaseRegisteredModel.get_subclass_cls(obj_type)
+            obj_cls = BaseRegisteredModel.get_cls_from_name(obj_type)
 
             obj = obj_cls.create(
                 doc_id=val.get("doc_id", None),

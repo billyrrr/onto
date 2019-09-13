@@ -153,7 +153,7 @@ def snapshot_to_obj(
     """
     d = snapshot.to_dict()
     obj_type = d["obj_type"]
-    obj_cls = super_cls.get_subclass_cls(obj_type)
+    obj_cls = super_cls.get_cls_from_name(obj_type)
 
     if obj_cls is None:
         raise ValueError("Cannot read obj_type: {}. "

@@ -66,6 +66,8 @@ class QueryMixin:
                     )
 
         for key, val in kwargs.items():
-            cur_where = cur_where.where(key, "==", val)
+            comp, other = val if isinstance(val, tuple) else ("==", val)
+            firestore_key = cls.get_schema_cls().f(key)
+            cur_where = cur_where.where(firestore_key, comp, other)
 
         return cur_where

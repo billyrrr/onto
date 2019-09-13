@@ -196,34 +196,34 @@ def test_separate_class():
     :return:
     """
 
-    class ModelASchema(schema.Schema):
+    class SModelASchema(schema.Schema):
         int_a = schema.fields.Integer(load_from="intA", dump_to="intA")
         int_b = schema.fields.Integer(load_from="intB", dump_to="intB")
 
-    class ModelASerializable(serializable.Serializable):
-        _schema_cls = ModelASchema
+    class SModelASerializable(serializable.Serializable):
+        _schema_cls = SModelASchema
 
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
 
-    class ModelAModel(object):
+    class SModelAModel(object):
 
         def __init__(self):
             self.int_a = 0
             self.int_b = 0
 
-    class ModelA(ModelAModel, ModelASerializable):
+    class SModelA(SModelAModel, SModelASerializable):
 
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
 
-    a = ModelA()
+    a = SModelA()
     a.int_a = 1
     a.int_b = 2
 
     assert a._export_as_dict() == {
         "intA": 1,
         "intB": 2,
-        "obj_type": "ModelA"
+        "obj_type": "SModelA"
     }
 
