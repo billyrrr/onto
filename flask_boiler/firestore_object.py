@@ -1,4 +1,5 @@
 import warnings
+from typing import TypeVar
 
 from google.cloud.firestore import DocumentReference
 from google.cloud.firestore import Transaction, DocumentSnapshot
@@ -54,7 +55,7 @@ class FirestoreObject(Serializable, CollectionMixin):
         obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
         return obj
 
-    def save(self, transaction: Transaction=None):
+    def save(self, transaction: Transaction = None):
         d = self._export_as_dict(to_save=True)
         if transaction is None:
             self.doc_ref.set(document_data=d)
@@ -62,7 +63,7 @@ class FirestoreObject(Serializable, CollectionMixin):
             transaction.set(reference=self.doc_ref,
                             document_data=d)
 
-    def delete(self, transaction: Transaction=None):
+    def delete(self, transaction: Transaction = None):
         if transaction is None:
             self.doc_ref.delete()
         else:
@@ -96,7 +97,8 @@ class FirestoreObject(Serializable, CollectionMixin):
     def _export_val_view(self, val):
 
         def get_vm(doc_ref):
-            obj = FirestoreObject.get(doc_ref=doc_ref, transaction=self.transaction)
+            obj = FirestoreObject.get(doc_ref=doc_ref,
+                                      transaction=self.transaction)
             return obj._export_as_view_dict()
 
         if isinstance(val, RelationshipReference):
@@ -136,7 +138,18 @@ class FirestoreObject(Serializable, CollectionMixin):
             return super()._import_val(val)
 
 
-def snapshot_to_obj(snapshot: DocumentSnapshot, super_cls=None):
+T = TypeVar('T', covariant=True)
+
+
+def snapshot_to_obj(
+        snapshot: DocumentSnapshot,
+        super_cls: T = None) -> T:
+    """ Converts a firestore document snapshot to FirestoreObject
+
+    :param snapshot: firestore document snapshot
+    :param super_cls: subclass of FirestoreObject
+    :return:
+    """
     d = snapshot.to_dict()
     obj_type = d["obj_type"]
     obj_cls = super_cls.get_subclass_cls(obj_type)
@@ -152,5 +165,3 @@ def snapshot_to_obj(snapshot: DocumentSnapshot, super_cls=None):
     obj = obj_cls.create(doc_ref=snapshot.reference)
     obj._import_properties(d)
     return obj
-
-

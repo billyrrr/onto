@@ -5,9 +5,18 @@ from flask_boiler.helpers import RelationshipReference
 
 
 class Field(fields.Field):
+    """
+    Custom class of field for supporting flask_boiler-related
+        features such as auto-initialization.
+    """
 
     @property
     def default_value(self):
+        """ The default value to assign to instance variable at
+                initialization to auto initialize the object.
+
+        :return:
+        """
         return None
 
 
@@ -47,6 +56,9 @@ class List(fields.Raw, Field):
 
 
 class Function(fields.Function, Field):
+    """
+    For use with property.
+    """
 
     @property
     def default_value(self):
@@ -66,6 +78,9 @@ class String(fields.String, Field):
 
 
 class Nested(fields.Nested, Field):
+    """
+    Field that describes a dictionary that conforms to a marshmallow schema.
+    """
 
     @property
     def default_value(self):
@@ -73,37 +88,29 @@ class Nested(fields.Nested, Field):
 
 
 class Relationship(fields.Str, Field):
+    """
+    Field that describes a relationship in reference to another document
+        in the Firestore.
+    """
 
     def __init__(self, *args, nested=False, many=False, **kwargs):
+        """ Initializes a relationship. A field of the master object
+                to describe relationship to another object or document
+                being referenced.
+
+        :param args: Positional arguments to pass to marshmallow.fields.Str
+        :param nested: If set to True, the document being referenced
+                    will be retrieved and saved as the master document
+                    or object. If set to False, only the reference
+                    (DocumentReference) will be stored in the master
+                    document and retrieved into the master object.
+        :param many: If set to True, will deserialize and serialize the field
+                    as a list. (TODO: add support for more iterables)
+        :param kwargs: Keyword arguments to pass to marshmallow.fields.Str
+        """
         super().__init__(*args, **kwargs)
         self.nested = nested
         self.many = many
-
-    # def _serialize(self, value, *args, **kwargs):
-    #     if isinstance(value, list) and self.many:
-    #         return [self._serialize(val, *args, **kwargs) for val in value]
-    #     else:
-    #         if value is None:
-    #             raise ValueError
-    #         # Note that AssertionError is not always thrown
-    #         if self.nested:
-    #             return value
-    #         else:
-    #             assert isinstance(value, DocumentReference)
-    #             return RelationshipReference(doc_ref=value,
-    #                                          nested=False)
-    #
-    # def _deserialize(self, value, *args, **kwargs):
-    #     if isinstance(value, list) and self.many:
-    #         return [self._deserialize(val, *args, **kwargs) for val in value]
-    #     else:
-    #         if value is None:
-    #             raise ValueError
-    #         assert isinstance(value, DocumentReference)
-    #         return RelationshipReference(
-    #             doc_ref=value,
-    #             nested=self.nested,
-    #         )
 
     def _serialize(self, value, *args, **kwargs):
         if value is None:

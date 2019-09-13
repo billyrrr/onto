@@ -21,6 +21,11 @@ class SchemedBase(object):
 
 
 class Schemed(object):
+    """
+    A mixin class for object bounded to a schema for serialization
+        and deserialization.
+    """
+
     _schema_obj = None
     _schema_cls = None
 
@@ -62,6 +67,10 @@ class Schemed(object):
 
 
 class Importable(SchemedBase):
+    """
+    When object subclass this mixin class, the object has the ability to
+        be deserialized/loaded/set from a dictionary.
+    """
 
     def _import_val(self, val, to_get=False):
         if isinstance(val, dict) and "obj_type" in val:
@@ -114,8 +123,24 @@ class Importable(SchemedBase):
 
 
 class Exportable(SchemedBase):
+    """
+    When object subclass this mixin class, the object has the ability to
+        be serialized/dumped/output into a dictionary.
+    """
 
     def _export_val(self, val, to_save=False):
+        """
+        Private method for serializing an instance variable of the object.
+        TODO: test nested
+
+        :param val:
+        :param to_save: If set to True, the changes made to an
+                    object referenced by master object in
+                    a relationship field will be saved. Otherwise,
+                    changes are not saved, and the
+                    TODO: Add support for atomicity
+        :return:
+        """
         if isinstance(val, Serializable):
             return val._export_as_dict(to_save=to_save)
         elif is_iterable_but_not_string(val):

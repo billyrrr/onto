@@ -26,29 +26,6 @@ class SchemaMixin:
             default_data_key = self.f(field_obj.attribute)
             field_obj.data_key = default_data_key
 
-    #
-    # @pre_load
-    # def map_namespace(self, data, **kwargs):
-    #     res = dict()
-    #     for key, val in data.items():
-    #         if key not in self._get_reserved_fieldnames() and \
-    #             key in self.fields and \
-    #                 not self.fields[key].attribute:
-    #                     res[self.g(key)] = val
-    #         else:
-    #             res[key] = val
-    #     return res
-    #
-    # @post_dump
-    # def unmap_namespace(self, data, **kwargs):
-    #     res = dict()
-    #     for key, val in data.items():
-    #         if key not in self._get_reserved_fieldnames():
-    #             res[self.f(key)] = val
-    #         else:
-    #             res[key] = val
-    #     return res
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, unknown=EXCLUDE, **kwargs)
 
@@ -89,15 +66,6 @@ class Schema(SchemaMixin, marshmallow.Schema):
         required=False
     )
 
-    # @classmethod
-    # def _get_dump_only_fieldnames(cls):
-    #
-    #     for x in dir(cls):
-    #         v = getattr(cls, x)
-    #         if isinstance(v, fields.Field):
-    #             if v.dump_only:
-    #                 yield v
-
     @classmethod
     def _get_reserved_fieldnames(cls):
         """ Returns a list of fieldnames to hide when calling
@@ -113,16 +81,6 @@ def _get_field(variable_key) -> fields.Field:
     return fields.Raw(
             load_from=attr_name_to_firestore_key(variable_key)
         )
-
-    # if isinstance(variable_val, int):
-    #     return fields.Integer(
-    #         load_from=attr_name_to_firestore_key(variable_key)
-    #     )
-    # elif isinstance(variable_val, property):
-    #
-    # else:
-    #     # TODO: implement _get_field for other field types
-    #     raise NotImplementedError
 
 
 def _get_field_vars(var_names, fd) -> dict:
@@ -186,4 +144,3 @@ def generate_schema(obj_cls) -> Schema:
     )
 
     return TempSchema(obj_cls)
-
