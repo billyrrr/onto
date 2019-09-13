@@ -15,12 +15,7 @@ class FirestoreObjectClsFactory(ClsFactory):
     pass
 
 
-class FirestoreObject(Serializable, CollectionMixin):
-
-    def __init__(self, doc_ref=None):
-        super().__init__()
-        self._doc_ref = doc_ref
-        self.transaction = None
+class FirestoreObjectMixin:
 
     @classmethod
     def create(cls, doc_ref=None):
@@ -69,6 +64,14 @@ class FirestoreObject(Serializable, CollectionMixin):
             self.doc_ref.delete()
         else:
             transaction.delete(reference=self.doc_ref)
+
+
+class FirestoreObject(FirestoreObjectMixin, Serializable, CollectionMixin):
+
+    def __init__(self, doc_ref=None):
+        super().__init__()
+        self._doc_ref = doc_ref
+        self.transaction = None
 
     def _export_val(self, val, to_save=False):
 
