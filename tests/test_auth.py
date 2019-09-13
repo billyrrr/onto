@@ -1,10 +1,15 @@
+from unittest import mock
+from unittest.mock import Mock, patch
+
 import flask
 import pytest
 
 from flask import Flask
 from flask_boiler import auth
+
 import flask_restful
 from flask_restful import Resource, ResponseBase
+from firebase_admin import auth as firebase_admin_auth
 
 from .fixtures import CTX
 
@@ -58,4 +63,74 @@ def test_auth_no_headers(CTX):
     res = app.get(path="/int_resource")
 
     assert res.status_code == 401
+
+
+@pytest.fixture
+def vit(monkeypatch):
+    # mock_auth = Mock()
+
+    verify_id_token = Mock(
+        return_value={
+            "uid": "uid_1"
+        })
+    monkeypatch.setattr(
+        firebase_admin_auth,
+        "verify_id_token",
+        verify_id_token
+    )
+    return verify_id_token
+
+
+@pytest.fixture
+def MockProductionCTX(CTX, monkeypatch):
+
+    monkeypatch.setattr(
+        CTX.config, "TESTING", False
+    )
+
+
+def test_authenticate(MockProductionCTX, vit):
+
+    class IntegerResource(Resource):
+
+        @auth.authenticate
+        def get(self, uid):
+            assert uid == "uid_1"
+
+    flask_app = flask.app.Flask(__name__)
+    api = flask_restful.Api(flask_app)
+    api.add_resource(IntegerResource, "/int_resource")
+    app = flask_app.test_client()
+
+    res = app.get(
+        path="/int_resource",
+        headers={
+            'Authorization': "correct_id_token_for_uid_1"
+        }
+    )
+
+    assert vit.call_args[0][0] == "correct_id_token_for_uid_1"
+
+
+def test_authenticate_testing_config(CTX, vit):
+
+    class IntegerResource(Resource):
+
+        @auth.authenticate
+        def get(self, uid):
+            assert uid == "uid_1"
+
+    flask_app = flask.app.Flask(__name__)
+    api = flask_restful.Api(flask_app)
+    api.add_resource(IntegerResource, "/int_resource")
+    app = flask_app.test_client()
+
+    res = app.get(
+        path="/int_resource",
+        headers={
+            'Authorization': "uid_1"
+        }
+    )
+
+    assert vit.call_count == 0
 
