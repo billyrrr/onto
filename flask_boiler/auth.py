@@ -78,9 +78,12 @@ def authenticate(func):
         uid, status_code = default_authentication(id_token)  # custom account lookup function
 
         if status_code == 401:
-            abort(401, 'Unauthorized. Token revoked, inform the user to reauthenticate or signOut(). ')
+            # 'Unauthorized. Token revoked, inform the user to '
+            # 'reauthenticate or signOut(). '
+            abort(401)
         elif status_code == 402:
-            abort(402, 'Invalid token')
+            # 'Invalid token'
+            abort(402)
 
         if uid:
             func_acct = partial(func, uid=uid)

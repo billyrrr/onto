@@ -134,3 +134,43 @@ def test_authenticate_testing_config(CTX, vit):
 
     assert vit.call_count == 0
 
+
+@pytest.fixture
+def vit_bomb(monkeypatch):
+
+    def auth_bomb(*args, **kwargs):
+        raise firebase_admin_auth.AuthError(
+            'ID_TOKEN_REVOKED',
+            "mock messagge")
+
+    verify_id_token = Mock(wraps=auth_bomb)
+    monkeypatch.setattr(
+        firebase_admin_auth,
+        "verify_id_token",
+        verify_id_token
+    )
+    return verify_id_token
+
+
+def test_authenticate_error(MockProductionCTX, vit_bomb):
+
+    class IntegerResource(Resource):
+
+        @auth.authenticate
+        def get(self, uid):
+            assert uid == "uid_1"
+
+    flask_app = flask.app.Flask(__name__)
+    api = flask_restful.Api(flask_app)
+    api.add_resource(IntegerResource, "/int_resource")
+    app = flask_app.test_client()
+
+    res = app.get(
+        path="/int_resource",
+        headers={
+            'Authorization': "correct_id_token_for_uid_1"
+        }
+    )
+
+    assert res.status_code == 401
+
