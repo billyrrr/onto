@@ -7,10 +7,11 @@ from google.cloud.firestore import Transaction, DocumentSnapshot
 from flask_boiler.helpers import RelationshipReference
 # from flask_boiler.view_model import ViewModel
 from flask_boiler.collection_mixin import CollectionMixin
-from flask_boiler.serializable import Serializable, SerializableClsFactory
+from flask_boiler.serializable import Serializable
+from flask_boiler.factory import ClsFactory
 
 
-class FirestoreObjectClsFactory(SerializableClsFactory):
+class FirestoreObjectClsFactory(ClsFactory):
     pass
 
 

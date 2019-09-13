@@ -3,7 +3,7 @@ Note that test setup is UNRELIABLE.
 Class may persist in registry (of metaclass) across tests.
 
 """
-
+import flask_boiler.factory
 from flask_boiler import serializable
 from flask_boiler import view_model, schema, fields
 
@@ -15,7 +15,7 @@ def test_cls_factory():
         int_a = fields.Integer(load_from="intA", dump_to="intA")
         int_b = fields.Integer(load_from="intB", dump_to="intB")
 
-    ModelA = serializable.SerializableClsFactory.create(name="ModelA", schema=ModelASchema)
+    ModelA = flask_boiler.factory.ClsFactory.create(name="ModelA", schema=ModelASchema)
 
     obj: ModelA = ModelA()
 
@@ -43,7 +43,7 @@ def test_from_dict():
         int_a = fields.Integer(load_from="intA", dump_to="intA")
         int_b = fields.Integer(load_from="intB", dump_to="intB")
 
-    ModelA = serializable.SerializableClsFactory.create(name="ModelA", schema=ModelASchema)
+    ModelA = flask_boiler.factory.ClsFactory.create(name="ModelA", schema=ModelASchema)
 
     obj = ModelA.from_dict({
         "intA": 1,
@@ -63,7 +63,7 @@ def test__additional_fields():
     class ModelAASchema(ModelASchema):
         int_aa = fields.Integer(load_from="intAA", dump_to="intAA")
 
-    ModelA = serializable.SerializableClsFactory.create(
+    ModelA = flask_boiler.factory.ClsFactory.create(
         name="ModelA",
         schema=ModelASchema
     )
@@ -73,7 +73,7 @@ def test__additional_fields():
     assert hasattr(obj_a, "int_a")
     assert not hasattr(obj_a, "int_aa")
 
-    ModelAA = serializable.SerializableClsFactory.create(
+    ModelAA = flask_boiler.factory.ClsFactory.create(
         name="ModelAA",
         schema=ModelAASchema
     )
@@ -86,7 +86,7 @@ def test_default_value():
     class ModelASchema(schema.Schema):
         int_a = fields.Integer(load_from="intA", dump_to="intA")
 
-    ModelA = serializable.SerializableClsFactory.create(
+    ModelA = flask_boiler.factory.ClsFactory.create(
         name="ModelA",
         schema=ModelASchema
     )
@@ -106,7 +106,7 @@ def test_property_fields():
 
     sp = property(fget=fget)
 
-    ModelA = serializable.SerializableClsFactory.create(
+    ModelA = flask_boiler.factory.ClsFactory.create(
         name="ModelA",
         schema=ModelASchema
     )
@@ -128,7 +128,7 @@ def test_multiple_inheritance():
     class ModelABSchema(ModelASchema, ModelBSchema):
         pass
 
-    ModelAB = serializable.SerializableClsFactory.create(
+    ModelAB = flask_boiler.factory.ClsFactory.create(
         name="ModelAB",
         schema=ModelABSchema
     )
@@ -152,7 +152,7 @@ def test__export_as_dict():
         int_a = fields.Integer()
         int_b = fields.Integer()
 
-    ModelA = serializable.SerializableClsFactory.create(
+    ModelA = flask_boiler.factory.ClsFactory.create(
         name="ModelA",
         schema=ModelASchema
     )
@@ -174,7 +174,7 @@ def test__import_properties():
         int_a = fields.Integer()
         int_b = fields.Integer()
 
-    ModelA = serializable.SerializableClsFactory.create(
+    ModelA = flask_boiler.factory.ClsFactory.create(
         name="ModelA",
         schema=ModelASchema
     )

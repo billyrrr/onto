@@ -1,4 +1,4 @@
-from typing import TypeVar, Union
+from typing import TypeVar
 
 from marshmallow.utils import is_iterable_but_not_string
 
@@ -215,6 +215,20 @@ def initializer(obj, d):
             setattr(obj, key, val.default_value)
 
 
+class NewMixin:
+    """
+    Mixin class for initializing instance variable on creation.
+    """
+
+    @classmethod
+    def new(cls, **kwargs):
+        return cls(**kwargs)
+
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+
+
 class AutoInitialized(object):
 
     @classmethod
@@ -236,21 +250,3 @@ class Serializable(BaseRegisteredModel,
 
 T = TypeVar('T')
 U = TypeVar('U')
-
-
-class SerializableClsFactory:
-
-    @classmethod
-    def create(cls, name, schema: T, base:U=Serializable) -> Union[T, U]:
-
-        existing = BaseRegisteredModel.get_subclass_cls(name)
-        if existing is None:
-            new_cls = type(name,  # class name
-                           (base, ),
-                           dict(
-                               _schema_cls=schema
-                           )
-                           )
-            return new_cls
-        else:
-            return existing
