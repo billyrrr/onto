@@ -3,7 +3,148 @@
 [![Build Status](https://travis-ci.com/billyrrr/flask-boiler.svg?branch=master)](https://travis-ci.com/billyrrr/flask-boiler)
 [![Coverage Status](https://coveralls.io/repos/github/billyrrr/flask-boiler/badge.svg?branch=master)](https://coveralls.io/github/billyrrr/flask-boiler?branch=master)
 
-Flask-boiler helps you build fast-prototype of your backend. 
+Flask-boiler helps you build fast-prototype of your backend.
+
+### Add data
+
+It allows you to replace, 
+
+```python
+doc_ref = db.collection(u'users').document(u'alovelace')
+doc_ref.set({
+    u'first': u'Ada',
+    u'last': u'Lovelace',
+    u'born': 1815
+})
+```
+with this, 
+
+```python
+user = User.create(doc_id="alovelace")
+user.first = 'Ada'
+user.last = 'Lovelace'
+user.born = "1815"
+user.save()
+```
+
+(*Extra steps required to declare model. See quickstart for details.)
+
+### Read data
+
+It allows you to replace, 
+
+```python
+users_ref = db.collection(u'users')
+docs = users_ref.stream()
+
+for doc in docs:
+    print(u'{} => {}'.format(doc.id, doc.to_dict()))
+```
+
+with this, 
+
+```python
+for user in User.all():
+    print(user.to_dict())
+```
+
+It allows you to replace, 
+
+```python
+class City(object):
+    def __init__(self, name, state, country, capital=False, population=0,
+                 regions=[]):
+        self.name = name
+        self.state = state
+        self.country = country
+        self.capital = capital
+        self.population = population
+        self.regions = regions
+
+    @staticmethod
+    def from_dict(source):
+        # ...
+
+    def to_dict(self):
+        # ...
+
+    def __repr__(self):
+        return(
+            u'City(name={}, country={}, population={}, capital={}, regions={})'
+            .format(self.name, self.country, self.population, self.capital,
+                    self.regions))
+
+cities_ref = db.collection(u'cities')
+cities_ref.document(u'SF').set(
+    City(u'San Francisco', u'CA', u'USA', False, 860000,
+         [u'west_coast', u'norcal']).to_dict())
+cities_ref.document(u'LA').set(
+    City(u'Los Angeles', u'CA', u'USA', False, 3900000,
+         [u'west_coast', u'socal']).to_dict())
+cities_ref.document(u'DC').set(
+    City(u'Washington D.C.', None, u'USA', True, 680000,
+         [u'east_coast']).to_dict())
+cities_ref.document(u'TOK').set(
+    City(u'Tokyo', None, u'Japan', True, 9000000,
+         [u'kanto', u'honshu']).to_dict())
+cities_ref.document(u'BJ').set(
+    City(u'Beijing', None, u'China', True, 21500000, [u'hebei']).to_dict())
+```
+
+with this, 
+
+```python
+
+def CityBase(DomainModel):
+    _collection_name = "cities"
+    
+City = ClsFactory.create_customized(
+        name="City",
+        fieldnames=["name", "state", "country", "capital", "population", "regions"], 
+        auto_initialized=False,
+        importable=False,
+        exportable=True,
+        additional_base=(CityBase,)
+    )
+    
+City.new(
+        doc_id='SF',
+        name='San Francisco',
+        state='CA', 
+        country='USA', 
+        capital=False, 
+        populations=860000,
+        regions=['west_coast', 'norcal']).save()
+
+# ...
+```
+
+(*fieldname kwarg in ClsFactory to be implemented soon)
+
+It allows you to replace, 
+
+```python
+doc_ref = db.collection(u'cities').document(u'SF')
+
+try:
+    doc = doc_ref.get()
+    print(u'Document data: {}'.format(doc.to_dict()))
+except google.cloud.exceptions.NotFound:
+    print(u'No such document!')
+```
+
+with this, 
+
+```python
+sf = City.get(doc_id='SF')
+if sf is not None:  # To be implemented soon  
+    print(u'Document data: {}'.format(doc.to_dict()))
+else:
+    print("No such document")
+
+```
+
+
 
 ## Architecture Diagram
 
