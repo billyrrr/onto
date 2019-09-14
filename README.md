@@ -166,6 +166,26 @@ for city in City.where(capital=True):
     print(city.to_dict())
 ```
 
+### Query operators
+
+It allows you to replace, 
+
+```python
+cities_ref = db.collection(u'cities')
+
+cities_ref.where(u'state', u'==', u'CA')
+cities_ref.where(u'population', u'<', 1000000)
+cities_ref.where(u'name', u'>=', u'San Francisco'
+```
+
+with this, 
+
+```python
+City.where(state="CA")
+City.where(population=('<', 1000000))
+City.where(name=('>=', "San Francisco"))
+```
+
 ## Architecture Diagram
 
 You may structure your project in this way:
