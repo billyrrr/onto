@@ -1,10 +1,50 @@
 from flasgger import SwaggerView
 from flask import jsonify
 
+from .serializable import Serializable
 from .domain_model import DomainModel
-from .view_model import ViewModel
+from .view_model import ViewModel, ViewModelMixin
 from google.cloud import firestore
 from .context import Context as CTX
+
+
+class View(ViewModelMixin, Serializable):
+
+    @classmethod
+    def get(cls, struct_d=None):
+        obj = cls(struct_d=struct_d)
+        for key, val in obj._structure.items():
+            obj_type, doc_id, update_func = val
+            obj.quick_bind_to(key=key, obj_type=obj_type, doc_id=doc_id)
+        return obj
+
+    def get_on_update(self,
+                  dm_cls=None, dm_doc_id=None,
+                  update_func=None, key=None):
+        # do something with this ViewModel
+
+        def __on_update(dm: DomainModel):
+
+            update_func(vm=self, dm=dm)
+
+            self.business_properties[key] = dm
+
+        return __on_update
+
+    def quick_bind_to(self, key, obj_type, doc_id):
+        """
+
+        :param key:
+        :param obj_type:
+        :param doc_id:
+        :return:
+        """
+        obj_cls: DomainModel = Serializable.get_cls_from_name(obj_type)
+        obj = obj_cls.get(doc_id=doc_id)
+        update_func = self._structure[key][2]
+        f = self.get_on_update(dm_cls=obj_cls, dm_doc_id=doc_id,
+                  update_func=update_func, key=None)
+        f(obj)
 
 
 def default_mapper(path_str_template: str, _kwargs):

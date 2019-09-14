@@ -2,7 +2,8 @@ from functools import partial
 
 import pytest as pytest
 
-from flask_boiler import schema, fields, factory, view_model, domain_model
+from flask_boiler import schema, fields, factory, view_model, domain_model, \
+    view
 
 from flask import Flask, jsonify
 from flasgger import Swagger, SwaggerView
@@ -74,6 +75,52 @@ PaletteViewModel = factory.ClsFactory.create(
     schema=Palette,
     base=PaletteViewModelBase
 )
+
+
+@pytest.fixture
+def v_cls(CTX):
+
+    class RainbowSchema(schema.Schema):
+        rainbow_name = fields.Raw(dump_only=True)
+        colors = fields.Raw(dump_only=True)
+
+    class RainbowView(view.View):
+
+        _schema_cls = RainbowSchema
+
+        _color_d = dict()
+
+        @property
+        def colors(self):
+            return list(self._color_d.values())
+
+        @property
+        def rainbow_name(self):
+            return "-".join(self._color_d.values())
+
+        def set_color(self, color_name):
+            self._color_d[color_name] = color_name
+
+        @classmethod
+        def get_from_color_names(cls, color_names):
+            struct = dict()
+
+            for color_name in color_names:
+                obj_type = "Color"
+                doc_id = "doc_id_{}".format(color_name)
+
+                def update_func(vm: RainbowView, dm: Color):
+                    vm.set_color(dm.name)
+
+                struct[color_name] = (obj_type, doc_id, update_func)
+            return super().get(struct_d=struct)
+
+    return RainbowView
+
+
+def test_to_dict_view(v_cls, color_refs):
+    vm = v_cls.get_from_color_names(["yellow", "magenta", "cian"])
+    print(vm.to_view_dict())
 
 
 @pytest.fixture

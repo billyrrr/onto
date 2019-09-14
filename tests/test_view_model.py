@@ -16,14 +16,6 @@ def test_create(CTX):
     class EmptySchema(Schema):
         pass
 
-    # TestViewObject = FirestoreObjectClsFactory.create(
-    #     name="TestViewObject",
-    #     schema=EmptySchema,
-    #     base=ViewModel
-    # )
-
-    # obj = TestViewObject.create("viewId1")
-
     class DomainObjectBase(DomainModel):
         _collection_name = "tst_domain_objs"
 
@@ -49,10 +41,16 @@ def test_create(CTX):
     ref_1_str: str = dependent_obj_1.doc_ref.path
     assert ref_1_str == "tst_domain_objs/dependentId1"
 
-
     dependent_obj_2 = DomainObject2.create("dependentId2")
     ref_2_str: str = dependent_obj_2.doc_ref.path
     assert ref_2_str == "tst_domain_objs/dependentId2"
 
     # TODO: implement
 
+    ViewObject = FirestoreObjectClsFactory.create(
+        name="TestViewObject",
+        schema=EmptySchema,
+        base_tuple=(ViewModel, )
+    )
+
+    # obj = TestViewObject.create("viewId1")

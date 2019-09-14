@@ -9,32 +9,35 @@ from .serializable import Serializable
 from .utils import random_id
 
 
-class Persistable:
-    _COLLECTION_ID = "Persistable"
+class PersistableMixin:
 
-    @staticmethod
-    def _create__structure_id():
-        return random_id()
+    _struct_collection_id = "Persistable"
 
-    @staticmethod
-    def __get_ref(structure_doc_id) -> DocumentReference:
-        return CTX.db.collection(Persistable._COLLECTION_ID) \
-            .document(structure_doc_id)
+    def __init__(self, *args, struct_id=None, struct_d=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if struct_id is None:
+            self._structure_id = random_id()
+        else:
+            self._structure_id = struct_id
 
-    @staticmethod
-    def _save__structure(structure_doc_id, d):
-        structure_doc_ref: DocumentReference = Persistable \
-            .__get_ref(structure_doc_id)
-        structure_doc_ref.set(d)
+        if struct_d is None:
+            self._structure = dict()
+        else:
+            self._structure = struct_d
+        # self._structure["vm_type"] = self.__class__.__name__
 
-    @staticmethod
-    def _get__structure(structure_doc_id):
-        structure_doc_ref: DocumentReference = Persistable \
-            .__get_ref(structure_doc_id)
-        structure_doc_ref.get()
+    def __get_ref(self) -> DocumentReference:
+        return CTX.db.collection(self._struct_collection_id) \
+            .document(self._structure_id)
+
+    def _save__structure(self):
+        self.__get_ref().set(self._structure)
+
+    def _get__structure(self):
+        return self.__get_ref().get()
 
 
-class ViewModel(ReferencedObject, Persistable):
+class ViewModelMixin(PersistableMixin):
     """ View model are generated and refreshed automatically
             as domain model changes.
 
@@ -51,25 +54,8 @@ class ViewModel(ReferencedObject, Persistable):
     TODO: consider decoupling bind_to to a superclass
     """
 
-    def __init__(self, struct_id=None, **kwargs):
-        super().__init__(**kwargs)
-
-        def init_struct():
-            self._structure_id = self._create__structure_id()
-            self._structure = dict()
-            self._structure["vm_type"] = self.__class__.__name__
-            self._save__structure(self._structure_id, self._structure)
-
-        def get_struct(struct_id):
-            self._structure_id = struct_id
-            self._structure = self._get__structure(self._structure_id)
-            self._save__structure(self._structure_id, self._structure)
-
-        if struct_id is None:
-            init_struct()
-        else:
-            get_struct(struct_id)
-
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.business_properties: Dict[str, DomainModel] = dict()
         self._on_update_funcs: Dict[str, Tuple] = dict()
 
@@ -92,9 +78,13 @@ class ViewModel(ReferencedObject, Persistable):
         """
         obj_cls: DomainModel = Serializable.get_cls_from_name(obj_type)
 
-        update_func = self.get_update_func(dm_cls=obj_cls)
-
-        self._structure[key] = (obj_type, doc_id, update_func)
+        if key in self._structure:
+            a, b, update_func=self._structure[key]
+            if a != obj_type or b != doc_id:
+                raise ValueError("Values disagree. ")
+        else:
+            update_func = self.get_update_func(dm_cls=obj_cls)
+            self._structure[key] = (obj_type, doc_id, update_func)
         self.__subscribe_to(
             key=key,
             dm_cls=obj_cls,
@@ -114,21 +104,10 @@ class ViewModel(ReferencedObject, Persistable):
 
             doc_watch.unsubscribe()
 
-        def on_update(docs, changes, readtime):
-            # do something with this ViewModel
-
-            assert len(docs) == 1
-
-            doc = docs[0]
-            updated_dm = dm_cls.create(doc_id=dm_doc_id)
-            updated_dm._import_properties(doc.to_dict())
-            update_func(vm=self, dm=updated_dm)
-
-            self.business_properties[key] = updated_dm
-
-            self.save()
-
         dm_ref: DocumentReference = dm_cls._get_collection().document(dm_doc_id)
+        on_update = self.get_on_update(
+                  dm_cls=dm_cls, dm_doc_id=dm_doc_id,
+                  update_func=update_func, key=key)
         doc_watch = dm_ref.on_snapshot(on_update)
         self._on_update_funcs[key] = (on_update, doc_watch)
 
@@ -156,3 +135,26 @@ class ViewModel(ReferencedObject, Persistable):
 
     def to_dict(self):
         return self.to_view_dict()
+
+
+class ViewModel(ViewModelMixin, ReferencedObject):
+
+    def get_on_update(self,
+                  dm_cls=None, dm_doc_id=None,
+                  update_func=None, key=None):
+        # do something with this ViewModel
+
+        def __on_update(docs, changes, readtime):
+
+            assert len(docs) == 1
+
+            doc = docs[0]
+            updated_dm = dm_cls.create(doc_id=dm_doc_id)
+            updated_dm._import_properties(doc.to_dict())
+            update_func(vm=self, dm=updated_dm)
+
+            self.business_properties[key] = updated_dm
+
+            self.save()
+
+        return __on_update
