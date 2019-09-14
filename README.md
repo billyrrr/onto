@@ -3,7 +3,14 @@
 [![Build Status](https://travis-ci.com/billyrrr/flask-boiler.svg?branch=master)](https://travis-ci.com/billyrrr/flask-boiler)
 [![Coverage Status](https://coveralls.io/repos/github/billyrrr/flask-boiler/badge.svg?branch=master)](https://coveralls.io/github/billyrrr/flask-boiler?branch=master)
 
-Flask-boiler helps you build fast-prototype of your backend.
+Flask-boiler helps you build fast-prototype of your backend. Other than providing an easy-to-use 
+ORM wrapper for firestore ORM, this framework support an entire set of features to build a backend 
+using "flask-boiler architecture". It works with flask so you may build new services using flask-boiler 
+to run with your current flask app. 
+
+# Features
+
+## Firestore ORM 
 
 ### Add data
 
@@ -186,13 +193,7 @@ City.where(population=('<', 1000000))
 City.where(name=('>=', "San Francisco"))
 ```
 
-## Architecture Diagram
 
-You may structure your project in this way:
-
-![architecture diagrama](https://www.lucidchart.com/publicSegments/view/76e8c8d4-a356-46ed-af95-e079d38a7bd7/image.png)
-
-## Features
 
 ### Context Management
 
@@ -232,64 +233,11 @@ CTX.firebase_app
 
 ```
 
-### ORM
+## Architecture Diagram
 
-```python
+You may structure your project in this way:
 
-from flask_boiler.factory import ClsFactory
-from flask_boiler import schema, fields
-from flask_boiler.domain_model import DomainModel
-
-class TestObjectBase(DomainModel):
-
-    # Declares the root collection to store primary object to in firestore 
-    _collection_name = "TestObject"
-
-
-# Creates a schema for serializing and deserializing to firestore database
-class TestObjectSchema(schema.Schema):
-    
-    # Describes how obj.int_a is read from and stored to a document in firestore
-    int_a = fields.Raw()
-    int_b = fields.Raw()
-
-
-# Declares the object
-TestObject = ClsFactory.create(
-    name="TestObject",
-    schema=TestObjectSchema,
-    base=TestObjectBase
-)
-
-# Creates an object with default values with reference: "TestObject/testObjId1"
-#   (but not saved to database)
-obj = TestObject.create(doc_id="testObjId1")
-
-# Assigns value to the newly created object
-obj.int_a = 1
-obj.int_b = 2
-
-# Saves the object 
-obj.save()
-
-# The document now stored in firestore collection "TestObject" / document "testObjId1"
-# {
-#   "intA": 1,
-#   "intB": 2,
-#   "doc_id": "testObjId1",
-#   "doc_ref": "TestObject/testObjId1",
-#   "obj_type": "TestObject"    
-# } 
-
-# Gets the object from firestore "TestObject/testObjId1"
-retrieved_obj = TestObject.get(doc_id="testObjId1")
-
-# Access values of the object retrieved
-assert retrieved_obj.int_a == 1
-
-# Deletes the object from firestore "TestObject/testObjId1"
-retrieved_obj.delete()
-```
+![architecture diagrama](https://www.lucidchart.com/publicSegments/view/76e8c8d4-a356-46ed-af95-e079d38a7bd7/image.png)
 
 ### Business Properties Binding
 
@@ -306,6 +254,9 @@ You can create a flask view to specify how a view model is read and changed.
 
 
 ## Architecture Discussion
+
+Flask-boiler is built on facade pattern, and allows front-end to read and write to objects 
+that are abstractions of domain models. 
 
 ### Disambiguation 
 
