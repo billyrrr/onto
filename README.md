@@ -48,6 +48,8 @@ for user in User.all():
     print(user.to_dict())
 ```
 
+### Save data 
+
 It allows you to replace, 
 
 ```python
@@ -121,6 +123,8 @@ City.new(
 
 (*fieldname kwarg in ClsFactory to be implemented soon)
 
+### Get data 
+
 It allows you to replace, 
 
 ```python
@@ -144,7 +148,23 @@ else:
 
 ```
 
+### Simple queries
 
+It allows you to replace, 
+
+```python
+docs = db.collection(u'cities').where(u'capital', u'==', True).stream()
+
+for doc in docs:
+    print(u'{} => {}'.format(doc.id, doc.to_dict()))
+```
+
+with this, 
+
+```python
+for city in City.where(capital=True):
+    print(city.to_dict())
+```
 
 ## Architecture Diagram
 
