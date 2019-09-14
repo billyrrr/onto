@@ -120,7 +120,10 @@ def v_cls(CTX):
 
 def test_to_dict_view(v_cls, color_refs):
     vm = v_cls.get_from_color_names(["yellow", "magenta", "cian"])
-    print(vm.to_view_dict())
+    assert vm.to_view_dict() == {
+        'rainbowName': 'yellow-magenta-cian',
+        'colors': ['yellow', 'magenta', 'cian']
+    }
 
 
 @pytest.fixture
