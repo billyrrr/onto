@@ -193,6 +193,102 @@ City.where(population=('<', 1000000))
 City.where(name=('>=', "San Francisco"))
 ```
 
+### Field name conversion 
+
+Sometimes, you want to have object attributes in "snake_case" and 
+Firestore Document field name in "camelCase". This is by default for 
+flask-boiler. You may customize this conversion also. 
+
+Consider this example, 
+
+```python
+
+class CitySchema(Schema):
+    city_name = fields.Raw()
+
+    country = fields.Raw()
+    capital = fields.Raw()
+    
+
+class MunicipalitySchema(CitySchema):
+    pass
+
+
+class StandardCitySchema(CitySchema):
+    city_state = fields.Raw()
+    regions = fields.Raw(many=True)
+
+
+class City(DomainModel):
+    _collection_name = "City"
+    
+
+Municipality = ClsFactory.create(
+    name="Municipality",
+    schema=MunicipalitySchema,
+    base=City,
+)
+
+
+StandardCity = ClsFactory.create(
+    name="StandardCity",
+    schema=StandardCitySchema,
+    base=City
+)
+
+sf = StandardCity.create(doc_id="SF")
+sf.city_name, sf.city_state, sf.country, sf.capital, sf.regions = \
+    'San Francisco', 'CA', 'USA', False, ['west_coast', 'norcal']
+sf.save()
+
+la = StandardCity.create(doc_id="LA")
+la.city_name, la.city_state, la.country, la.capital, la.regions = \
+    'Los Angeles', 'CA', 'USA', False, ['west_coast', 'socal']
+la.save()
+
+dc = Municipality.create(doc_id="DC")
+dc.city_name, dc.country, dc.capital = 'Washington D.C.', 'USA', True
+dc.save()
+
+tok = Municipality.create(doc_id="TOK")
+tok.city_name, tok.country, tok.capital = 'Tokyo', 'Japan', True
+tok.save()
+
+beijing = Municipality.create(doc_id="BJ")
+beijing.city_name, beijing.country, beijing.capital = \
+    'Beijing', 'China', True
+beijing.save()
+
+```
+
+object ```la``` saves to a document in firestore with "camelCase" field names, 
+
+```python
+{
+    'cityName': 'Los Angeles',
+    'cityState': 'CA',
+    'country': 'USA',
+    'capital': False,
+    'regions': ['west_coast', 'socal'],
+    'obj_type': "StandardCity",
+    'doc_id': 'LA',
+    'doc_ref': 'City/LA'
+}
+```
+
+Similarly, you can query the objects with your local object attribute 
+or firestore field name. 
+
+```python
+for obj in City.where(city_state="CA"):
+    print(obj.city_name)
+```
+
+Or equivalently 
+```python
+for obj in City.where("cityState", "==", "CA"):
+    print(obj.city_name)
+```
 
 
 ### Context Management
@@ -251,52 +347,6 @@ You can enable auto-generated swagger docs. See: ```examples/view_example.py```
 ### Create Flask View
 
 You can create a flask view to specify how a view model is read and changed. 
-
-
-## Architecture Discussion
-
-Flask-boiler is built on facade pattern, and allows front-end to read and write to objects 
-that are abstractions of domain models. 
-
-### Disambiguation 
-
-There are 2+ ways to run the view layer. 
-1. Document-As-View: Persist all view models to firestore, and client reads/writes to firestore. 
-
-    * Document is refreshed every time the bounding domain models change 
-    * Firestore serves Document at near 0 latency (cached) if the client attaches a listener 
-            to the view model
-    * Performance depends on **how often the domain model is changed**
-        
-2. Flask-As-View: only the binding structure is persisted, and client reads/writes to flask REST API resources. 
-
-    * Bounding domain models are read every time the client requests the resource 
-    * May experience latency, but overall lower in server cost since the ViewModel is not persisted
-    * Performance depends on **how often the view model is read** 
-        
-3. A combination of 1 and 2: build read-intensive microservices with Document-As-View 
-            and change-intensive microservices with Flask-As-View. 
-
-Flask-boiler is mostly for building a fast prototype of your backend. As you keep 
-developing your product, we recommend that you switch to a relational database for 
-your domain model layer if your data has many references, and WebSocket/REST API 
-for view layer. This does not mean that flask-boiler is not runtime efficient, 
-but that simplicity is always a compromise and firestore can be expensive.  
-
-### Performance 
-
-Document-As-View has better performance if data is read more than it's changed, and 
-the view models served are limited or specific to a user. 
-
-Flask-As-View has better performance when the domain model is 
-changed often, and the client rarely reads all data available 
-to a specific user. 
-
-Flask-boiler is not a well-tested concept, but criticisms are welcomed. 
-At least, we can strive to build a backend framework that is simple and 
-friendly to beginners who want to prototype their backend easily 
-so that they can focus on transforming ideas. 
-
 
 ## Advantages
 
