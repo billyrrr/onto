@@ -119,12 +119,8 @@ First, declare a schema for your data.
 class TestObjectSchema(schema.Schema):
     
     # Describes how obj.int_a is read from and stored to a document in firestore 
-    int_a = fields.Raw(
-        load_from="intA", # reads obj.int_a from firestore document field "intA" 
-        dump_to="intA" # stores the value of obj.int_a to firestore document field "intA" 
-        )
-    int_b = fields.Raw(load_from="intB", dump_to="intB")
-
+    int_a = fields.Raw()
+    int_b = fields.Raw()
 ```
 
 Next, declare the domain model and initialize all fields to the 
