@@ -46,7 +46,8 @@ class LuggagesBase(view_model.ViewModel):
 
     @property
     def luggages(self):
-        return [ v for _, v in self._luggage_d.items() ]
+        res = [self._luggage_d[key] for key in sorted(self._luggage_d)]
+        return res
 
     @luggages.setter
     def luggages(self, val):

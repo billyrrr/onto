@@ -35,5 +35,13 @@ def obj_type_deserialize(value):
     return value
 
 
-attr_name_to_firestore_key = partial(camelize, uppercase_first_letter=False)
+def attr_name_to_firestore_key(s):
+    res = camelize(s, uppercase_first_letter=False)
+    if firestore_key_to_attr_name(res) != s:
+        raise ValueError("attr_name: {} is not invertible. "
+                         .format(s)
+                         )
+    else:
+        return res
+
 firestore_key_to_attr_name = underscore
