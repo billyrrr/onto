@@ -1,7 +1,10 @@
 .. _firestore-orm:
 
-Firestore ORM
--------------
+Migrate from google.cloud.firestore
+===================================
+
+This document compares google-cloud-python-client
+firestore client library with flask-boiler ORM.
 
 Add data
 ########

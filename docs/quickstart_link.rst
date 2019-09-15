@@ -1,0 +1,4 @@
+Quickstart
+==========
+
+.. mdinclude:: ../quickstart.md
