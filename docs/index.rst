@@ -14,7 +14,7 @@ Welcome to flask-boiler's documentation!
    context-management
    quickstart_link
 
-
+   apidoc/modules
 
 Indices and tables
 ==================
