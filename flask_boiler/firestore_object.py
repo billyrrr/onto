@@ -154,6 +154,10 @@ def snapshot_to_obj(
     :param super_cls: subclass of FirestoreObject
     :return:
     """
+
+    if not snapshot.exists:
+        return None
+
     d = snapshot.to_dict()
     obj_type = d["obj_type"]
     obj_cls = super_cls.get_cls_from_name(obj_type)

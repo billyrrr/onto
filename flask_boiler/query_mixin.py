@@ -66,8 +66,8 @@ class QueryMixin:
 
     @classmethod
     def _where_query(cls, *args, cur_where=None, **kwargs):
-        if len(args) == 0 and len(kwargs) == 0:
-            raise ValueError("Empty where")
+        # if len(args) == 0 and len(kwargs) == 0:
+        #     raise ValueError("Empty where")
         if cur_where is None:
             raise ValueError
 
@@ -106,5 +106,8 @@ class QueryMixin:
 
         cur_where = cls._where_query(*args, **kwargs,
                                      cur_where=cur_where)
+
+        if limit is not None:
+            cur_where = cur_where.limit(count=limit)
 
         return cur_where
