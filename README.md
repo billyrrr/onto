@@ -144,6 +144,43 @@ else:
 
 ```
 
+### Relationship
+
+Flask-boiler adds an option to retrieve a relation with 
+minimal steps. Take an example given from SQLAlchemy, 
+
+```python
+category_id = utils.random_id()
+py = Category.create(doc_id=category_id)
+py.name = "Python"
+
+post_id = utils.random_id()
+p = Post.create(doc_id=post_id)
+p.title = "snakes"
+p.body = "Ssssssss"
+
+# py.posts.append(p)
+p.category = py
+
+py.save()
+
+obj = Post.get(doc_id=post_id)
+
+assert str(p.category) == "<Category 'Python'>"
+
+assert p._export_as_view_dict() == {'body': 'Ssssssss',
+                                    'id': post_id,
+                                    'category': {
+                                        'id': category_id,
+                                        'name': 'Python'},
+                                    'title': 'snakes',
+                                    'pubDate': None
+                                    }
+                                    
+```
+
+See ```examples/relationship_example.py```
+
 ### Business Properties Binding
 You can bind a view model to its business properties (underlying domain model).
 See `examples/binding_example.py`.

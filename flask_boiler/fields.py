@@ -93,6 +93,13 @@ class Relationship(fields.Str, Field):
         in the Firestore.
     """
 
+    @property
+    def default_value(self):
+        if self.many:
+            return list()
+        else:
+            return None
+
     def __init__(self, *args, nested=False, many=False, **kwargs):
         """ Initializes a relationship. A field of the master object
                 to describe relationship to another object or document
