@@ -8,7 +8,7 @@ from google.cloud import firestore
 from .context import Context as CTX
 
 
-class View(ViewModelMixin, Serializable):
+class FlaskAsViewMixin:
 
     @classmethod
     def get(cls, struct_d=None):
@@ -17,6 +17,9 @@ class View(ViewModelMixin, Serializable):
             obj_type, doc_id, update_func = val
             obj.quick_bind_to(key=key, obj_type=obj_type, doc_id=doc_id)
         return obj
+
+    def new(cls, *args, **kwargs):
+        raise NotImplementedError
 
     def get_on_update(self,
                   dm_cls=None, dm_doc_id=None,
