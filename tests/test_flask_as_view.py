@@ -6,66 +6,7 @@ from flask_boiler import schema, fields, view, domain_model, factory, \
     view_model, view_mediator
 
 from .fixtures import CTX
-
-
-@pytest.fixture
-def color_refs(request):
-
-    cian = Color.create("doc_id_cian")
-    cian.name = 'cian'
-    cian.save()
-
-    magenta = Color.create("doc_id_magenta")
-    magenta.name = "magenta"
-    magenta.save()
-
-    yellow = Color.create("doc_id_yellow")
-    yellow.name = "yellow"
-    yellow.save()
-
-    black = Color.create("black")
-    black.name = "black"
-    black.save()
-
-    def fin():
-        cian.delete()
-        magenta.delete()
-        yellow.delete()
-        black.delete()
-
-    request.addfinalizer(fin)
-
-    return [cian.doc_ref,
-            magenta.doc_ref,
-            yellow.doc_ref,
-            black.doc_ref
-            ]
-
-
-@pytest.fixture
-def setup_app(CTX):
-
-    description = "A list of colors (may be filtered by palette)"
-
-    app = Flask(__name__)
-    swagger = Swagger(app)
-
-    return app
-
-
-class ColorSchema(schema.Schema):
-    name = fields.Str()
-
-
-class ColorDomainModelBase(domain_model.DomainModel):
-    _collection_name = "colors"
-
-
-Color = factory.ClsFactory.create(
-    name="Color",
-    schema=ColorSchema,
-    base=ColorDomainModelBase
-)
+from .color_fixtures import color_refs, setup_app, ColorSchema, ColorDomainModelBase, Color
 
 
 def test_rainbow_stuffs(CTX, setup_app, color_refs):
