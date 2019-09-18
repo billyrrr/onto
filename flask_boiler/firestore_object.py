@@ -1,14 +1,14 @@
 import warnings
-from typing import TypeVar
 
 from google.cloud.firestore import DocumentReference
-from google.cloud.firestore import Transaction, DocumentSnapshot
+from google.cloud.firestore import Transaction
 
 from flask_boiler.helpers import RelationshipReference
 # from flask_boiler.view_model import ViewModel
 from flask_boiler.collection_mixin import CollectionMixin
 from flask_boiler.serializable import Serializable
 from flask_boiler.factory import ClsFactory
+from flask_boiler.utils import snapshot_to_obj
 
 
 class FirestoreObjectClsFactory(ClsFactory):
@@ -141,35 +141,3 @@ class FirestoreObject(FirestoreObjectMixin, Serializable, CollectionMixin):
         else:
             return super()._import_val(val)
 
-
-T = TypeVar('T', covariant=True)
-
-
-def snapshot_to_obj(
-        snapshot: DocumentSnapshot,
-        super_cls: T = None) -> T:
-    """ Converts a firestore document snapshot to FirestoreObject
-
-    :param snapshot: firestore document snapshot
-    :param super_cls: subclass of FirestoreObject
-    :return:
-    """
-
-    if not snapshot.exists:
-        return None
-
-    d = snapshot.to_dict()
-    obj_type = d["obj_type"]
-    obj_cls = super_cls.get_cls_from_name(obj_type)
-
-    if obj_cls is None:
-        raise ValueError("Cannot read obj_type: {}. "
-                         "Make sure that obj_type is a subclass of {}. "
-                         .format(obj_type, super_cls))
-
-    if super_cls is not None:
-        assert issubclass(obj_cls, super_cls)
-
-    obj = obj_cls.create(doc_ref=snapshot.reference)
-    obj._import_properties(d)
-    return obj

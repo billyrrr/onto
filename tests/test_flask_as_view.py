@@ -1,3 +1,5 @@
+import time
+
 import pytest
 from flasgger import SwaggerView, Swagger
 from flask import Flask
@@ -48,7 +50,7 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs):
                     vm.set_color(dm.name)
 
                 struct[color_name] = (obj_type, doc_id, update_func)
-            return super().get(struct_d=struct)
+            return super().get(struct_d=struct, once=True)
 
         @classmethod
         def new(cls, color_names: str=None):
@@ -60,6 +62,8 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs):
         app=app
     )
     mediator.add_instance_get(rule="/rainbow/<string:color_names>")
+
+    time.sleep(1)
 
     res = test_client.get(
         path="/rainbow/yellow+magenta+cian")

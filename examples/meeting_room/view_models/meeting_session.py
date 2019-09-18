@@ -55,7 +55,7 @@ class MeetingSession(view.FlaskAsViewMixin, view_model.ViewModel):
             return list()
 
         res = list()
-        for user_id in user_ids:
+        for user_id in sorted(user_ids):
             ticket = self.tickets[user_id]
             user = self.users[user_id]
             if ticket.attendance:
@@ -78,10 +78,10 @@ class MeetingSession(view.FlaskAsViewMixin, view_model.ViewModel):
 
     @property
     def in_session(self):
-        return self.meeting.status == "in_session"
+        return self.meeting.status == "in-session"
 
     @classmethod
-    def get_from_meeting_id(cls, meeting_id):
+    def get_from_meeting_id(cls, meeting_id, once=False):
         struct = dict()
 
         m: Meeting = Meeting.get(doc_id=meeting_id)
@@ -112,4 +112,4 @@ class MeetingSession(view.FlaskAsViewMixin, view_model.ViewModel):
             vm.set_location(dm)
         struct[m.location.id] = ("Location", m.location.id, location_update_func)
 
-        return super().get(struct_d=struct)
+        return super().get(struct_d=struct, once=once)

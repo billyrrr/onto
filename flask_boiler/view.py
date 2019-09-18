@@ -10,14 +10,6 @@ from .context import Context as CTX
 
 class FlaskAsViewMixin:
 
-    @classmethod
-    def get(cls, struct_d=None):
-        obj = cls(struct_d=struct_d)
-        for key, val in obj._structure.items():
-            obj_type, doc_id, update_func = val
-            obj.quick_bind_to(key=key, obj_type=obj_type, doc_id=doc_id)
-        return obj
-
     def new(cls, *args, **kwargs):
         raise NotImplementedError
 
@@ -32,9 +24,20 @@ class FlaskAsViewMixin:
 
             self.business_properties[key] = dm
 
-        return __on_update
+        def _on_update(docs, changes, readtime):
+            if len(docs) == 0:
+                # NO CHANGE
+                return
+            elif len(docs) != 1:
+                raise NotImplementedError
+            doc = docs[0]
+            updated_dm = dm_cls.create(doc_id=dm_doc_id)
+            updated_dm._import_properties(doc.to_dict())
+            __on_update(updated_dm)
 
-    def quick_bind_to(self, key, obj_type, doc_id):
+        return _on_update
+
+    def bind_to_once(self, key, obj_type, doc_id):
         """
 
         :param key:
@@ -43,11 +46,13 @@ class FlaskAsViewMixin:
         :return:
         """
         obj_cls: DomainModel = Serializable.get_cls_from_name(obj_type)
-        obj = obj_cls.get(doc_id=doc_id)
+        dm_ref = obj_cls._get_collection().document(doc_id)
         update_func = self._structure[key][2]
-        f = self.get_on_update(dm_cls=obj_cls, dm_doc_id=doc_id,
+        on_update = self.get_on_update(dm_cls=obj_cls, dm_doc_id=doc_id,
                   update_func=update_func, key=None)
-        f(obj)
+        # doc_watch = dm_ref.on_snapshot(on_update)
+        # doc_watch.unsubscribe()
+        on_update([dm_ref.get()], changes=None, readtime=None)
 
 
 def default_mapper(path_str_template: str, _kwargs):

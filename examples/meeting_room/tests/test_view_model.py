@@ -103,7 +103,7 @@ def meeting(users, tickets, location, request):
     m.users = [user.doc_ref for user in users]
     m.tickets = [ticket.doc_ref for ticket in tickets]
     m.location = location.doc_ref
-    m.status = "in_session"
+    m.status = "in-session"
 
     m.save()
 
@@ -117,23 +117,53 @@ def meeting(users, tickets, location, request):
 
 def test_view_model(users, tickets, location, meeting):
     meeting_session = view_models.MeetingSession \
-        .get_from_meeting_id(meeting_id=meeting.doc_id)
+        .get_from_meeting_id(meeting_id=meeting.doc_id, once=True)
 
-    time.sleep(5)
+    time.sleep(2)
 
     assert meeting_session._export_as_view_dict() == {'inSession': True,
                                                'longitude': -117.242929,
                                                'latitude': 32.880361,
                                                'address': '9500 Gilman Drive, La Jolla, CA',
                                                'attending': [
-                                                   {'name': 'Tijuana Furlong',
-                                                    'organization': 'UCSD',
+                                                   {
+                                                   'name': 'Joshua Pendergrast',
+                                                           'organization': 'SDSU',
                                                     'hearing_aid_requested': True},
                                                    {'name': 'Thomasina Manes',
                                                     'organization': 'UCSD',
                                                     'hearing_aid_requested': False},
-                                                   {
-                                                       'name': 'Joshua Pendergrast',
-                                                       'organization': 'SDSU',
-                                                       'hearing_aid_requested': True}],
+                                                   {'name': 'Tijuana Furlong',
+                                                    'organization': 'UCSD',
+                                                    'hearing_aid_requested': True},
+                                                   ],
                                                'numHearingAidRequested': 2}
+
+
+def test_view_model_update(users, tickets, location, meeting):
+
+    meeting_session = view_models.MeetingSession \
+        .get_from_meeting_id(meeting_id=meeting.doc_id, once=False)
+
+    time.sleep(2)
+
+    tickets[0].attendance = False
+    tickets[0].save()
+
+    time.sleep(5)
+
+    assert meeting_session._export_as_view_dict() == {'inSession': True,
+                                                      'longitude': -117.242929,
+                                                      'latitude': 32.880361,
+                                                      'address': '9500 Gilman Drive, La Jolla, CA',
+                                                      'attending': [
+                                                          {
+                                                              'name': 'Joshua Pendergrast',
+                                                              'organization': 'SDSU',
+                                                              'hearing_aid_requested': True},
+                                                          {
+                                                              'name': 'Thomasina Manes',
+                                                              'organization': 'UCSD',
+                                                              'hearing_aid_requested': False}
+                                                          ],
+                                                      'numHearingAidRequested': 1}

@@ -54,6 +54,23 @@ class ViewModelMixin(PersistableMixin):
     TODO: consider decoupling bind_to to a superclass
     """
 
+    @classmethod
+    def get(cls, struct_d=None, once=False):
+        """
+
+        :param struct_d:
+        :param once: If set to True, do not listen to document changes
+        :return:
+        """
+        obj = cls(struct_d=struct_d)
+        for key, val in obj._structure.items():
+            obj_type, doc_id, update_func = val
+            if once:
+                obj.bind_to_once(key=key, obj_type=obj_type, doc_id=doc_id)
+            else:
+                obj.bind_to(key=key, obj_type=obj_type, doc_id=doc_id)
+        return obj
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.business_properties: Dict[str, DomainModel] = dict()
@@ -101,8 +118,10 @@ class ViewModelMixin(PersistableMixin):
             # Release the previous on_snapshot functions
             #   https://firebase.google.com/docs/firestore/query-data/listen
             f, doc_watch = self._on_update_funcs[key]
-
-            doc_watch.unsubscribe()
+            # TODO: add back, see:
+            # https://github.com/googleapis/google-cloud-python/issues/9008
+            # https://github.com/googleapis/google-cloud-python/issues/7826
+            # doc_watch.unsubscribe()
 
         dm_ref: DocumentReference = dm_cls._get_collection().document(dm_doc_id)
         on_update = self.get_on_update(
@@ -144,17 +163,22 @@ class ViewModel(ViewModelMixin, ReferencedObject):
                   update_func=None, key=None):
         # do something with this ViewModel
 
-        def __on_update(docs, changes, readtime):
-
-            assert len(docs) == 1
-
-            doc = docs[0]
-            updated_dm = dm_cls.create(doc_id=dm_doc_id)
-            updated_dm._import_properties(doc.to_dict())
+        def __on_update(updated_dm: DomainModel):
             update_func(vm=self, dm=updated_dm)
 
             self.business_properties[key] = updated_dm
 
             self.save()
 
-        return __on_update
+        def _on_update(docs, changes, readtime):
+            if len(docs) == 0:
+                # NO CHANGE
+                return
+            elif len(docs) != 1:
+                raise NotImplementedError
+            doc = docs[0]
+            updated_dm = dm_cls.create(doc_id=dm_doc_id)
+            updated_dm._import_properties(doc.to_dict())
+            __on_update(updated_dm)
+
+        return _on_update

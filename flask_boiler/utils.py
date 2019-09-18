@@ -1,5 +1,6 @@
 import random
 import string
+from typing import TypeVar
 
 
 # Generate a random string
@@ -7,6 +8,7 @@ import string
 # https://www.geeksforgeeks.org/generating-random-ids-python/
 from functools import partial
 
+from google.cloud.firestore import DocumentSnapshot
 from inflection import camelize, underscore
 
 
@@ -44,4 +46,38 @@ def attr_name_to_firestore_key(s):
     else:
         return res
 
+
 firestore_key_to_attr_name = underscore
+
+
+T = TypeVar('T', covariant=True)
+
+
+def snapshot_to_obj(
+        snapshot: DocumentSnapshot,
+        super_cls: T = None) -> T:
+    """ Converts a firestore document snapshot to FirestoreObject
+
+    :param snapshot: firestore document snapshot
+    :param super_cls: subclass of FirestoreObject
+    :return:
+    """
+
+    if not snapshot.exists:
+        return None
+
+    d = snapshot.to_dict()
+    obj_type = d["obj_type"]
+    obj_cls = super_cls.get_cls_from_name(obj_type)
+
+    if obj_cls is None:
+        raise ValueError("Cannot read obj_type: {}. "
+                         "Make sure that obj_type is a subclass of {}. "
+                         .format(obj_type, super_cls))
+
+    if super_cls is not None:
+        assert issubclass(obj_cls, super_cls)
+
+    obj = obj_cls.create(doc_ref=snapshot.reference)
+    obj._import_properties(d)
+    return obj
