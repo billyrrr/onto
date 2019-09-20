@@ -1,4 +1,6 @@
+import time
 from functools import partial
+from itertools import count
 
 import pytest as pytest
 
@@ -28,25 +30,28 @@ def v_cls(CTX):
 
         @property
         def colors(self):
-            return list(self._color_d.values())
+            return [self._color_d[key] for key in sorted(self._color_d)]
 
         @property
         def rainbow_name(self):
-            return "-".join(self._color_d.values())
+            return "-".join([self._color_d[key] for key in sorted(self._color_d)])
 
-        def set_color(self, color_name):
-            self._color_d[color_name] = color_name
+        def set_color(self, color_name, order):
+            self._color_d[(order, color_name)] = color_name
 
         @classmethod
         def get_from_color_names(cls, color_names):
             struct = dict()
 
+            order = count()
             for color_name in color_names:
                 obj_type = "Color"
                 doc_id = "doc_id_{}".format(color_name)
 
-                def update_func(vm: RainbowView, dm: Color):
-                    vm.set_color(dm.name)
+                def update_func(order, vm: RainbowView, dm: Color):
+                    vm.set_color(dm.name, order=order)
+
+                update_func = partial(update_func, order=next(order))
 
                 struct[color_name] = (obj_type, doc_id, update_func)
             return super().get(struct_d=struct)
@@ -56,6 +61,7 @@ def v_cls(CTX):
 
 def test_to_dict_view(v_cls, color_refs):
     vm = v_cls.get_from_color_names(["yellow", "magenta", "cian"])
+    time.sleep(3)
     assert vm.to_view_dict() == {
         'rainbowName': 'yellow-magenta-cian',
         'colors': ['yellow', 'magenta', 'cian']
@@ -91,7 +97,14 @@ def test_vm(vm: PaletteViewModel):
     }
 
 
-def test_get(setup_app, vm):
+@pytest.mark.skip
+def test_dav_get(setup_app, vm):
+    """ Tests document-as-view (dav) get
+
+    :param setup_app:
+    :param vm:
+    :return:
+    """
     app = setup_app
 
     assert isinstance(app, Flask)
