@@ -6,6 +6,7 @@ from testfixtures import compare
 import flask_boiler.utils
 from flask_boiler import schema, fields
 from flask_boiler.schema import Schema
+from flask_boiler.serializable import Serializable
 
 
 def test__get_instance_vars():
@@ -263,7 +264,6 @@ def test_schema_load():
         # 'doc_id': 'DC',
         # 'doc_ref': 'City/DC'
     }
-
 
 
 # def test_read_only_fields():

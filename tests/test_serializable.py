@@ -227,3 +227,46 @@ def test_separate_class():
         "obj_type": "SModelA"
     }
 
+
+def test_embedded():
+
+    class TargetSchema(schema.Schema):
+        earliest = fields.Raw()
+        latest = fields.Raw()
+
+    class Target(serializable.Serializable):
+        _schema_cls = TargetSchema
+
+    t = Target()
+    t.earliest = 10
+    t.latest = 20
+
+    class PlanSchema(schema.Schema):
+        target = fields.Embedded()
+        name = fields.Str()
+
+    class Plan(serializable.Serializable):
+        _schema_cls = PlanSchema
+
+    k = Plan.from_dict({
+        "target": t.to_dict(),
+        "name": "my plan"
+    })
+
+    assert k.name == "my plan"
+    assert isinstance(k.target, Target)
+    assert k.target.earliest == 10
+    assert k.target.latest == 20
+
+    assert k.to_dict() == {
+        "name": "my plan",
+        "target": {
+            "earliest": 10,
+            "latest": 20,
+            "obj_type": "Target",
+            "doc_id": ""
+        },
+        "obj_type": "Plan",
+        "doc_id": ""
+    }
+

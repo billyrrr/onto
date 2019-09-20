@@ -3,7 +3,7 @@ import warnings
 from google.cloud.firestore import DocumentReference
 from google.cloud.firestore import Transaction
 
-from flask_boiler.helpers import RelationshipReference
+from flask_boiler.helpers import RelationshipReference, EmbeddedElement
 # from flask_boiler.view_model import ViewModel
 from flask_boiler.collection_mixin import CollectionMixin
 from flask_boiler.serializable import Serializable
@@ -95,6 +95,7 @@ class FirestoreObject(FirestoreObjectMixin, Serializable, CollectionMixin):
                 return val.obj.doc_ref
         elif is_ref_only_relationship(val):
             return val.doc_ref
+
         else:
             return super()._export_val(val, to_save=to_save)
 

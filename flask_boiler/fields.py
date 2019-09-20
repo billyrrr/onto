@@ -1,7 +1,8 @@
 from google.cloud.firestore import DocumentReference
 from marshmallow import fields
 
-from flask_boiler.helpers import RelationshipReference
+from flask_boiler.helpers import RelationshipReference, EmbeddedElement
+from flask_boiler.serializable import Serializable, Importable, Exportable
 
 
 class Field(fields.Field):
@@ -144,6 +145,62 @@ class Relationship(fields.Str, Field):
             doc_ref=value,
             nested=self.nested
         )
+
+
+class Embedded(fields.Raw, Field):
+
+    @property
+    def default_value(self):
+        if self.many:
+            return list()
+        else:
+            return None
+
+    def __init__(self, *args, many=False, **kwargs):
+        """ Initializes a relationship. A field of the master object
+                to describe relationship to another object or document
+                being referenced.
+
+        :param args: Positional arguments to pass to marshmallow.fields.Str
+        :param many: If set to True, will deserialize and serialize the field
+                    as a list. (TODO: add support for more iterables)
+        :param kwargs: Keyword arguments to pass to marshmallow.fields.Str
+        """
+        super().__init__(*args, **kwargs)
+        self.many = many
+
+    def _serialize(self, value, *args, **kwargs):
+
+        if self.many:
+            if isinstance(value, list):
+                return [self._serialize(val, *args, **kwargs) for val in value]
+            elif isinstance(value, dict):
+                return {
+                    key: self._serialize(val)
+                    for key, val in value.items()
+                }
+            else:
+                raise NotImplementedError
+        else:
+            return EmbeddedElement(
+                obj=value
+            )
+
+    def _deserialize(self, value, *args, **kwargs):
+        if self.many:
+            if isinstance(value, list):
+                return [self._deserialize(val, *args, *kwargs) for val in value]
+            elif isinstance(value, dict):
+                return {
+                    key: self._deserialize(val)
+                    for key, val in value.items()
+                }
+            else:
+                raise NotImplementedError
+        else:
+            return EmbeddedElement(
+                d=value
+            )
 
 
 Str = String

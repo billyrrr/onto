@@ -3,6 +3,7 @@ from typing import TypeVar
 from marshmallow.utils import is_iterable_but_not_string
 
 from flask_boiler import fields
+from flask_boiler.helpers import EmbeddedElement
 from .model_registry import BaseRegisteredModel
 
 
@@ -73,7 +74,19 @@ class Importable(SchemedBase):
     """
 
     def _import_val(self, val, to_get=False):
-        if isinstance(val, dict) and "obj_type" in val:
+
+        def embed_element(val: EmbeddedElement):
+            d = val.d
+            obj_type = d["obj_type"]
+            obj_cls = BaseRegisteredModel.get_cls_from_name(obj_type)
+            data = {key:val for key, val in d.items() if key != "obj_type"}
+            obj = obj_cls()
+            obj._import_properties(data)
+            return obj
+
+        if isinstance(val, EmbeddedElement):
+            return embed_element(val)
+        elif isinstance(val, dict) and "obj_type" in val:
             # Deserialize nested object
             obj_type = val["obj_type"]
             # TODO: check hierarchy
@@ -141,8 +154,15 @@ class Exportable(SchemedBase):
                     TODO: Add support for atomicity
         :return:
         """
+
+        def embed_element(val: EmbeddedElement):
+            obj = val.obj
+            return self._export_val(obj)
+
         if isinstance(val, Serializable):
             return val._export_as_dict(to_save=to_save)
+        elif isinstance(val, EmbeddedElement):
+            return embed_element(val)
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):
                 val_list = [self._export_val(elem, to_save) for elem in val]
@@ -172,8 +192,14 @@ class Exportable(SchemedBase):
 
     def _export_val_view(self, val):
 
+        def embed_element(val: EmbeddedElement):
+            obj = val.obj
+            return obj._export_as_view_dict()
+
         if isinstance(val, Serializable):
             return val._export_as_view_dict()
+        if isinstance(val, EmbeddedElement):
+            return embed_element(val)
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):
                 val_list = [self._export_val_view(elem) for elem in val]
