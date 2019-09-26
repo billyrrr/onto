@@ -181,6 +181,54 @@ assert p._export_as_view_dict() == {'body': 'Ssssssss',
 
 See ```examples/relationship_example.py```
 
+### Embedded
+
+You can embed a serializable object in a ViewModel or ReferencedObject, 
+so that the embedded object is retrieved with the master object 
+(no separate calls). Thus offer an advantage over performance when 
+1. nested document is meant to be retrieved with the master document
+2. nested document is not referenced by any other document 
+3. nested documents do not need to be queried 
+
+
+```python
+    class TargetSchema(schema.Schema):
+        earliest = fields.Raw()
+        latest = fields.Raw()
+
+    class Target(serializable.Serializable):
+        _schema_cls = TargetSchema
+
+    t = Target()
+    t.earliest = 10
+    t.latest = 20
+
+    class PlanSchema(schema.Schema):
+        target = fields.Embedded()
+        name = fields.Str()
+
+    class Plan(serializable.Serializable):
+        _schema_cls = PlanSchema
+
+    k = Plan.from_dict({
+        "target": t.to_dict(),
+        "name": "my plan"
+    })
+
+    assert k.to_dict() == {
+        "name": "my plan",
+        "target": {
+            "earliest": 10,
+            "latest": 20,
+            "obj_type": "Target",
+            "doc_id": ""
+        },
+        "obj_type": "Plan",
+        "doc_id": ""
+    }
+
+```
+
 ### Business Properties Binding
 You can bind a view model to its business properties (underlying domain model).
 See `examples/binding_example.py`.
