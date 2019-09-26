@@ -10,7 +10,7 @@ from .model_registry import BaseRegisteredModel
 # from abc import ABC, abstractmethod
 
 
-class SchemedBase(object):
+class SchemedBase:
 
     @property
     def schema_obj(self):
@@ -21,7 +21,7 @@ class SchemedBase(object):
         raise NotImplementedError
 
 
-class Schemed(object):
+class Schemed(SchemedBase):
     """
     A mixin class for object bounded to a schema for serialization
         and deserialization.
@@ -67,7 +67,7 @@ class Schemed(object):
     #     return res
 
 
-class Importable(SchemedBase):
+class Importable:
     """
     When object subclass this mixin class, the object has the ability to
         be deserialized/loaded/set from a dictionary.
@@ -128,14 +128,8 @@ class Importable(SchemedBase):
             # if key not in self.__get_dump_only_fields__():
             setattr(self, key, self._import_val(val, to_get=to_get))
 
-    @classmethod
-    def from_dict(cls, d, **kwargs):
-        instance = cls(**kwargs)  # TODO: fix unexpected arguments
-        instance._import_properties(d)
-        return instance
 
-
-class Exportable(SchemedBase):
+class Exportable:
     """
     When object subclass this mixin class, the object has the ability to
         be serialized/dumped/output into a dictionary.
@@ -233,14 +227,6 @@ class Exportable(SchemedBase):
         return self._export_as_dict()
 
 
-def initializer(obj, d):
-    for key, val in d.items():
-        assert isinstance(val, fields.Field)
-        # if not hasattr(obj, key):
-        if key not in dir(obj):
-            setattr(obj, key, val.default_value)
-
-
 class NewMixin:
     """
     Mixin class for initializing instance variable on creation.
@@ -254,23 +240,60 @@ class NewMixin:
         for key, val in kwargs.items():
             setattr(self, key, val)
 
+        for key, val in self._get_fields().items():
+            assert isinstance(val, fields.Field)
 
-class AutoInitialized(object):
+            if key in dir(self):
+                continue
 
-    @classmethod
-    def _get_fields(cls):
-        raise NotImplementedError
+            if val.required:
+
+                if key in kwargs:
+                    setattr(self, key, kwargs[key])
+                else:
+                    raise ValueError
+
+            else:
+
+                if key in kwargs:
+                    setattr(self, key, kwargs[key])
+                else:
+                    setattr(self, key, val.default_value)
+
+
+class AutoInitialized:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         initializer(self, self._get_fields())
 
 
-class Serializable(BaseRegisteredModel,
-                   Schemed,
-                   Importable,
-                   Exportable,
-                   AutoInitialized, ):
+class Mutable(BaseRegisteredModel,
+              Schemed, AutoInitialized, Importable, NewMixin, Exportable):
+
+    @classmethod
+    def from_dict(cls, d, **kwargs):
+        instance = cls(**kwargs)  # TODO: fix unexpected arguments
+        instance._import_properties(d)
+        return instance
+
+
+def initializer(obj, d):
+    for key, val in d.items():
+        assert isinstance(val, fields.Field)
+        # if not hasattr(obj, key):
+        if key not in dir(obj):
+            setattr(obj, key, val.default_value)
+
+
+class Immutable(BaseRegisteredModel, Schemed, NewMixin, Exportable):
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls.new(**d)
+
+
+class Serializable(Mutable):
     pass
 
 
