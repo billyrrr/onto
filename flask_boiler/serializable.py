@@ -129,6 +129,12 @@ class Importable:
             # if key not in self.__get_dump_only_fields__():
             setattr(self, key, self._import_val(val, to_get=to_get))
 
+    @classmethod
+    def from_dict(cls, d, to_get=False, **kwargs):
+        instance = cls(**kwargs)  # TODO: fix unexpected arguments
+        instance._import_properties(d, to_get=to_get)
+        return instance
+
 
 class Exportable:
     """
@@ -262,6 +268,11 @@ class NewMixin:
                     setattr(self, key, val.default_value)
 
 
+    @classmethod
+    def from_dict(cls, d, **kwargs):
+        return cls.new({**d, **kwargs})
+
+
 class AutoInitialized:
 
     def __init__(self, *args, **kwargs):
@@ -271,12 +282,7 @@ class AutoInitialized:
 
 class Mutable(BaseRegisteredModel,
               Schemed, AutoInitialized, Importable, NewMixin, Exportable):
-
-    @classmethod
-    def from_dict(cls, d, to_get=False, **kwargs):
-        instance = cls(**kwargs)  # TODO: fix unexpected arguments
-        instance._import_properties(d, to_get=to_get)
-        return instance
+    pass
 
 
 def initializer(obj, d):
@@ -288,10 +294,7 @@ def initializer(obj, d):
 
 
 class Immutable(BaseRegisteredModel, Schemed, NewMixin, Exportable):
-
-    @classmethod
-    def from_dict(cls, d, **kwargs):
-        return cls.new({**d, **kwargs})
+    pass
 
 
 class Serializable(Mutable):
