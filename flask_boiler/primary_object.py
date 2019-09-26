@@ -49,7 +49,6 @@ class PrimaryObject(FirestoreObject, QueryMixin):
         else:
             return cls._schema_cls
 
-
     def __init__(self, doc_id=None, doc_ref=None):
         if doc_ref is None:
             doc_ref = self._doc_ref_from_id(doc_id=doc_id)
@@ -67,7 +66,7 @@ class PrimaryObject(FirestoreObject, QueryMixin):
         return self._doc_ref
 
     @classmethod
-    def create(cls, doc_id=None, doc_ref=None):
+    def create(cls, doc_id=None, doc_ref=None, with_dict=None,):
         """
         Creates an instance of object and assign a firestore
             reference with random id to the instance.
@@ -78,13 +77,13 @@ class PrimaryObject(FirestoreObject, QueryMixin):
             if doc_id is None:
                 doc_id = random_id()
             doc_ref = cls._get_collection().document(doc_id)
-            obj = super().create(doc_ref=doc_ref)
+            obj = super().create(with_dict=with_dict, doc_ref=doc_ref)
             return obj
 
         else:
 
             assert doc_id is None
-            obj = super().create(doc_ref=doc_ref)
+            obj = super().create(with_dict=with_dict, doc_ref=doc_ref)
             return obj
 
     @classmethod

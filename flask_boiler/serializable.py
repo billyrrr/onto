@@ -94,10 +94,11 @@ class Importable:
             obj_cls = BaseRegisteredModel.get_cls_from_name(obj_type)
 
             obj = obj_cls.create(
+                with_dict=val,
+                to_get=to_get,
                 doc_id=val.get("doc_id", None),
                 transaction=self.transaction
             )
-            obj._import_properties(val, to_get=to_get)
 
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):
@@ -272,9 +273,9 @@ class Mutable(BaseRegisteredModel,
               Schemed, AutoInitialized, Importable, NewMixin, Exportable):
 
     @classmethod
-    def from_dict(cls, d, **kwargs):
+    def from_dict(cls, d, to_get=False, **kwargs):
         instance = cls(**kwargs)  # TODO: fix unexpected arguments
-        instance._import_properties(d)
+        instance._import_properties(d, to_get=to_get)
         return instance
 
 
@@ -289,8 +290,8 @@ def initializer(obj, d):
 class Immutable(BaseRegisteredModel, Schemed, NewMixin, Exportable):
 
     @classmethod
-    def from_dict(cls, d):
-        return cls.new(**d)
+    def from_dict(cls, d, **kwargs):
+        return cls.new({**d, **kwargs})
 
 
 class Serializable(Mutable):

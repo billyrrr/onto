@@ -18,10 +18,13 @@ class FirestoreObjectClsFactory(ClsFactory):
 class FirestoreObjectMixin:
 
     @classmethod
-    def create(cls, doc_ref=None):
+    def create(cls, doc_ref=None, with_dict=None):
         if doc_ref is None:
             raise ValueError
-        obj = cls(doc_ref=doc_ref)
+        if with_dict is not None:
+            obj = cls.from_dict(d=with_dict, doc_ref=doc_ref)
+        else:
+            obj = cls(doc_ref=doc_ref)
         return obj
 
     def get_firestore_ref(self):
