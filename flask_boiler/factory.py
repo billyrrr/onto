@@ -35,16 +35,17 @@ class ClsFactory:
         """
         base_list = [BaseRegisteredModel, Schemed]
 
-        if auto_initialized:
-            base_list.append(AutoInitialized)
-        else:
-            base_list.append(NewMixin)
-
         if importable:
             base_list.append(Importable)
 
         if exportable:
             base_list.append(Exportable)
+
+        if auto_initialized:
+            base_list.append(AutoInitialized)
+        else:
+            base_list.append(NewMixin)
+            base_list.append(AutoInitialized)
 
         return cls.create(
             name=name,

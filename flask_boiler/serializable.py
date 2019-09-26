@@ -261,13 +261,10 @@ class NewMixin:
         keys_super = kwargs_keys - keys_to_set - keys_default
 
         super().__init__(
+            fd={key: field
+                for key, field in fd.items() if key in keys_default},
             **{key: val for key, val in kwargs.items() if key in keys_super}
         )
-
-        initializer(self,
-                    {key: field for key, field in fd.items()
-                     if key in keys_default}
-                    )
 
         d_to_set = {key: field for key, field in fd.items()
                     if key in keys_to_set}
@@ -288,13 +285,15 @@ class NewMixin:
 
 class AutoInitialized:
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, fd=None, **kwargs):
         super().__init__(*args, **kwargs)
-        initializer(self, self._get_fields())
+        if fd is None:
+            fd = self._get_fields()
+        initializer(self, fd)
 
 
 class Mutable(BaseRegisteredModel,
-              Schemed, AutoInitialized, Importable, NewMixin, Exportable):
+              Schemed, Importable, NewMixin, AutoInitialized, Exportable):
     pass
 
 
