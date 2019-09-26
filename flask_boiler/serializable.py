@@ -79,7 +79,7 @@ class Importable:
             d = val.d
             obj_type = d["obj_type"]
             obj_cls = BaseRegisteredModel.get_cls_from_name(obj_type)
-            data = {key:val for key, val in d.items() if key != "obj_type"}
+            data = {key: val for key, val in d.items() if key != "obj_type"}
             obj = obj_cls()
             obj._import_properties(data)
             return obj
@@ -243,30 +243,43 @@ class NewMixin:
     def new(cls, **kwargs):
         return cls(**kwargs)
 
-    def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            setattr(self, key, val)
+    def __init__(self, allow_default=True, **kwargs):
 
-        for key, val in self._get_fields().items():
+        fd = self._get_fields()  # Calls classmethod
+
+        field_keys = set(fd.keys())
+        kwargs_keys = set(kwargs.keys())
+
+        required_keys = {val for key, val in fd.items() if val.required}
+
+        # Keys to set value from keyword arguments
+        keys_to_set = kwargs_keys & field_keys
+        # Keys to set to default value read from Field object from schema
+        keys_default = field_keys - keys_to_set
+        if not allow_default and len(keys_default) != 0:
+            raise ValueError("{} are not set".format(keys_default))
+        keys_super = kwargs_keys - keys_to_set - keys_default
+
+        super().__init__(
+            **{key: val for key, val in kwargs.items() if key in keys_super}
+        )
+
+        initializer(self,
+                    {key: field for key, field in fd.items()
+                     if key in keys_default}
+                    )
+
+        d_to_set = {key: field for key, field in fd.items()
+                    if key in keys_to_set}
+
+        for key, val in d_to_set.items():
+
             assert isinstance(val, fields.Field)
 
             if key in dir(self):
                 continue
 
-            if val.required:
-
-                if key in kwargs:
-                    setattr(self, key, kwargs[key])
-                else:
-                    raise ValueError
-
-            else:
-
-                if key in kwargs:
-                    setattr(self, key, kwargs[key])
-                else:
-                    setattr(self, key, val.default_value)
-
+            setattr(self, key, kwargs[key])
 
     @classmethod
     def from_dict(cls, d, **kwargs):
