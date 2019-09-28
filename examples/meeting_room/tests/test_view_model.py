@@ -122,26 +122,58 @@ def test_view_model(users, tickets, location, meeting):
     time.sleep(2)
 
     assert meeting_session._export_as_view_dict() == {'inSession': True,
-                                               'longitude': -117.242929,
-                                               'latitude': 32.880361,
-                                               'address': '9500 Gilman Drive, La Jolla, CA',
-                                               'attending': [
-                                                   {
-                                                   'name': 'Joshua Pendergrast',
-                                                           'organization': 'SDSU',
-                                                    'hearing_aid_requested': True},
-                                                   {'name': 'Thomasina Manes',
-                                                    'organization': 'UCSD',
-                                                    'hearing_aid_requested': False},
-                                                   {'name': 'Tijuana Furlong',
-                                                    'organization': 'UCSD',
-                                                    'hearing_aid_requested': True},
-                                                   ],
-                                               'numHearingAidRequested': 2}
+                                                      'longitude': -117.242929,
+                                                      'latitude': 32.880361,
+                                                      'address': '9500 Gilman Drive, La Jolla, CA',
+                                                      'attending': [
+                                                          {
+                                                              'name': 'Joshua Pendergrast',
+                                                              'organization': 'SDSU',
+                                                              'hearing_aid_requested': True},
+                                                          {
+                                                              'name': 'Thomasina Manes',
+                                                              'organization': 'UCSD',
+                                                              'hearing_aid_requested': False},
+                                                          {
+                                                              'name': 'Tijuana Furlong',
+                                                              'organization': 'UCSD',
+                                                              'hearing_aid_requested': True},
+                                                      ],
+                                                      'numHearingAidRequested': 2}
+
+
+def test_user_view(users, meeting):
+    user_view = view_models.UserView.get_from_user_id(user_id="thomasina", )
+
+    time.sleep(2)
+
+    assert user_view._export_as_view_dict() == {'meetings': [
+        {'status': 'in-session', 'users': [
+            {'lastName': 'Furlong', 'firstName': 'Tijuana',
+             'hearingAidRequested': True, 'organization': 'UCSD'},
+            {'lastName': 'Manes', 'firstName': 'Thomasina',
+             'hearingAidRequested': False, 'organization': 'UCSD'},
+            {'lastName': 'Pendergrast', 'firstName': 'Joshua',
+             'hearingAidRequested': True, 'organization': 'SDSU'}],
+         'location': {'latitude': 32.880361,
+                      'address': '9500 Gilman Drive, La Jolla, CA',
+                      'longitude': -117.242929}, 'tickets': [
+            {'attendance': True, 'role': 'Participant',
+             'user': {'lastName': 'Furlong', 'firstName': 'Tijuana',
+                      'hearingAidRequested': True, 'organization': 'UCSD'}},
+            {'attendance': True, 'role': 'Organizer',
+             'user': {'lastName': 'Manes', 'firstName': 'Thomasina',
+                      'hearingAidRequested': False, 'organization': 'UCSD'}},
+            {'attendance': True, 'role': 'Participant',
+             'user': {'lastName': 'Pendergrast', 'firstName': 'Joshua',
+                      'hearingAidRequested': True, 'organization': 'SDSU'}}]}],
+                                                'lastName': 'Manes',
+                                                'firstName': 'Thomasina',
+                                                'hearingAidRequested': False,
+                                                'organization': 'UCSD'}
 
 
 def test_view_model_update(users, tickets, location, meeting):
-
     meeting_session = view_models.MeetingSession \
         .get_from_meeting_id(meeting_id=meeting.doc_id, once=False)
 
@@ -165,5 +197,5 @@ def test_view_model_update(users, tickets, location, meeting):
                                                               'name': 'Thomasina Manes',
                                                               'organization': 'UCSD',
                                                               'hearing_aid_requested': False}
-                                                          ],
+                                                      ],
                                                       'numHearingAidRequested': 1}
