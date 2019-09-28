@@ -18,7 +18,7 @@ This page is adapted from [Quickstart using a server client library](https://clo
 
 If this is a new project, you need to create a Cloud Firestore database instance.
 
-1. [GO TO THE CLOUD FIRESTORE VIEWER](https://console.cloud.google.com/firestore/data?_ga=2.250628420.-378732223.1566339304) .
+1. Go to [Cloud Firestore Viewer](https://console.cloud.google.com/firestore/data?_ga=2.250628420.-378732223.1566339304) .
 2. From the Select a database service screen, choose Cloud Firestore in Native mode.
 
 3. Select a [location](https://cloud.google.com/firestore/docs/locations#types) for your Cloud Firestore.
@@ -41,7 +41,7 @@ To run the client library, you must first set up authentication by creating a se
 GCP CONSOLE
 1. In the GCP Console, go to the **Create service account** key page.
 
-[GO TO THE CREATE SERVICE ACCOUNT KEY PAGE](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.86663898.-378732223.1566339304)
+    Go to [Create Service Account Key Page](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.86663898.-378732223.1566339304)
 
 2. From the **Service account** list, select **New service account**.
 
