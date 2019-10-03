@@ -8,8 +8,8 @@ from flask_boiler import schema, fields, view_model, view
 
 from flask import Flask
 
-from tests.color_fixtures import Color, PaletteViewModel, setup_app, \
-    vm, color_refs
+from tests.color_fixtures import Color, PaletteViewModel, vm, color_refs
+from tests.fixtures import setup_app
 from .fixtures import CTX
 
 from flask_boiler.view import default_mapper, document_as_view

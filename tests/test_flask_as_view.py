@@ -8,7 +8,8 @@ from flask_boiler import schema, fields, view, domain_model, factory, \
     view_model, view_mediator
 
 from .fixtures import CTX
-from .color_fixtures import color_refs, setup_app, ColorSchema, ColorDomainModelBase, Color
+from .color_fixtures import color_refs, ColorSchema, ColorDomainModelBase, Color
+from tests.fixtures import setup_app
 
 
 def test_rainbow_stuffs(CTX, setup_app, color_refs):

@@ -71,6 +71,11 @@ class ViewModelMixin(PersistableMixin):
                 obj.bind_to(key=key, obj_type=obj_type, doc_id=doc_id)
         return obj
 
+    @classmethod
+    def get_many(cls, struct_d_iterable=None, once=False):
+        return [cls.get(struct_d=struct_d, once=once)
+                for struct_d in struct_d_iterable]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.business_properties: Dict[str, DomainModel] = dict()

@@ -1,10 +1,7 @@
-from functools import partial
-
 import pytest as pytest
-from flasgger import Swagger
-from flask import Flask
 
 from flask_boiler import schema, fields, domain_model, view_model, factory
+from .fixtures import setup_app
 
 
 class ColorSchema(schema.Schema):
@@ -76,15 +73,6 @@ def vm(color_refs, CTX, request):
     request.addfinalizer(fin)
 
     return vm
-
-
-@pytest.fixture
-def setup_app(CTX):
-
-    app = Flask(__name__)
-    swagger = Swagger(app)
-
-    return app
 
 
 Color = factory.ClsFactory.create(

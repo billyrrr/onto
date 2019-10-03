@@ -81,6 +81,18 @@ class MeetingSession(view.FlaskAsViewMixin, view_model.ViewModel):
         return self.meeting.status == "in-session"
 
     @classmethod
+    def get_many_from_query(cls, query_d=None, once=False):
+        """ Note that once kwarg apply to the snapshot but not the query.
+
+        :param query_d:
+        :param once: attaches a listener to individual snapshots
+        :return:
+        """
+        return [
+            cls.get_from_meeting_id(meeting_id=obj.doc_id, once=once)
+            for obj in Meeting.where(**query_d)]
+
+    @classmethod
     def get_from_meeting_id(cls, meeting_id, once=False):
         struct = dict()
 

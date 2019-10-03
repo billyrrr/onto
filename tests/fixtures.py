@@ -1,4 +1,6 @@
 import pytest
+from flasgger import Swagger
+from flask import Flask
 
 
 @pytest.fixture(scope="package")
@@ -20,3 +22,12 @@ def CTX():
     )
     TST_CTX.read(config)
     return TST_CTX
+
+
+@pytest.fixture
+def setup_app(CTX):
+
+    app = Flask(__name__)
+    swagger = Swagger(app)
+
+    return app
