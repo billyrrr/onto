@@ -129,6 +129,12 @@ class Importable:
             # if key not in self.__get_dump_only_fields__():
             setattr(self, key, self._import_val(val, to_get=to_get))
 
+    def update_vals(self, with_dict=None):
+        if with_dict is None:
+            with_dict = dict()
+        for key, val in with_dict.items():
+            setattr(self, key, self._import_val(val, to_get=False))
+
     @classmethod
     def from_dict(cls, d, to_get=False, **kwargs):
         instance = cls(**kwargs)  # TODO: fix unexpected arguments

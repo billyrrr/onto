@@ -215,7 +215,6 @@ def test_view(users, tickets, location, meeting, setup_app):
     ]
     }
 
-
 def test_user_view(users, meeting):
     user_view = view_models.UserView.get_from_user_id(user_id="thomasina", )
 
