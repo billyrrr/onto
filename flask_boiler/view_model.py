@@ -187,3 +187,10 @@ class ViewModel(ViewModelMixin, ReferencedObject):
             __on_update(updated_dm)
 
         return _on_update
+
+    def propagate_change(self):
+        """
+        Save all objects mutated in a mutation
+        :return:
+        """
+        raise NotImplementedError

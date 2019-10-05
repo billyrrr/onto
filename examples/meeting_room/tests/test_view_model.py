@@ -5,6 +5,8 @@ from flasgger import SwaggerView
 from flask import request
 
 from examples.meeting_room.view_models import MeetingSession
+from examples.meeting_room.view_models.meeting_session import \
+    MeetingSessionMutation
 from flask_boiler import view_mediator
 from .. import view_models
 from .. import domain_models
@@ -116,7 +118,7 @@ def test_view_model(users, tickets, location, meeting):
     meeting_session = view_models.MeetingSession \
         .get_from_meeting_id(meeting_id=meeting.doc_id, once=True)
 
-    time.sleep(2)
+    time.sleep(2)  # TODO: delete after implementing sync
 
     assert meeting_session._export_as_view_dict() == \
            {'inSession': True,
@@ -174,26 +176,29 @@ def test_view(users, tickets, location, meeting, setup_app):
             query_d = request.args.to_dict()
             meeting_sessions = MeetingSession.get_many_from_query(
                 query_d=query_d, once=False)
-            time.sleep(1)
-            results = [meeting_session.to_view_dict()
-                       for meeting_session in meeting_sessions]
+            time.sleep(1)  # TODO: delete after implementing sync
+            results = {meeting_session.meeting_id: meeting_session.to_view_dict()
+                       for meeting_session in meeting_sessions}
             return {
                 "results": results
             }
 
     mediator = view_mediator.ViewMediator(
-        view_model_cls=MeetingSession, app=app)
+        view_model_cls=MeetingSession,
+        app=app,
+        mutation_cls=MeetingSessionMutation
+    )
     mediator.add_list_get(rule="/meeting_sessions", list_get_view=ListGet)
 
-    time.sleep(2)
+    time.sleep(2)  # TODO: delete after implementing sync
 
     test_client = app.test_client()
 
     res = test_client.get(
         path='meeting_sessions?status=in-session')
 
-    assert res.json == {'results': [
-        {'inSession': True,
+    assert res.json == {'results': {
+        "meeting_1": {'inSession': True,
          'longitude': -117.242929,
          'latitude': 32.880361,
          'address': '9500 Gilman Drive, La Jolla, CA',
@@ -212,13 +217,67 @@ def test_view(users, tickets, location, meeting, setup_app):
                  'hearing_aid_requested': True},
          ],
          'numHearingAidRequested': 2}
-    ]
     }
+    }
+
+    mediator.add_instance_get(rule="/meeting_sessions/<string:doc_id>")
+    res = test_client.get(
+        path='meeting_sessions/meeting_1')
+
+    assert res.json == {'inSession': True,
+         'longitude': -117.242929,
+         'latitude': 32.880361,
+         'address': '9500 Gilman Drive, La Jolla, CA',
+         'attending': [
+             {
+                 'name': 'Joshua Pendergrast',
+                 'organization': 'SDSU',
+                 'hearing_aid_requested': True},
+             {
+                 'name': 'Thomasina Manes',
+                 'organization': 'UCSD',
+                 'hearing_aid_requested': False},
+             {
+                 'name': 'Tijuana Furlong',
+                 'organization': 'UCSD',
+                 'hearing_aid_requested': True},
+         ],
+         'numHearingAidRequested': 2}
+
+    mediator.add_instance_patch(rule="/meeting_sessions/<string:doc_id>")
+    test_client.patch(
+        path='meeting_sessions/meeting_1', json={
+            "inSession": False
+        })
+
+    res = test_client.get(
+        path='meeting_sessions/meeting_1')
+
+    assert res.json == {'inSession': False,
+                        'longitude': -117.242929,
+                        'latitude': 32.880361,
+                        'address': '9500 Gilman Drive, La Jolla, CA',
+                        'attending': [
+                            {
+                                'name': 'Joshua Pendergrast',
+                                'organization': 'SDSU',
+                                'hearing_aid_requested': True},
+                            {
+                                'name': 'Thomasina Manes',
+                                'organization': 'UCSD',
+                                'hearing_aid_requested': False},
+                            {
+                                'name': 'Tijuana Furlong',
+                                'organization': 'UCSD',
+                                'hearing_aid_requested': True},
+                        ],
+                        'numHearingAidRequested': 2}
+
 
 def test_user_view(users, meeting):
     user_view = view_models.UserView.get_from_user_id(user_id="thomasina", )
 
-    time.sleep(2)
+    time.sleep(2)  # TODO: delete after implementing sync
 
     assert user_view._export_as_view_dict() == {'meetings': [
         {'status': 'in-session', 'users': [
@@ -250,12 +309,12 @@ def test_view_model_update(users, tickets, location, meeting):
     meeting_session = view_models.MeetingSession \
         .get_from_meeting_id(meeting_id=meeting.doc_id, once=False)
 
-    time.sleep(2)
+    time.sleep(2)  # TODO: delete after implementing sync
 
     tickets[0].attendance = False
     tickets[0].save()
 
-    time.sleep(5)
+    time.sleep(5)  # TODO: delete after implementing sync
 
     assert meeting_session._export_as_view_dict() == {'inSession': True,
                                                       'longitude': -117.242929,

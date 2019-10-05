@@ -26,8 +26,33 @@ class SchemaMixin:
             default_data_key = self.f(field_obj.attribute)
             field_obj.data_key = default_data_key
 
+        # if field_obj.attribute in self.f_mapping:
+        #     raise ValueError
+        # else:
+        #     self.f_mapping[field_obj.attribute] = field_obj.data_key
+        #
+        # if field_obj.data_key in self.g_mapping:
+        #     raise ValueError
+        # else:
+        #     self.g_mapping[field_obj.data_key] = field_obj.attribute
+
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, unknown=EXCLUDE, **kwargs)
+        if "unknown" not in kwargs:
+            # The assumption made is that if-condition on existence of
+            #   key in kwargs is a better design than explicit kwarg = None,
+            #   since, as an example, `EXCLUDE is None` may be True, as it
+            #   is from an external dependency.
+            # TODO: note that unknown passed by positional arg is not caught
+            unknown = EXCLUDE
+        else:
+            unknown = kwargs["unknown"]
+        super().__init__(
+            *args,
+            unknown=unknown,
+            **kwargs)
+        #
+        # self.f_mapping = dict()
+        # self.g_mapping = dict()
 
 
 class Schema(SchemaMixin, marshmallow.Schema):

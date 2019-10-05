@@ -1,6 +1,9 @@
+import time
+
 from examples.meeting_room.domain_models.location import Location
 from examples.meeting_room.domain_models.meeting import Meeting
 from flask_boiler import fields, schema, view_model, view
+from flask_boiler.mutation import Mutation
 
 
 class MeetingSessionSchema(schema.Schema):
@@ -23,6 +26,10 @@ class MeetingSession(view.FlaskAsViewMixin, view_model.ViewModel):
         self.meeting = None
         self.location = None
 
+    @property
+    def meeting_id(self):
+        return self.meeting.doc_id
+
     def set_user(self, user):
         self.users[user.doc_id] = user
 
@@ -34,6 +41,20 @@ class MeetingSession(view.FlaskAsViewMixin, view_model.ViewModel):
 
     def set_location(self, location):
         self.location = location
+
+    @property
+    def in_session(self):
+        return self.meeting.status == "in-session"
+
+    @in_session.setter
+    def in_session(self, in_session):
+        cur_status = self.meeting.status
+        if cur_status == "in-session" and not in_session:
+            self.meeting.status = "closed"
+        elif cur_status == "closed" and in_session:
+            self.meeting.status = "in-session"
+        else:
+            raise ValueError
 
     @property
     def latitude(self):
@@ -76,10 +97,6 @@ class MeetingSession(view.FlaskAsViewMixin, view_model.ViewModel):
                 count += 1
         return count
 
-    @property
-    def in_session(self):
-        return self.meeting.status == "in-session"
-
     @classmethod
     def get_many_from_query(cls, query_d=None, once=False):
         """ Note that once kwarg apply to the snapshot but not the query.
@@ -91,6 +108,10 @@ class MeetingSession(view.FlaskAsViewMixin, view_model.ViewModel):
         return [
             cls.get_from_meeting_id(meeting_id=obj.doc_id, once=once)
             for obj in Meeting.where(**query_d)]
+
+    @classmethod
+    def new(cls, doc_id=None):
+        return cls.get_from_meeting_id(meeting_id=doc_id)
 
     @classmethod
     def get_from_meeting_id(cls, meeting_id, once=False):
@@ -124,4 +145,14 @@ class MeetingSession(view.FlaskAsViewMixin, view_model.ViewModel):
             vm.set_location(dm)
         struct[m.location.id] = ("Location", m.location.id, location_update_func)
 
-        return super().get(struct_d=struct, once=once)
+        obj = super().get(struct_d=struct, once=once)
+        time.sleep(2)  # TODO: delete after implementing sync
+        return obj
+
+    def propagate_change(self):
+        self.meeting.save()
+
+
+class MeetingSessionMutation(Mutation):
+
+    view_model_cls = MeetingSession
