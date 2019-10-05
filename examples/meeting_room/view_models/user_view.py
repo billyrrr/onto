@@ -20,6 +20,10 @@ class UserView(view.FlaskAsViewMixin, view_model.ViewModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @classmethod
+    def new(cls, doc_id=None):
+        return cls.get_from_user_id(user_id=doc_id)
+
     def set_user(self, user):
         self.user = user
 
