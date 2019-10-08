@@ -155,10 +155,10 @@ class ViewModelMixin(PersistableMixin):
             for i in range(n):
 
                 doc = docs[i]
-                change = changes[i]
 
-                on_update = self._on_update_funcs[doc._document_path]
-                on_update([doc], [change], read_time)
+                on_update = self._on_update_funcs[doc.reference._document_path]
+                # TODO: restore parameter "changes"
+                on_update([doc], None, read_time)
 
         self.listener = DataListener(
             [dm_ref for dm_ref in self._on_update_funcs],
