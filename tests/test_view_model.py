@@ -89,6 +89,7 @@ def test_binding(CTX):
 
     vm.bind_to(key=id_a, obj_type="LuggageItem", doc_id=id_a)
     vm.bind_to(key=id_b, obj_type="LuggageItem", doc_id=id_b)
+    vm.register_listener()
 
     # Takes time to propagate changes
     time.sleep(2)

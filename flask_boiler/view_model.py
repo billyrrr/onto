@@ -2,6 +2,7 @@ from typing import Dict, Tuple, Callable
 
 from google.cloud.firestore import DocumentReference
 
+from flask_boiler.watch import DataListener
 from .context import Context as CTX
 from .domain_model import DomainModel
 from flask_boiler.referenced_object import ReferencedObject
@@ -69,6 +70,7 @@ class ViewModelMixin(PersistableMixin):
                 obj.bind_to_once(key=key, obj_type=obj_type, doc_id=doc_id)
             else:
                 obj.bind_to(key=key, obj_type=obj_type, doc_id=doc_id)
+        obj.register_listener()
         return obj
 
     @classmethod
@@ -119,21 +121,50 @@ class ViewModelMixin(PersistableMixin):
     def __subscribe_to(self, *, key, dm_cls, update_func,
                        dm_doc_id):
 
-        if key in self._on_update_funcs:
-            # Release the previous on_snapshot functions
-            #   https://firebase.google.com/docs/firestore/query-data/listen
-            f, doc_watch = self._on_update_funcs[key]
-            # TODO: add back, see:
-            # https://github.com/googleapis/google-cloud-python/issues/9008
-            # https://github.com/googleapis/google-cloud-python/issues/7826
-            # doc_watch.unsubscribe()
+        # if key in self._on_update_funcs:
+        #     # Release the previous on_snapshot functions
+        #     #   https://firebase.google.com/docs/firestore/query-data/listen
+        #     f, doc_watch = self._on_update_funcs[key]
+        #     # TODO: add back, see:
+        #     # https://github.com/googleapis/google-cloud-python/issues/9008
+        #     # https://github.com/googleapis/google-cloud-python/issues/7826
+        #     # doc_watch.unsubscribe()
 
         dm_ref: DocumentReference = dm_cls._get_collection().document(dm_doc_id)
         on_update = self.get_on_update(
                   dm_cls=dm_cls, dm_doc_id=dm_doc_id,
                   update_func=update_func, key=key)
-        doc_watch = dm_ref.on_snapshot(on_update)
-        self._on_update_funcs[key] = (on_update, doc_watch)
+        # doc_watch = dm_ref.on_snapshot(on_update)
+        self._on_update_funcs[dm_ref._document_path] = on_update
+
+    def register_listener(self):
+
+        def snapshot_callback(docs, changes, read_time):
+            """
+            docs (List(DocumentSnapshot)): A callback that returns the
+                        ordered list of documents stored in this snapshot.
+            changes (List(str)): A callback that returns the list of
+                        changed documents since the last snapshot delivered for
+                        this watch.
+            read_time (string): The ISO 8601 time at which this
+                        snapshot was obtained.
+            :return:
+            """
+
+            n = len(docs)
+            for i in range(n):
+
+                doc = docs[i]
+                change = changes[i]
+
+                on_update = self._on_update_funcs[doc._document_path]
+                on_update([doc], [change], read_time)
+
+        self.listener = DataListener(
+            [dm_ref for dm_ref in self._on_update_funcs],
+            snapshot_callback=snapshot_callback,
+            firestore=CTX.db
+        )
 
     def get_update_func(self, dm_cls, *args, **kwargs) -> Callable:
         """ Returns a function for updating a view
