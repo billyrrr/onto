@@ -119,8 +119,6 @@ def test_view_model(users, tickets, location, meeting):
     meeting_session = view_models.MeetingSession \
         .get_from_meeting_id(meeting_id=meeting.doc_id, once=True)
 
-    time.sleep(2)  # TODO: delete after implementing sync
-
     assert meeting_session._export_as_view_dict() == \
            {'inSession': True,
             'longitude': -117.242929,
@@ -215,6 +213,8 @@ def test_view(users, tickets, location, meeting, setup_app):
         path='meeting_sessions/meeting_1', json={
             "inSession": False
         })
+
+    time.sleep(3)
 
     res = test_client.get(
         path='meeting_sessions/meeting_1')

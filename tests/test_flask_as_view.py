@@ -23,18 +23,24 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs):
         rainbow_name = fields.Raw(dump_only=True)
         colors = fields.Raw(dump_only=True)
 
-    class RainbowViewModel(view.FlaskAsViewMixin, view_model.ViewModel):
+    class RainbowViewModel(view.FlaskAsView):
 
         _schema_cls = RainbowSchema
         _color_d = dict()
 
         @property
         def colors(self):
-            return list(self._color_d.values())
+            res = list()
+            for key in sorted(self._color_d):
+                res.append(self._color_d[key])
+            return res
 
         @property
         def rainbow_name(self):
-            return "-".join(self._color_d.values())
+            res = list()
+            for key in sorted(self._color_d):
+                res.append(self._color_d[key])
+            return "-".join(res)
 
         def set_color(self, color_name):
             self._color_d[color_name] = color_name
@@ -70,6 +76,6 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs):
         path="/rainbow/yellow+magenta+cian")
 
     assert res.json == {
-        'rainbowName': 'yellow-magenta-cian',
-        'colors': ['yellow', 'magenta', 'cian']
+        'rainbowName': 'cian-magenta-yellow',
+        'colors': ['cian', 'magenta', 'yellow']
     }

@@ -15,7 +15,7 @@ class MeetingSessionSchema(schema.Schema):
     num_hearing_aid_requested = fields.Raw()
 
 
-class MeetingSession(view.FlaskAsViewMixin, view_model.ViewModel):
+class MeetingSession(view.FlaskAsView):
 
     _schema_cls = MeetingSessionSchema
 

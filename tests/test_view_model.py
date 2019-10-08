@@ -85,7 +85,7 @@ def test_binding(CTX):
     vm_ref: DocumentReference = CTX.db.document(
         "test_lugagges/user_a_luggages")
 
-    vm: Luggages = Luggages.create(vm_ref)
+    vm: Luggages = Luggages.create(doc_ref=vm_ref)
 
     vm.bind_to(key=id_a, obj_type="LuggageItem", doc_id=id_a)
     vm.bind_to(key=id_b, obj_type="LuggageItem", doc_id=id_b)

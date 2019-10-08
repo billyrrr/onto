@@ -1,6 +1,6 @@
 from flask_boiler.serializable import BaseRegisteredModel, Schemed, \
     Importable, NewMixin, AutoInitialized, Exportable
-from flask_boiler.view_model import ViewModel
+from flask_boiler.view_model import ViewModel, ViewModelMixin
 
 
 class Mutation(BaseRegisteredModel,
@@ -18,6 +18,6 @@ class Mutation(BaseRegisteredModel,
     @classmethod
     def mutate_patch(cls, doc_id=None, data=None):
         obj = cls.view_model_cls.new(doc_id=doc_id)
-        assert isinstance(obj, ViewModel)
+        assert isinstance(obj, ViewModelMixin)
         obj.update_vals(with_dict=data)
         obj.propagate_change()

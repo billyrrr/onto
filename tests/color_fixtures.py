@@ -60,7 +60,7 @@ def vm(color_refs, CTX, request):
 
     # Create palette document in firestore
     vm = PaletteViewModel.create(
-        CTX.db.collection("palettes").document("palette_id_a")
+        doc_ref=CTX.db.collection("palettes").document("palette_id_a")
     )
     vm.palette_name = 'cmyk'
     vm.colors = color_refs

@@ -4,7 +4,7 @@ from google.cloud.firestore_v1.watch import Watch, WATCH_TARGET_ID, document_wat
 
 class DataListener:
 
-    def __init__(self, document_refs, snapshot_callback, firestore):
+    def __init__(self, document_refs, snapshot_callback, firestore, once=False):
         """
 
         :param document_refs: a list of string
@@ -14,6 +14,7 @@ class DataListener:
         target = {
                 "documents": {"documents": document_refs},
                 "target_id": WATCH_TARGET_ID,
+                "once": once
             }
 
         def comparator(doc1: DocumentSnapshot, doc2: DocumentSnapshot):
@@ -33,4 +34,7 @@ class DataListener:
                            document_reference_cls=DocumentReference,
                            )
 
-
+    def wait_for_once_done(self):
+        # TODO: Find a better way
+        # TODO: review and test
+        self.watch._consumer._thread.join()

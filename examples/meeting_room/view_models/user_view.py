@@ -13,7 +13,7 @@ class UserViewSchema(schema.Schema):
     meetings = fields.Relationship(many=True, dump_only=True)
 
 
-class UserView(view.FlaskAsViewMixin, view_model.ViewModel):
+class UserView(view.FlaskAsView):
 
     _schema_cls = UserViewSchema
 

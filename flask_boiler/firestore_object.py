@@ -18,13 +18,13 @@ class FirestoreObjectClsFactory(ClsFactory):
 class FirestoreObjectMixin:
 
     @classmethod
-    def create(cls, doc_ref=None, with_dict=None):
+    def create(cls, doc_ref=None, with_dict=None, **kwargs):
         if doc_ref is None:
             raise ValueError
         if with_dict is not None:
             obj = cls.from_dict(d=with_dict, doc_ref=doc_ref)
         else:
-            obj = cls(doc_ref=doc_ref)
+            obj = cls(doc_ref=doc_ref, **kwargs)
         return obj
 
     def get_firestore_ref(self):
@@ -69,13 +69,7 @@ class FirestoreObjectMixin:
             transaction.delete(reference=self.doc_ref)
 
 
-class FirestoreObject(FirestoreObjectMixin, Serializable, CollectionMixin):
-
-    def __init__(self, doc_ref=None):
-        super().__init__()
-        self._doc_ref = doc_ref
-        self.transaction = None
-
+class FirestoreObjectValMixin:
     def _export_val(self, val, to_save=False):
 
         def is_nested_relationship(val):
@@ -145,3 +139,20 @@ class FirestoreObject(FirestoreObjectMixin, Serializable, CollectionMixin):
         else:
             return super()._import_val(val)
 
+
+class SerializableFO(FirestoreObjectValMixin, Serializable):
+    """
+    Serializable with capacity of holding Firestore object as a field value.
+    """
+    pass
+
+
+class FirestoreObject(FirestoreObjectValMixin,
+                      FirestoreObjectMixin,
+                      Serializable,
+                      CollectionMixin):
+
+    def __init__(self, doc_ref=None):
+        super().__init__()
+        self._doc_ref = doc_ref
+        self.transaction = None

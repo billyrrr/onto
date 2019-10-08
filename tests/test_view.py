@@ -12,7 +12,7 @@ from tests.color_fixtures import Color, PaletteViewModel, vm, color_refs
 from tests.fixtures import setup_app
 from .fixtures import CTX
 
-from flask_boiler.view import default_mapper, document_as_view
+from flask_boiler.view import default_mapper
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def v_cls(CTX):
         rainbow_name = fields.Raw(dump_only=True)
         colors = fields.Raw(dump_only=True)
 
-    class RainbowView(view.FlaskAsViewMixin, view_model.ViewModel):
+    class RainbowView(view.FlaskAsView):
 
         _schema_cls = RainbowSchema
 
@@ -70,7 +70,7 @@ def test_to_dict_view(v_cls, color_refs):
 
 def test_vm__export_as_view_dict(color_refs, CTX):
     vm = PaletteViewModel.create(
-        CTX.db.collection("palettes").document("palette_id_a")
+        doc_ref=CTX.db.collection("palettes").document("palette_id_a")
     )
     vm.palette_name = 'cmyk'
     vm.colors = color_refs
@@ -95,43 +95,3 @@ def test_vm(vm: PaletteViewModel):
             {'name': 'black'}
         ]
     }
-
-
-@pytest.mark.skip
-def test_dav_get(setup_app, vm):
-    """ Tests document-as-view (dav) get
-
-    :param setup_app:
-    :param vm:
-    :return:
-    """
-    app = setup_app
-
-    assert isinstance(app, Flask)
-
-    description = "A list of colors (may be filtered by palette)"
-
-    palette_doc_mapper = partial(default_mapper, "palettes/{doc_id}")
-
-    obj = document_as_view(
-        view_model_cls=PaletteViewModel,
-        app=app,
-        endpoint="/palettes/<string:doc_id>",
-        mapper=palette_doc_mapper)
-
-    test_client = app.test_client()
-
-    res = test_client.get(
-        path="/palettes/palette_id_a")
-
-    assert res.status_code == 200
-    assert res.json == {
-        "paletteName": 'cmyk',
-        "colors": [
-            {'name': 'cian'},
-            {'name': 'magenta'},
-            {'name': 'yellow'},
-            {'name': 'black'}
-        ]
-    }
-
