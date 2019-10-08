@@ -15,10 +15,10 @@ def CTX():
     from flask_boiler.config import Config
 
     config = Config(
-        app_name="gravitate-dive-testing",
+        app_name="flask-boiler-testing",
         debug=True,
         testing=True,
-        certificate_filename="gravitate-dive-testing-firebase-adminsdk-g1ybn-2dde9daeb0.json"
+        certificate_filename="flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
     )
     TST_CTX.read(config)
     return TST_CTX

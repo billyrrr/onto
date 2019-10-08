@@ -9,13 +9,13 @@ from flask_boiler.firestore_object import FirestoreObject, \
 from flask_boiler.primary_object import PrimaryObject
 
 config = Config(
-    app_name="gravitate-dive-testing",
+    app_name="flask-boiler-testing",
     debug=True,
     testing=True,
-    certificate_filename="gravitate-dive-testing-firebase-adminsdk-g1ybn-2dde9daeb0.json"
+    certificate_filename="flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
 )
 CTX.read(config)
-assert CTX.firebase_app.project_id == "gravitate-dive-testing"
+assert CTX.firebase_app.project_id == "flask-boiler-testing"
 
 
 # Creates a schema for serializing and deserializing to firestore database
