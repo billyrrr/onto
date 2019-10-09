@@ -148,6 +148,10 @@ class Relationship(fields.Str, Field):
 
 
 class Embedded(fields.Raw, Field):
+    """
+    Note that when many is set to True, default value of this field
+        is an empty list (even if a dict is expected).
+    """
 
     @property
     def default_value(self):
@@ -157,9 +161,7 @@ class Embedded(fields.Raw, Field):
             return None
 
     def __init__(self, *args, many=False, **kwargs):
-        """ Initializes a relationship. A field of the master object
-                to describe relationship to another object or document
-                being referenced.
+        """
 
         :param args: Positional arguments to pass to marshmallow.fields.Str
         :param many: If set to True, will deserialize and serialize the field
@@ -169,14 +171,17 @@ class Embedded(fields.Raw, Field):
         super().__init__(*args, **kwargs)
         self.many = many
 
-    def _serialize(self, value, *args, **kwargs):
+    def _serialize(self, value, *args, many=None, **kwargs):
+        if many is None:
+            many = self.many
 
-        if self.many:
+        if many:
             if isinstance(value, list):
-                return [self._serialize(val, *args, **kwargs) for val in value]
+                return [self._serialize(val, many=False)
+                        for val in value]
             elif isinstance(value, dict):
                 return {
-                    key: self._serialize(val)
+                    key: self._serialize(val, many=False)
                     for key, val in value.items()
                 }
             else:
