@@ -12,32 +12,14 @@ from .context import Context as CTX
 
 class FlaskAsViewMixin:
 
+    @classmethod
     def new(cls, *args, **kwargs):
+        """ Abstract method. Subclass implement this method so that a view
+                model can be constructed by a single key. Implementing
+                or linking this method allows ViewMediator to add
+                automatically generated REST API views.
+        """
         raise NotImplementedError
-
-    def get_on_update(self,
-                  dm_cls=None, dm_doc_id=None,
-                  update_func=None, key=None):
-        # do something with this ViewModel
-
-        def __on_update(dm: DomainModel):
-
-            update_func(vm=self, dm=dm)
-
-            self.business_properties[key] = dm
-
-        def _on_update(docs, changes, readtime):
-            if len(docs) == 0:
-                # NO CHANGE
-                return
-            elif len(docs) != 1:
-                raise NotImplementedError
-            doc = docs[0]
-            updated_dm = dm_cls.create(doc_id=dm_doc_id)
-            updated_dm._import_properties(doc.to_dict())
-            __on_update(updated_dm)
-
-        return _on_update
 
     # def _bind_to_once(self, key, obj_type, doc_id):
     #     """ Gets value of view models without using on_snapshot/listeners
@@ -62,6 +44,10 @@ class FlaskAsView(FlaskAsViewMixin,
                   PersistableMixin,
                   SerializableFO
                   ):
+    """
+    Base for a view model intended to be exposed as a REST API resource
+    """
+
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)
@@ -70,11 +56,17 @@ class FlaskAsView(FlaskAsViewMixin,
 
 class DocumentAsViewMixin:
 
+    @classmethod
     def new(cls, *args, **kwargs):
         raise NotImplementedError
 
     def _notify(self):
-        """ Notify that this object has been changed by underlying view models
+        """Once this object has a different value for underlying domain models,
+                save the object to Firestore. Note that this method is
+                expected to be called only after the data is consistent.
+                (Ex. When all relevant changes made in a single transaction
+                    from another server has been loaded into the object.
+                )
 
         :return:
         """
@@ -85,6 +77,10 @@ class DocumentAsView(DocumentAsViewMixin,
                      ViewModelMixin,
                      PersistableMixin,
                      ReferencedObject):
+    """
+    Base for a view model intended to be read and modified as
+        documents or collections in Firestore
+    """
     pass
 
 

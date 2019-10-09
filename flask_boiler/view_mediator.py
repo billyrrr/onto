@@ -5,8 +5,19 @@ from flask import request
 
 
 class ViewMediator:
+    """
+    Registers a REST API Resource for a view model
+    """
 
     def __init__(self, view_model_cls=None, app=None, mutation_cls=None):
+        """
+
+        :param view_model_cls: the view model to be exposed in REST API
+        :param app: Flask App
+        :param mutation_cls: a subclass of Mutation to handle the changes
+                POST, PATCH, UPDATE, PUT, DELETE made to the list of view
+                models or a single view model.
+        """
         self.view_model_cls = view_model_cls
         self.app = app
         self.mutation_cls = mutation_cls
@@ -14,6 +25,12 @@ class ViewMediator:
         self.default_tag = self.view_model_cls.__name__
 
     def add_instance_get(self, rule=None, instance_get_view=None):
+        """ Add GET operation for resource/instance_id
+
+        :param rule:
+        :param instance_get_view: Flask View
+        :return:
+        """
 
         if instance_get_view is None:
             instance_get_view = self._default_instance_get_view()
@@ -29,6 +46,12 @@ class ViewMediator:
         self.rule_view_cls_mapping[(rule, 'GET')] = instance_get_view
 
     def add_list_get(self, rule=None, list_get_view=None):
+        """ Add GET operation for resource to get a list of instances
+
+        :param rule:
+        :param list_get_view: Flask View
+        :return:
+        """
 
         name = self.view_model_cls.__name__ + "ListGetView"
         assert rule is not None
@@ -40,6 +63,13 @@ class ViewMediator:
         self.rule_view_cls_mapping[(rule, 'GET')] = list_get_view
 
     def add_list_post(self, rule=None, list_post_view=None):
+        """ Add POST operation for resource to add an instance to a list
+                of instances
+
+        :param rule:
+        :param list_post_view: Flask View
+        :return:
+        """
         name = self.view_model_cls.__name__ + "ListPostView"
         assert rule is not None
         self.app.add_url_rule(
@@ -50,6 +80,12 @@ class ViewMediator:
         self.rule_view_cls_mapping[(rule, 'POST')] = list_post_view
 
     def add_instance_patch(self, rule=None, instance_patch_view=None):
+        """ Add PATCH operation for making changes to an instance
+
+        :param rule:
+        :param instance_patch_view: Flask View
+        :return:
+        """
 
         if instance_patch_view is None:
             instance_patch_view = self._default_instance_patch_view()
@@ -64,6 +100,9 @@ class ViewMediator:
         self.rule_view_cls_mapping[(rule, 'PATCH')] = instance_patch_view
 
     def _default_list_post_view(_self):
+        """ Returns a default flask view to handle POST to a list of instances
+
+        """
 
         class PostView(SwaggerView):
 
@@ -96,6 +135,9 @@ class ViewMediator:
         return PostView
 
     def _default_instance_patch_view(_self):
+        """ Returns a default flask view to handle PATCH to an instance
+
+        """
         # TODO: change to dynamically construct class to avoid class
         #           name conflict
 
@@ -136,6 +178,9 @@ class ViewMediator:
         return PatchView
 
     def _default_instance_get_view(_self):
+        """ Returns a default flask view to handle GET to an instance
+
+        """
         # TODO: change to dynamically construct class to avoid class
         #           name conflict
 
@@ -167,6 +212,3 @@ class ViewMediator:
                 return instance.to_view_dict()
 
         return GetView
-
-
-
