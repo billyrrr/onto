@@ -114,7 +114,7 @@ class MeetingSessionMixin:
         return cls.get_from_meeting_id(meeting_id=doc_id)
 
     @classmethod
-    def get_from_meeting_id(cls, meeting_id, once=False):
+    def get_from_meeting_id(cls, meeting_id, once=False, **kwargs):
         struct = dict()
 
         m: Meeting = Meeting.get(doc_id=meeting_id)
@@ -145,7 +145,7 @@ class MeetingSessionMixin:
             vm.set_location(dm)
         struct[m.location.id] = ("Location", m.location.id, location_update_func)
 
-        obj = super().get(struct_d=struct, once=once)
+        obj = super().get(struct_d=struct, once=once, **kwargs)
         time.sleep(2)  # TODO: delete after implementing sync
         return obj
 
