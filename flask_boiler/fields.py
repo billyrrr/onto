@@ -171,17 +171,17 @@ class Embedded(fields.Raw, Field):
         super().__init__(*args, **kwargs)
         self.many = many
 
-    def _serialize(self, value, *args, many=None, **kwargs):
-        if many is None:
-            many = self.many
+    def _serialize(self, value, *args, embed_many=None, **kwargs):
+        if embed_many is None:
+            embed_many = self.many
 
-        if many:
+        if embed_many:
             if isinstance(value, list):
-                return [self._serialize(val, many=False)
+                return [self._serialize(val, embed_many=False)
                         for val in value]
             elif isinstance(value, dict):
                 return {
-                    key: self._serialize(val, many=False)
+                    key: self._serialize(val, embed_many=False)
                     for key, val in value.items()
                 }
             else:
@@ -191,13 +191,19 @@ class Embedded(fields.Raw, Field):
                 obj=value
             )
 
-    def _deserialize(self, value, *args, **kwargs):
-        if self.many:
+    def _deserialize(self, value, *args, embed_many=None, **kwargs):
+        if embed_many is None:
+            embed_many = self.many
+
+        if embed_many:
             if isinstance(value, list):
-                return [self._deserialize(val, *args, *kwargs) for val in value]
+                return [self._deserialize(
+                    val, *args, **kwargs, embed_many=False)
+                        for val in value]
             elif isinstance(value, dict):
                 return {
-                    key: self._deserialize(val)
+                    key: self._deserialize(
+                        val, *args, **kwargs, embed_many=False)
                     for key, val in value.items()
                 }
             else:

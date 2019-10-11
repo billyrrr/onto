@@ -318,26 +318,31 @@ def test_embedded_many_with_dict():
         }
     )
 
-    assert {'obj_type': 'EndangeredSpecies', 'habitats': [
+    d = {'obj_type': 'EndangeredSpecies', 'habitats': [
         {'obj_type': 'Habitat', 'doc_id': '', 'habitatName': 'Temperate'},
         {'obj_type': 'Habitat', 'doc_id': '', 'habitatName': 'Broadleaf'},
         {'obj_type': 'Habitat', 'doc_id': '', 'habitatName': 'Mixed Forests'}],
-            'weight': '70 - 105 pounds',
-            'scientificName': 'Panthera pardus orientalis', 'doc_id': '',
-            'relatedSpecies': {
-                'jaguar': {'obj_type': 'Species', 'habitats': [
-                    {'obj_type': 'Habitat', 'doc_id': '',
-                     'habitatName': 'Forests'},
-                    {'obj_type': 'Habitat', 'doc_id': '',
-                     'habitatName': 'Grasslands'}], 'weight': '',
-                           'scientificName': 'Panthera onca',
-                           'doc_id': '', 'relatedSpecies': []},
-                'snow leopard': {'obj_type': 'Species',
-                                 'habitats': [
-                                     {'obj_type': 'Habitat',
-                                      'doc_id': '',
-                                      'habitatName': 'cold high mountains'}],
-                                 'weight': '',
-                                 'scientificName': 'Panthera uncia',
-                                 'doc_id': '',
-                                 'relatedSpecies': []}}} == amur_leopard.to_dict()
+         'weight': '70 - 105 pounds',
+         'scientificName': 'Panthera pardus orientalis', 'doc_id': '',
+         'relatedSpecies': {
+             'jaguar': {'obj_type': 'Species', 'habitats': [
+                 {'obj_type': 'Habitat', 'doc_id': '',
+                  'habitatName': 'Forests'},
+                 {'obj_type': 'Habitat', 'doc_id': '',
+                  'habitatName': 'Grasslands'}], 'weight': '',
+                        'scientificName': 'Panthera onca',
+                        'doc_id': '', 'relatedSpecies': []},
+             'snow leopard': {'obj_type': 'Species',
+                              'habitats': [
+                                  {'obj_type': 'Habitat',
+                                   'doc_id': '',
+                                   'habitatName': 'cold high mountains'}],
+                              'weight': '',
+                              'scientificName': 'Panthera uncia',
+                              'doc_id': '',
+                              'relatedSpecies': []}}}
+
+    assert d == amur_leopard.to_dict()
+
+    amur_leopard_deserialized = EndangeredSpecies.from_dict(d)
+    assert amur_leopard_deserialized.to_dict() == d
