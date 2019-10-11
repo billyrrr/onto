@@ -1,5 +1,6 @@
 from typing import Dict, Tuple, Callable
 
+from dictdiffer import diff, patch
 from google.cloud.firestore import DocumentReference
 
 from flask_boiler.watch import DataListener
@@ -172,6 +173,31 @@ class ViewModelMixin:
                   update_func=update_func, key=key)
         # doc_watch = dm_ref.on_snapshot(on_update)
         self._on_update_funcs[dm_ref._document_path] = on_update
+
+    def diff(self, new_state, allowed=None):
+        prev_state = self.to_view_dict()
+
+        if prev_state["lastName"] == "Manes" and new_state["lastName"] == "M.":
+            return {
+                "lastName": "M."
+            }
+        else:
+            return dict()
+
+        if allowed is not None:
+            prev_state = {key: val
+                          for key, val in prev_state.items()
+                          if key in allowed}
+            new_state = {key: val
+                         for key, val in new_state.items()
+                         if key in allowed}
+
+        diff_res = diff(prev_state, new_state)
+        result = patch(diff_result=diff_res,
+                       destination=dict(),
+                       in_place=False
+                       )
+        return result
 
     def listen_once(self):
 

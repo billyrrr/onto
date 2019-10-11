@@ -13,7 +13,7 @@ class UserViewSchema(schema.Schema):
     meetings = fields.Relationship(many=True, dump_only=True)
 
 
-class UserView(view.FlaskAsView):
+class UserViewMixin:
 
     _schema_cls = UserViewSchema
 
@@ -35,6 +35,10 @@ class UserView(view.FlaskAsView):
     def last_name(self):
         return self.user.last_name
 
+    @last_name.setter
+    def last_name(self, new_last_name):
+        self.user.last_name = new_last_name
+
     @property
     def organization(self):
         return self.user.organization
@@ -48,7 +52,7 @@ class UserView(view.FlaskAsView):
         return list(Meeting.where(users=("array_contains", self.user.doc_ref)))
 
     @classmethod
-    def get_from_user_id(cls, user_id, once=False):
+    def get_from_user_id(cls, user_id, once=False, **kwargs):
         struct = dict()
 
         u: User = User.get(doc_id=user_id)
@@ -57,4 +61,8 @@ class UserView(view.FlaskAsView):
             vm.set_user(dm)
         struct[u.doc_id] = ("User", u.doc_ref.id, user_update_func)
 
-        return super().get(struct_d=struct, once=once)
+        return super().get(struct_d=struct, once=once, **kwargs)
+
+
+class UserView(UserViewMixin, view.FlaskAsView):
+    pass

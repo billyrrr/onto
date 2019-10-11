@@ -21,3 +21,10 @@ class Mutation(BaseRegisteredModel,
         assert isinstance(obj, ViewModelMixin)
         obj.update_vals(with_dict=data)
         obj.propagate_change()
+
+    @classmethod
+    def mutate_patch_one(cls, obj=None, data=None):
+        if data:
+            assert isinstance(obj, ViewModelMixin)
+            obj.update_vals(with_dict=data)
+            obj.propagate_change()
