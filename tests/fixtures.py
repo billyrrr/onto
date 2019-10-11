@@ -3,7 +3,7 @@ from flasgger import Swagger
 from flask import Flask
 
 
-@pytest.fixture(scope="package")
+@pytest.fixture
 def CTX():
     """
     Note that pytest.fixture(scope="package") is experimental according

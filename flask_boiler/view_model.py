@@ -270,4 +270,3 @@ class ViewModelMixin:
 
 class ViewModel(ViewModelMixin, PersistableMixin, ReferencedObject):
     pass
-

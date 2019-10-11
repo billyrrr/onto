@@ -15,7 +15,7 @@ class MeetingSessionSchema(schema.Schema):
     num_hearing_aid_requested = fields.Raw()
 
 
-class MeetingSession(view.FlaskAsView):
+class MeetingSessionMixin:
 
     _schema_cls = MeetingSessionSchema
 
@@ -151,6 +151,10 @@ class MeetingSession(view.FlaskAsView):
 
     def propagate_change(self):
         self.meeting.save()
+
+
+class MeetingSession(MeetingSessionMixin, view.FlaskAsView):
+    pass
 
 
 class MeetingSessionMutation(Mutation):
