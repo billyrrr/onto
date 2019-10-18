@@ -19,3 +19,5 @@ apispec>=2.0.2
 flasgger
 
 dictdiffer
+
+celery

@@ -15,6 +15,7 @@ import logging
 import firebase_admin
 from firebase_admin import credentials
 from google.cloud import firestore
+from celery import Celery
 
 from .config import Config
 
@@ -23,6 +24,8 @@ class Context:
     firebase_app: firebase_admin.App = None
     db: firestore.Client = None
     config: Config = None
+    celery_app: Celery = None
+
     # debug = None
     # testing = None
     _cred = None
@@ -56,7 +59,12 @@ class Context:
         cls._reload_testing_flag(cls.config.TESTING)
         cls._reload_firebase_app(cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
         cls._reload_firestore_client(cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
+        cls._reload_celery_app()
         return cls
+
+    @classmethod
+    def _reload_celery_app(cls):
+        cls.celery_app = Celery('tasks', broker='pyamqp://guest@localhost//')
 
     @classmethod
     def _reload_debug_flag(cls, debug):
