@@ -1,8 +1,9 @@
+from dataclasses import make_dataclass
 from typing import TypeVar
 
 from marshmallow.utils import is_iterable_but_not_string
 
-from flask_boiler import fields
+from flask_boiler import fields, schema
 from flask_boiler.helpers import EmbeddedElement
 from .model_registry import BaseRegisteredModel
 
@@ -253,7 +254,7 @@ class NewMixin:
 
         fd = self._get_fields()  # Calls classmethod
 
-        field_keys = set(fd.keys())
+        field_keys = set(self.schema_obj.dataclass_attrs)
         kwargs_keys = set(kwargs.keys())
 
         required_keys = {val for key, val in fd.items() if val.required}
@@ -266,11 +267,11 @@ class NewMixin:
             raise ValueError("{} are not set".format(keys_default))
         keys_super = kwargs_keys - keys_to_set - keys_default
 
-        super().__init__(
-            fd={key: field
-                for key, field in fd.items() if key in keys_default},
-            **{key: val for key, val in kwargs.items() if key in keys_super}
-        )
+        init_kwargs = {}
+
+        for key, field in fd.items():
+            if key in keys_default:
+                init_kwargs[key] = field.default_value
 
         d_to_set = {key: field for key, field in fd.items()
                     if key in keys_to_set}
@@ -284,31 +285,56 @@ class NewMixin:
 
             setattr(self, key, kwargs[key])
 
+        s: schema.Schema = self.schema_obj
+        self.dataclass_obj = s.dataclass_cls(**init_kwargs)
+
+        super().__init__(
+            **{key: val for key, val in kwargs.items() if key in keys_super}
+        )
+
+
+
+
+
+
+    def __getattr__(self, item):
+        if item in self.schema_obj.dataclass_attrs:
+            return getattr(self.dataclass_obj, item)
+        else:
+            return super().__getattribute__(item)
+
+    def __setattr__(self, key, value):
+        if key in self.schema_obj.dataclass_attrs:
+            return setattr(self.dataclass_obj, key, value)
+        else:
+            return super().__setattr__(key, value)
+
     @classmethod
     def from_dict(cls, d, **kwargs):
         return cls.new({**d, **kwargs})
 
 
 class AutoInitialized:
+    pass
 
-    def __init__(self, *args, fd=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if fd is None:
-            fd = self._get_fields()
-        initializer(self, fd)
+    # def __init__(self, *args, fd=None, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     if fd is None:
+    #         fd = self._get_fields()
+    #     initializer(self, fd)
 
 
 class Mutable(BaseRegisteredModel,
               Schemed, Importable, NewMixin, AutoInitialized, Exportable):
     pass
 
-
-def initializer(obj, d):
-    for key, val in d.items():
-        assert isinstance(val, fields.Field)
-        # if not hasattr(obj, key):
-        if key not in dir(obj):
-            setattr(obj, key, val.default_value)
+#
+# def initializer(obj, d):
+#     for key, val in d.items():
+#         assert isinstance(val, fields.Field)
+#         # if not hasattr(obj, key):
+#         if key not in dir(obj):
+#             setattr(obj, key, val.default_value)
 
 
 class Immutable(BaseRegisteredModel, Schemed, NewMixin, Exportable):

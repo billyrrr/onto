@@ -1,4 +1,6 @@
+import typing
 import warnings
+from dataclasses import make_dataclass
 
 from flask_boiler.utils import attr_name_to_firestore_key, \
     firestore_key_to_attr_name
@@ -26,17 +28,29 @@ class SchemaMixin:
             default_data_key = self.f(field_obj.attribute)
             field_obj.data_key = default_data_key
 
-        # if field_obj.attribute in self.f_mapping:
-        #     raise ValueError
-        # else:
-        #     self.f_mapping[field_obj.attribute] = field_obj.data_key
-        #
-        # if field_obj.data_key in self.g_mapping:
-        #     raise ValueError
-        # else:
-        #     self.g_mapping[field_obj.data_key] = field_obj.attribute
+        if field_obj.attribute in self.f_mapping:
+            raise ValueError
+        else:
+            if not field_obj.load_only:
+                self.f_mapping[field_obj.attribute] = field_obj.data_key
+                self.dataclass_attrs.add(field_obj.attribute)
+                self.attr_to_field[field_obj.attribute] = field_obj
+
+        if field_obj.data_key in self.g_mapping:
+            raise ValueError
+        else:
+            if not field_obj.dump_only:
+                self.g_mapping[field_obj.data_key] = field_obj.attribute
+                self.dataclass_attrs.add(field_obj.attribute)
+                self.attr_to_field[field_obj.attribute] = field_obj
 
     def __init__(self, *args, **kwargs):
+
+        self.f_mapping = dict()
+        self.g_mapping = dict()
+        self.dataclass_attrs = set()
+        self.attr_to_field = dict()
+
         if "unknown" not in kwargs:
             # The assumption made is that if-condition on existence of
             #   key in kwargs is a better design than explicit kwarg = None,
@@ -50,9 +64,20 @@ class SchemaMixin:
             *args,
             unknown=unknown,
             **kwargs)
-        #
-        # self.f_mapping = dict()
-        # self.g_mapping = dict()
+
+        self.dataclass_cls = self._make_dataclass()
+
+    def _make_dataclass(self):
+
+        d_cls_name = self.__class__.__name__ + "Dataclass"
+        attrs = [
+            (attr, typing.Any, self.attr_to_field[attr].as_dataclass_field())
+            for attr in self.dataclass_attrs]
+
+        return make_dataclass(
+            d_cls_name,
+            attrs
+        )
 
 
 class Schema(SchemaMixin, marshmallow.Schema):

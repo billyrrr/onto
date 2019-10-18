@@ -266,8 +266,38 @@ def test_schema_load():
     }
 
 
-# def test_read_only_fields():
-#
-#     class TrivialSchema
-#
+def test_read_only_fields():
 
+    class CitySchema(Schema):
+        city_name = fields.Raw()
+
+        country = fields.Raw(load_only=True)
+        capital = fields.Raw(dump_only=True)
+
+    s = CitySchema()
+    assert s.f_mapping == {
+        "city_name": "cityName",
+        "capital": "capital",
+        'doc_id': 'doc_id',
+        'doc_ref_str': 'doc_ref',
+        'obj_type': 'obj_type'
+    }
+    assert s.g_mapping == {
+        "cityName": "city_name",
+        "country": "country",
+        'obj_type': 'obj_type'
+    }
+
+
+def test_invalid_schema():
+    """
+    Test that duplicated data_key raises ValueError
+    :return:
+    """
+
+    class Utopia(Schema):
+        desire_a = fields.Raw(data_key="desire", load_only=True)
+        desire_b = fields.Raw(data_key="desire", dump_only=True)
+
+    with pytest.raises(ValueError):
+        _ = Utopia()

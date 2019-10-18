@@ -1,8 +1,10 @@
+import dataclasses
+from functools import partial
+
 from google.cloud.firestore import DocumentReference
 from marshmallow import fields
 
 from flask_boiler.helpers import RelationshipReference, EmbeddedElement
-from flask_boiler.serializable import Serializable, Importable, Exportable
 
 
 class Field(fields.Field):
@@ -10,6 +12,12 @@ class Field(fields.Field):
     Custom class of field for supporting flask_boiler-related
         features such as auto-initialization.
     """
+
+    def as_dataclass_field(self):
+        default_factory = partial(self.__class__.default_value.fget, self)
+        return dataclasses.field(
+            default_factory=default_factory,
+        )
 
     @property
     def default_value(self):
