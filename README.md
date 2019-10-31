@@ -98,12 +98,6 @@ user.save()
 
 (*Extra steps required to declare model. See quickstart for details.)
 
-### Read data
-
-```python
-for user in User.all():
-    print(user.to_dict())
-```
 
 ### Save data
 
@@ -166,19 +160,6 @@ p.category = py
 
 py.save()
 
-obj = Post.get(doc_id=post_id)
-
-assert str(p.category) == "<Category 'Python'>"
-
-assert p._export_as_view_dict() == {'body': 'Ssssssss',
-                                    'id': post_id,
-                                    'category': {
-                                        'id': category_id,
-                                        'name': 'Python'},
-                                    'title': 'snakes',
-                                    'pubDate': None
-                                    }
-                                    
 ```
 
 See ```examples/relationship_example.py```
@@ -194,13 +175,6 @@ so that the embedded object is retrieved with the master object
 
 
 ```python
-    class TargetSchema(schema.Schema):
-        earliest = fields.Raw()
-        latest = fields.Raw()
-
-    class Target(serializable.Serializable):
-        _schema_cls = TargetSchema
-
     t = Target()
     t.earliest = 10
     t.latest = 20
@@ -216,30 +190,64 @@ so that the embedded object is retrieved with the master object
         "target": t.to_dict(),
         "name": "my plan"
     })
-
-    assert k.to_dict() == {
-        "name": "my plan",
-        "target": {
-            "earliest": 10,
-            "latest": 20,
-            "obj_type": "Target",
-            "doc_id": ""
-        },
-        "obj_type": "Plan",
-        "doc_id": ""
-    }
-
 ```
 
 ### Business Properties Binding
 You can bind a view model to its business properties (underlying domain model).
 See `examples/binding_example.py`.
 
+```python
+
+vm: Luggages = Luggages.create(vm_ref)
+
+vm.bind_to(key=id_a, obj_type="LuggageItem", doc_id=id_a)
+vm.bind_to(key=id_b, obj_type="LuggageItem", doc_id=id_b)
+vm.register_listener()
+
+```
+
 ### Automatically Generated Swagger Docs
 You can enable auto-generated swagger docs. See: `examples/view_example.py`
 
+
+
 ### Create Flask View
 You can create a flask view to specify how a view model is read and changed.
+
+```python
+
+
+    app = Flask(__name__)
+
+    meeting_session_mediator = view_mediator.ViewMediator(
+        view_model_cls=MeetingSession,
+        app=app,
+        mutation_cls=MeetingSessionMutation
+    )
+    meeting_session_mediator.add_list_get(
+        rule="/meeting_sessions",
+        list_get_view=meeting_session_ops.ListGet
+    )
+
+    meeting_session_mediator.add_instance_get(
+        rule="/meeting_sessions/<string:doc_id>")
+    meeting_session_mediator.add_instance_patch(
+        rule="/meeting_sessions/<string:doc_id>")
+
+    user_mediator = view_mediator.ViewMediator(
+        view_model_cls=UserView,
+        app=app,
+    )
+    user_mediator.add_instance_get(
+        rule="/users/<string:doc_id>"
+    )
+
+    swagger = Swagger(app)
+
+    app.run(debug=True)
+
+
+```
 
 ## Advantages
 
