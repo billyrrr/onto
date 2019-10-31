@@ -99,6 +99,7 @@ class Importable:
                 doc_id=val.get("doc_id", None),
                 transaction=self.transaction
             )
+            raise NotImplementedError
 
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):

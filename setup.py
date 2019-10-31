@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="flask_boiler",
     # Alpha release
-    version="0.0.1a4",
+    version="0.0.1a5",
     author="Bill Rao",
     author_email="billrao@me.com",
     description="Build flask project with Firebase ",
@@ -40,6 +40,8 @@ setuptools.setup(
         'marshmallow',
         "inflection",
         "apispec>=2.0.2",
-        "flasgger"
+        "flasgger",
+        "dictdiffer",
+        "celery"
     ],
 )

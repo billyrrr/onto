@@ -14,12 +14,18 @@ class FlaskAsViewMixin:
 
     @classmethod
     def new(cls, *args, **kwargs):
-        """ Abstract method. Subclass implement this method so that a view
+        """
+        Abstract method. Subclass implement this method so that a view
                 model can be constructed by a single key. Implementing
                 or linking this method allows ViewMediator to add
                 automatically generated REST API views.
+
+        Should override in subclass
+        :param args:
+        :param kwargs:
+        :return:
         """
-        raise NotImplementedError
+        return super().new(*args, **kwargs)
 
     # def _bind_to_once(self, key, obj_type, doc_id):
     #     """ Gets value of view models without using on_snapshot/listeners
@@ -58,7 +64,13 @@ class DocumentAsViewMixin:
 
     @classmethod
     def new(cls, *args, **kwargs):
-        raise NotImplementedError
+        """
+        Should override in subclass
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        return super().new(*args, **kwargs)
 
     def _notify(self):
         """Once this object has a different value for underlying domain models,

@@ -152,7 +152,7 @@ class FirestoreObject(FirestoreObjectValMixin,
                       Serializable,
                       CollectionMixin):
 
-    def __init__(self, doc_ref=None):
-        super().__init__()
+    def __init__(self, *args, doc_ref=None, **kwargs):
+        super().__init__(*args, **kwargs)
         self._doc_ref = doc_ref
         self.transaction = None
