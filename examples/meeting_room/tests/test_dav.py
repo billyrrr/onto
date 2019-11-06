@@ -90,7 +90,7 @@ def test_start(users, tickets, location, meeting):
         .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
     assert ref.get().to_dict() == {'latitude': 32.880361,
                                    'obj_type': 'MeetingSessionDAV',
-                                   'numHearingAidRequested': 2, 'doc_id': '',
+                                   'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
                                         'name': 'Joshua Pendergrast',
@@ -127,7 +127,7 @@ def test_mutate(users, tickets, location, meeting):
         .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
     assert ref.get().to_dict() == {'latitude': 32.880361,
                                    'obj_type': 'MeetingSessionDAV',
-                                   'numHearingAidRequested': 2, 'doc_id': '',
+                                   'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
                                         'name': 'Joshua Pendergrast',
@@ -172,7 +172,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
 
     assert ref.get().to_dict() == {'latitude': 32.880361,
                                    'obj_type': 'MeetingSessionDAV',
-                                   'numHearingAidRequested': 2, 'doc_id': '',
+                                   'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
                                         'name': 'Joshua Pendergrast',
@@ -201,7 +201,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
     """
     assert ref.get().to_dict() == {'latitude': 32.880361,
                                    'obj_type': 'MeetingSessionDAV',
-                                   'numHearingAidRequested': 1, 'doc_id': '',
+                                   'numHearingAidRequested': 1,
                                    'attending': [
                                        {
                                            'name': 'Joshua Pendergrast',

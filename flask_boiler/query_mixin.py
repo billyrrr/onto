@@ -29,9 +29,8 @@ class QueryMixin:
         docs = docs_ref.stream()
         for doc in docs:
             assert isinstance(doc, DocumentSnapshot)
-            obj = cls.create(doc_id=doc.id)
-            obj._import_properties(doc.to_dict())
-            yield obj
+
+            yield snapshot_to_obj(snapshot=doc, super_cls=cls)
 
     @staticmethod
     def _append_original(*args, cur_where=None) -> Query:

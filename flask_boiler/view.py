@@ -55,7 +55,7 @@ class FlaskAsView(FlaskAsViewMixin,
     """
 
     @classmethod
-    def create(cls, **kwargs):
+    def new(cls, **kwargs):
         obj = cls(**kwargs)
         return obj
 

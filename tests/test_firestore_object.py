@@ -33,18 +33,21 @@ class TestObjectSchema(schema.Schema):
 
 
 # Declares the object
-TestObject = FirestoreObjectClsFactory.create(
-    name="TestObject",
-    schema=TestObjectSchema,
-    base=PrimaryObject
-)
+class TestObject(PrimaryObject):
+    _schema_cls = TestObjectSchema
+
+# TestObject = FirestoreObjectClsFactory.new(
+#     name="TestObject",
+#     schema=TestObjectSchema,
+#     base=PrimaryObject
+# )
 
 
 def test_create_obj():
 
     # Creates an object with default values with reference: "TestObject/testObjId1"
     #   (but not saved to database)
-    obj = TestObject.create(doc_id="testObjId1")
+    obj = TestObject.new(doc_id="testObjId1")
     assert obj.doc_id == "testObjId1"
     assert obj.collection_name == "TestObject"
 
@@ -67,7 +70,7 @@ def test_create_obj():
 
 
 def test_relationship_not_nested():
-    referenced_obj = TestObject.create(doc_id="testObjId1")
+    referenced_obj = TestObject.new(doc_id="testObjId1")
 
     # Assigns value to the newly created object
     referenced_obj.int_a = 1
@@ -86,7 +89,7 @@ def test_relationship_not_nested():
         base=PrimaryObject
     )
 
-    master_obj = MasterObject.create(doc_id="masterObjId1")
+    master_obj = MasterObject.new(doc_id="masterObjId1")
     master_obj.nested_ref = referenced_obj.doc_ref
     assert master_obj._export_as_dict() == {
         'doc_id': 'masterObjId1',
@@ -100,7 +103,7 @@ def test_relationship_not_nested():
 
 
 def test_relationship_nested():
-    referenced_obj = TestObject.create(doc_id="testObjId3")
+    referenced_obj = TestObject.new(doc_id="testObjId3")
 
     # Assigns value to the newly created object
     referenced_obj.int_a = 1
@@ -116,7 +119,7 @@ def test_relationship_nested():
         base=PrimaryObject
     )
 
-    master_obj = MasterObjectNested.create(doc_id="masterObjIdNested1")
+    master_obj = MasterObjectNested.new(doc_id="masterObjIdNested1")
     master_obj.nested_obj = referenced_obj
 
     assert master_obj._export_as_dict(to_save=True) == {
@@ -145,7 +148,7 @@ def setup_object(doc_id):
 
     # Creates an object with default values with reference: "TestObject/testObjId1"
     #   (but not saved to database)
-    obj = TestObject.create(doc_id=doc_id)
+    obj = TestObject.new(doc_id=doc_id)
     assert obj.doc_id == doc_id
     assert obj.collection_name == "TestObject"
 
@@ -161,7 +164,7 @@ def delete_object(doc_id):
 
     # Creates an object with default values with reference: "TestObject/testObjId1"
     #   (but not saved to database)
-    obj = TestObject.create(doc_id=doc_id)
+    obj = TestObject.new(doc_id=doc_id)
 
     # Deletes "TestObject/testObjId1"
     obj.delete()

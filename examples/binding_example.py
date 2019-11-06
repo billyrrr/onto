@@ -38,7 +38,7 @@ if __name__ == "__main__":
             "obj_type": "LuggageItem"
         }
     id_a = "luggage_id_a"
-    obj_a = LuggageItem.create(id_a)
+    obj_a = LuggageItem.new(id_a)
     obj_a._import_properties(d_a)
     obj_a.save()
 
@@ -48,13 +48,13 @@ if __name__ == "__main__":
             "obj_type": "LuggageItem"
         }
     id_b = "luggage_id_b"
-    obj_b = LuggageItem.create(id_b)
+    obj_b = LuggageItem.new(id_b)
     obj_b._import_properties(d_b)
     obj_b.save()
 
     vm_ref: DocumentReference = CTX.db.document("test_lugagges/user_a_luggages")
 
-    vm: Luggages = Luggages.create(vm_ref)
+    vm: Luggages = Luggages.new(vm_ref)
 
     vm.bind_to(key=id_a, obj_type="LuggageItem", doc_id=id_a)
     vm.bind_to(key=id_b, obj_type="LuggageItem", doc_id=id_b)

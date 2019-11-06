@@ -67,7 +67,7 @@ def test_to_dict_view(v_cls, color_refs):
 
 
 def test_vm__export_as_view_dict(color_refs, CTX):
-    vm = PaletteViewModel.create(
+    vm = PaletteViewModel.new(
         doc_ref=CTX.db.collection("palettes").document("palette_id_a")
     )
     vm.palette_name = 'cmyk'

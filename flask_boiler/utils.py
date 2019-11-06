@@ -78,5 +78,5 @@ def snapshot_to_obj(
     if super_cls is not None:
         assert issubclass(obj_cls, super_cls)
 
-    obj = obj_cls.create(with_dict=d, doc_ref=snapshot.reference)
+    obj = obj_cls.from_dict(d=d, doc_ref=snapshot.reference)
     return obj

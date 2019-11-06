@@ -89,7 +89,7 @@ CTX.firebase_app
 ### Add data
 
 ```python
-user = User.create(doc_id="alovelace")
+user = User.new(doc_id="alovelace")
 user.first = 'Ada'
 user.last = 'Lovelace'
 user.born = "1815"
@@ -147,18 +147,18 @@ minimal steps. Take an example given from SQLAlchemy,
 
 ```python
 category_id = utils.random_id()
-py = Category.create(doc_id=category_id)
+py = Category.new(doc_id=category_id)
 py.name = "Python"
 
 post_id = utils.random_id()
-p = Post.create(doc_id=post_id)
+p = Post.new(doc_id=post_id)
 p.title = "snakes"
 p.body = "Ssssssss"
 
 # py.posts.append(p)
 p.category = py
 
-py.save()
+p.save()
 
 ```
 
@@ -198,7 +198,7 @@ See `examples/binding_example.py`.
 
 ```python
 
-vm: Luggages = Luggages.create(vm_ref)
+vm: Luggages = Luggages.new(vm_ref)
 
 vm.bind_to(key=id_a, obj_type="LuggageItem", doc_id=id_a)
 vm.bind_to(key=id_b, obj_type="LuggageItem", doc_id=id_b)

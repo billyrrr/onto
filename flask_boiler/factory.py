@@ -1,7 +1,7 @@
 from typing import Union
 
 from flask_boiler.model_registry import BaseRegisteredModel
-from flask_boiler.serializable import T, Schemed, AutoInitialized, NewMixin, \
+from flask_boiler.serializable import T, Schemed, NewMixin, \
     Importable, Exportable, U, Serializable
 
 
@@ -17,7 +17,6 @@ class ClsFactory:
     @classmethod
     def create_customized(
             cls, name, schema: T,
-            auto_initialized=True,
             importable=True,
             exportable=True):
         """
@@ -41,11 +40,7 @@ class ClsFactory:
         if exportable:
             base_list.append(Exportable)
 
-        if auto_initialized:
-            base_list.append(AutoInitialized)
-        else:
-            base_list.append(NewMixin)
-            base_list.append(AutoInitialized)
+        base_list.append(NewMixin)
 
         return cls.create(
             name=name,

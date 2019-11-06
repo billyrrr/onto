@@ -18,7 +18,7 @@ class FirestoreObjectClsFactory(ClsFactory):
 class FirestoreObjectMixin:
 
     @classmethod
-    def create(cls, doc_ref=None, with_dict=None, **kwargs):
+    def new(cls, doc_ref=None, with_dict=None, **kwargs):
         if doc_ref is None:
             raise ValueError
         if with_dict is not None:

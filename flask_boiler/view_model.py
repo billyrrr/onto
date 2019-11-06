@@ -57,11 +57,6 @@ class ViewModelMixin:
     """
 
     @classmethod
-    def create(cls, **kwargs):
-        obj = super().create(**kwargs)
-        return obj
-
-    @classmethod
     def get(cls, struct_d=None, once=False, **kwargs):
         """
 
@@ -69,7 +64,7 @@ class ViewModelMixin:
         :param once: If set to True, do not listen to document changes
         :return:
         """
-        obj = cls.create(struct_d=struct_d, **kwargs)
+        obj = cls(struct_d=struct_d, **kwargs)
         for key, val in obj._structure.items():
             obj_type, doc_id, update_func = val
             obj.bind_to(key=key, obj_type=obj_type, doc_id=doc_id)
@@ -142,7 +137,7 @@ class ViewModelMixin:
             elif len(docs) != 1:
                 raise NotImplementedError
             doc = docs[0]
-            updated_dm = dm_cls.create(doc_id=dm_doc_id)
+            updated_dm = dm_cls.new(doc_id=dm_doc_id)
             updated_dm._import_properties(doc.to_dict())
             __on_update(updated_dm)
 

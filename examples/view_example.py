@@ -50,7 +50,7 @@ if __name__ == "__main__":
     description = "A list of colors (may be filtered by palette)"
 
     # Create palette document in firestore
-    vm = PaletteViewModel.create(
+    vm = PaletteViewModel.new(
         CTX.db.collection("palettes").document("palette_id_a")
     )
     vm._import_properties({"palette_name": 'cmyk',

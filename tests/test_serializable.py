@@ -3,20 +3,36 @@ Note that test setup is UNRELIABLE.
 Class may persist in registry (of metaclass) across tests.
 
 """
+import json
+
+import pytest as pytest
+from functools import lru_cache
+
 import flask_boiler.factory
 from flask_boiler import serializable
 from flask_boiler import view_model, schema, fields
 
 
-def test_cls_factory():
+@pytest.fixture
+@lru_cache(maxsize=1)
+def ModelASchema():
     class ModelASchema(schema.Schema):
         int_a = fields.Integer(load_from="intA", dump_to="intA")
         int_b = fields.Integer(load_from="intB", dump_to="intB")
+    return ModelASchema
 
-    ModelA = flask_boiler.factory.ClsFactory.create(name="ModelA",
-                                                    schema=ModelASchema)
+@pytest.fixture
+@lru_cache(maxsize=1)
+def ModelA(ModelASchema):
 
-    obj: ModelA = ModelA()
+    class ModelA(serializable.Serializable):
+        _schema_cls = ModelASchema
+
+    return ModelA
+
+
+def test_cls_factory(ModelA):
+    obj: ModelA = ModelA.new()
 
     assert obj.int_a == 0
     assert obj.int_b == 0
@@ -31,17 +47,10 @@ def test_cls_factory():
         "intA": 1,
         "intB": 2,
         "obj_type": "ModelA",
-        'doc_id': ''  # Tmp
     }
 
 
-def test_from_dict():
-    class ModelASchema(schema.Schema):
-        int_a = fields.Integer(load_from="intA", dump_to="intA")
-        int_b = fields.Integer(load_from="intB", dump_to="intB")
-
-    ModelA = flask_boiler.factory.ClsFactory.create(name="ModelA",
-                                                    schema=ModelASchema)
+def test_from_dict(ModelA):
 
     obj = ModelA.from_dict({
         "intA": 1,
@@ -54,19 +63,12 @@ def test_from_dict():
     assert obj.int_b == 2
 
 
-def test__additional_fields():
-    class ModelASchema(schema.Schema):
-        int_a = fields.Integer(load_from="intA", dump_to="intA")
+def test__additional_fields(ModelASchema, ModelA):
 
     class ModelAASchema(ModelASchema):
         int_aa = fields.Integer(load_from="intAA", dump_to="intAA")
 
-    ModelA = flask_boiler.factory.ClsFactory.create(
-        name="ModelA",
-        schema=ModelASchema
-    )
-
-    obj_a = ModelA()
+    obj_a = ModelA.new()
 
     assert hasattr(obj_a, "int_a")
     assert not hasattr(obj_a, "int_aa")
@@ -75,27 +77,20 @@ def test__additional_fields():
         name="ModelAA",
         schema=ModelAASchema
     )
-    obj_aa = ModelAA()
+    obj_aa = ModelAA.new()
     assert hasattr(obj_aa, "int_a")
     assert hasattr(obj_aa, "int_aa")
 
 
-def test_default_value():
-    class ModelASchema(schema.Schema):
-        int_a = fields.Integer(load_from="intA", dump_to="intA")
+def test_default_value(ModelA):
 
-    ModelA = flask_boiler.factory.ClsFactory.create(
-        name="ModelA",
-        schema=ModelASchema
-    )
-
-    obj_a = ModelA()
+    obj_a = ModelA.new()
 
     assert obj_a.int_a == 0
 
 
 def test_property_fields():
-    class ModelASchema(schema.Schema):
+    class ModelAPSchema(schema.Schema):
         some_property = fields.Function(dump_only=True)
 
     def fget(self):
@@ -103,21 +98,17 @@ def test_property_fields():
 
     sp = property(fget=fget)
 
-    ModelA = flask_boiler.factory.ClsFactory.create(
-        name="ModelA",
-        schema=ModelASchema
-    )
+    class ModelAP(serializable.Serializable):
+        _schema_cls = ModelAPSchema
 
-    ModelA.some_property = sp
+    ModelAP.some_property = sp
 
-    obj_a = ModelA()
+    obj_a = ModelAP.new()
 
     assert obj_a.some_property == 8
 
 
-def test_multiple_inheritance():
-    class ModelASchema(schema.Schema):
-        int_a = fields.Integer(load_from="intA", dump_to="intA")
+def test_multiple_inheritance(ModelASchema):
 
     class ModelBSchema(schema.Schema):
         int_b = fields.Integer(load_from="intB", dump_to="intB")
@@ -130,7 +121,7 @@ def test_multiple_inheritance():
         schema=ModelABSchema
     )
 
-    ab = ModelAB()
+    ab = ModelAB.new()
     ab.int_a = 1
     ab.int_b = 2
 
@@ -143,17 +134,9 @@ def test_multiple_inheritance():
     }.items()
 
 
-def test__export_as_dict():
-    class ModelASchema(schema.Schema):
-        int_a = fields.Integer()
-        int_b = fields.Integer()
+def test__export_as_dict(ModelA):
 
-    ModelA = flask_boiler.factory.ClsFactory.create(
-        name="ModelA",
-        schema=ModelASchema
-    )
-
-    a = ModelA()
+    a = ModelA.new()
     a.int_a = 1
     a.int_b = 2
 
@@ -161,21 +144,12 @@ def test__export_as_dict():
         "intA": 1,
         "intB": 2,
         "obj_type": "ModelA",
-        "doc_id": ""
     }
 
 
-def test__import_properties():
-    class ModelASchema(schema.Schema):
-        int_a = fields.Integer()
-        int_b = fields.Integer()
+def test__import_properties(ModelA):
 
-    ModelA = flask_boiler.factory.ClsFactory.create(
-        name="ModelA",
-        schema=ModelASchema
-    )
-
-    a = ModelA()
+    a = ModelA.new()
     a._import_properties({
         "intA": 1,
         "intB": 2,
@@ -211,16 +185,17 @@ def test_separate_class():
     class SModelA(SModelAModel, SModelASerializable):
 
         def __init__(self, **kwargs):
-            super().__init__(**kwargs)
+            super().__init__()
+            super(SModelASerializable, self).__init__(**kwargs)
 
-    a = SModelA()
+    a = SModelA.new()
     a.int_a = 1
     a.int_b = 2
 
     assert a._export_as_dict() == {
         "intA": 1,
         "intB": 2,
-        "obj_type": "SModelA"
+        "obj_type": "SModelA",
     }
 
 
@@ -259,10 +234,8 @@ def test_embedded():
             "earliest": 10,
             "latest": 20,
             "obj_type": "Target",
-            "doc_id": ""
         },
         "obj_type": "Plan",
-        "doc_id": ""
     }
 
 
@@ -318,31 +291,58 @@ def test_embedded_many_with_dict():
         }
     )
 
-    d = {'obj_type': 'EndangeredSpecies', 'habitats': [
-        {'obj_type': 'Habitat', 'doc_id': '', 'habitatName': 'Temperate'},
-        {'obj_type': 'Habitat', 'doc_id': '', 'habitatName': 'Broadleaf'},
-        {'obj_type': 'Habitat', 'doc_id': '', 'habitatName': 'Mixed Forests'}],
-         'weight': '70 - 105 pounds',
-         'scientificName': 'Panthera pardus orientalis', 'doc_id': '',
-         'relatedSpecies': {
-             'jaguar': {'obj_type': 'Species', 'habitats': [
-                 {'obj_type': 'Habitat', 'doc_id': '',
-                  'habitatName': 'Forests'},
-                 {'obj_type': 'Habitat', 'doc_id': '',
-                  'habitatName': 'Grasslands'}], 'weight': '',
-                        'scientificName': 'Panthera onca',
-                        'doc_id': '', 'relatedSpecies': []},
-             'snow leopard': {'obj_type': 'Species',
-                              'habitats': [
-                                  {'obj_type': 'Habitat',
-                                   'doc_id': '',
-                                   'habitatName': 'cold high mountains'}],
-                              'weight': '',
-                              'scientificName': 'Panthera uncia',
-                              'doc_id': '',
-                              'relatedSpecies': []}}}
+    d = {
+        "obj_type": "EndangeredSpecies",
+        "relatedSpecies": {
+            "jaguar": {
+                "obj_type": "Species",
+                "relatedSpecies": [],
+                "scientificName": "Panthera onca",
+                "weight": "",
+                "habitats": [
+                    {
+                        "obj_type": "Habitat",
+                        "habitatName": "Forests"
+                    },
+                    {
+                        "obj_type": "Habitat",
+                        "habitatName": "Grasslands"
+                    }
+                ]
+            },
+            "snow leopard": {
+                "obj_type": "Species",
+                "relatedSpecies": [],
+                "scientificName": "Panthera uncia",
+                "weight": "",
+                "habitats": [
+                    {
+                        "obj_type": "Habitat",
+                        "habitatName": "cold high mountains"
+                    }
+                ]
+            }
+        },
+        "scientificName": "Panthera pardus orientalis",
+        "weight": "70 - 105 pounds",
+        "habitats": [
+            {
+                "obj_type": "Habitat",
+                "habitatName": "Temperate"
+            },
+            {
+                "obj_type": "Habitat",
+                "habitatName": "Broadleaf"
+            },
+            {
+                "obj_type": "Habitat",
+                "habitatName": "Mixed Forests"
+            }
+        ]
+    }
 
     assert d == amur_leopard.to_dict()
 
     amur_leopard_deserialized = EndangeredSpecies.from_dict(d)
+
     assert amur_leopard_deserialized.to_dict() == d

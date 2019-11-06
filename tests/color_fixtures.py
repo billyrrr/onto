@@ -15,19 +15,19 @@ class ColorDomainModelBase(domain_model.DomainModel):
 @pytest.fixture
 def color_refs(request):
 
-    cian = Color.create("doc_id_cian")
+    cian = Color.new("doc_id_cian")
     cian.name = 'cian'
     cian.save()
 
-    magenta = Color.create("doc_id_magenta")
+    magenta = Color.new("doc_id_magenta")
     magenta.name = "magenta"
     magenta.save()
 
-    yellow = Color.create("doc_id_yellow")
+    yellow = Color.new("doc_id_yellow")
     yellow.name = "yellow"
     yellow.save()
 
-    black = Color.create("black")
+    black = Color.new("black")
     black.name = "black"
     black.save()
 
@@ -59,7 +59,7 @@ class PaletteViewModelBase(view_model.ViewModel):
 def vm(color_refs, CTX, request):
 
     # Create palette document in firestore
-    vm = PaletteViewModel.create(
+    vm = PaletteViewModel.new(
         doc_ref=CTX.db.collection("palettes").document("palette_id_a")
     )
     vm.palette_name = 'cmyk'

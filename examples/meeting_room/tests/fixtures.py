@@ -5,21 +5,21 @@ from examples.meeting_room import domain_models
 
 @pytest.fixture
 def users(request, CTX):
-    tijuana = domain_models.User.create(doc_id="tijuana")
+    tijuana = domain_models.User.new(doc_id="tijuana")
     tijuana.first_name = "Tijuana"
     tijuana.last_name = "Furlong"
     tijuana.hearing_aid_requested = True
     tijuana.organization = "UCSD"
     tijuana.save()
 
-    thomasina = domain_models.User.create(doc_id="thomasina")
+    thomasina = domain_models.User.new(doc_id="thomasina")
     thomasina.first_name = "Thomasina"
     thomasina.last_name = "Manes"
     thomasina.hearing_aid_requested = False
     thomasina.organization = "UCSD"
     thomasina.save()
 
-    joshua = domain_models.User.create(doc_id="joshua")
+    joshua = domain_models.User.new(doc_id="joshua")
     joshua.first_name = "Joshua"
     joshua.last_name = "Pendergrast"
     joshua.hearing_aid_requested = True
@@ -38,19 +38,19 @@ def users(request, CTX):
 
 @pytest.fixture
 def tickets(users, request, CTX):
-    tj_t = domain_models.Ticket.create(doc_id="tj_t")
+    tj_t = domain_models.Ticket.new(doc_id="tj_t")
     tj_t.role = "Participant"
     tj_t.user = domain_models.User._get_collection().document("tijuana")
     tj_t.attendance = True
     tj_t.save()
 
-    ts_t = domain_models.Ticket.create(doc_id="ts_t")
+    ts_t = domain_models.Ticket.new(doc_id="ts_t")
     ts_t.role = "Organizer"
     ts_t.user = domain_models.User._get_collection().document("thomasina")
     ts_t.attendance = True
     ts_t.save()
 
-    js_t = domain_models.Ticket.create(doc_id="js_t")
+    js_t = domain_models.Ticket.new(doc_id="js_t")
     js_t.role = "Participant"
     js_t.user = domain_models.User._get_collection().document("joshua")
     js_t.attendance = True
@@ -68,7 +68,7 @@ def tickets(users, request, CTX):
 
 @pytest.fixture
 def location(request, CTX):
-    obj = domain_models.Location.create()
+    obj = domain_models.Location.new()
     obj.latitude = 32.880361
     obj.longitude = -117.242929
     obj.address = "9500 Gilman Drive, La Jolla, CA"
@@ -85,7 +85,7 @@ def location(request, CTX):
 
 @pytest.fixture
 def meeting(users, tickets, location, request, CTX):
-    m = domain_models.Meeting.create(doc_id="meeting_1")
+    m = domain_models.Meeting.new(doc_id="meeting_1")
     m.users = [user.doc_ref for user in users]
     m.tickets = [ticket.doc_ref for ticket in tickets]
     m.location = location.doc_ref

@@ -65,25 +65,25 @@ def setup_cities(request, CTX):
 
     request.addfinalizer(fin)
 
-    sf = StandardCity.create(doc_id="SF")
+    sf = StandardCity.new(doc_id="SF")
     sf.city_name, sf.city_state, sf.country, sf.capital, sf.regions = \
         'San Francisco', 'CA', 'USA', False, ['west_coast', 'norcal']
     sf.save()
 
-    la = StandardCity.create(doc_id="LA")
+    la = StandardCity.new(doc_id="LA")
     la.city_name, la.city_state, la.country, la.capital, la.regions = \
         'Los Angeles', 'CA', 'USA', False, ['west_coast', 'socal']
     la.save()
 
-    dc = Municipality.create(doc_id="DC")
+    dc = Municipality.new(doc_id="DC")
     dc.city_name, dc.country, dc.capital = 'Washington D.C.', 'USA', True
     dc.save()
 
-    tok = Municipality.create(doc_id="TOK")
+    tok = Municipality.new(doc_id="TOK")
     tok.city_name, tok.country, tok.capital = 'Tokyo', 'Japan', True
     tok.save()
 
-    beijing = Municipality.create(doc_id="BJ")
+    beijing = Municipality.new(doc_id="BJ")
     beijing.city_name, beijing.country, beijing.capital = \
         'Beijing', 'China', True
     beijing.save()
@@ -219,7 +219,7 @@ def test_from_dict(CTX):
 
 
 def test_to_dict(CTX):
-    sf = StandardCity.create(doc_id="SF")
+    sf = StandardCity.new(doc_id="SF")
     sf.city_name, sf.city_state, sf.country, sf.capital, sf.regions = \
         'San Francisco', 'CA', 'USA', False, ['west_coast', 'norcal']
     assert sf.to_dict() == {

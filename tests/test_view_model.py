@@ -16,7 +16,7 @@ from .fixtures import CTX
 
 
 @pytest.mark.usefixtures("CTX")
-def test_create(CTX):
+def test_new(CTX):
 
     class EmptySchema(Schema):
         pass
@@ -42,11 +42,11 @@ def test_create(CTX):
         base=DomainObjectBase
     )
 
-    dependent_obj_1 = DomainObject1.create("dependentId1")
+    dependent_obj_1 = DomainObject1.new("dependentId1")
     ref_1_str: str = dependent_obj_1.doc_ref.path
     assert ref_1_str == "tst_domain_objs/dependentId1"
 
-    dependent_obj_2 = DomainObject2.create("dependentId2")
+    dependent_obj_2 = DomainObject2.new("dependentId2")
     ref_2_str: str = dependent_obj_2.doc_ref.path
     assert ref_2_str == "tst_domain_objs/dependentId2"
 
@@ -58,7 +58,7 @@ def test_create(CTX):
         base_tuple=(ViewModel, )
     )
 
-    # obj = TestViewObject.create("viewId1")
+    # obj = TestViewObject.new("viewId1")
 
 
 def test_binding(CTX):
@@ -68,7 +68,7 @@ def test_binding(CTX):
         "obj_type": "LuggageItem"
     }
     id_a = "luggage_id_a"
-    obj_a = LuggageItem.create(id_a)
+    obj_a = LuggageItem.new(id_a)
     obj_a._import_properties(d_a)
     obj_a.save()
 
@@ -78,14 +78,14 @@ def test_binding(CTX):
         "obj_type": "LuggageItem"
     }
     id_b = "luggage_id_b"
-    obj_b = LuggageItem.create(id_b)
+    obj_b = LuggageItem.new(id_b)
     obj_b._import_properties(d_b)
     obj_b.save()
 
     vm_ref: DocumentReference = CTX.db.document(
         "test_lugagges/user_a_luggages")
 
-    vm: Luggages = Luggages.create(doc_ref=vm_ref)
+    vm: Luggages = Luggages.new(doc_ref=vm_ref)
 
     vm.bind_to(key=id_a, obj_type="LuggageItem", doc_id=id_a)
     vm.bind_to(key=id_b, obj_type="LuggageItem", doc_id=id_b)

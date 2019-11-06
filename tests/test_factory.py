@@ -14,7 +14,7 @@ def test_create():
         schema=ModelAASchema
     )
 
-    obj_aa = ModelAA()
+    obj_aa = ModelAA.new()
     assert hasattr(obj_aa, "int_a")
     assert hasattr(obj_aa, "int_aa")
 
@@ -27,7 +27,6 @@ def test_create_with_new():
     ModelAC = factory.ClsFactory.create_customized(
         name="ModelAC",
         schema=ModelACSchema,
-        auto_initialized=False,
         importable=False,
         exportable=True
     )
@@ -45,7 +44,6 @@ def test_create_with_new_exportable():
     ModelAC = factory.ClsFactory.create_customized(
         name="ModelAC",
         schema=ModelACSchema,
-        auto_initialized=False,
         importable=False,
         exportable=True
     )

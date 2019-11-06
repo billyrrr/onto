@@ -54,7 +54,11 @@ class Schemed(SchemedBase):
 
     @classmethod
     def _get_fields(cls):
-        return cls.get_schema_obj().fields
+        fd = cls.get_schema_obj().fields
+        return {
+            key: val for key, val in fd.items() if key not in {"doc_id", }
+        }
+
     #     """ TODO: find ways of collecting fields without reading
     #                 private attribute on Marshmallow.Schema
     #
@@ -93,7 +97,7 @@ class Importable:
             #   (_registry is a singleton dictionary and flat for now)
             obj_cls = BaseRegisteredModel.get_cls_from_name(obj_type)
 
-            obj = obj_cls.create(
+            obj = obj_cls.new(
                 with_dict=val,
                 to_get=to_get,
                 doc_id=val.get("doc_id", None),
@@ -138,7 +142,7 @@ class Importable:
 
     @classmethod
     def from_dict(cls, d, to_get=False, **kwargs):
-        instance = cls(**kwargs)  # TODO: fix unexpected arguments
+        instance = cls.new(**kwargs)  # TODO: fix unexpected arguments
         instance._import_properties(d, to_get=to_get)
         return instance
 
@@ -247,14 +251,11 @@ class NewMixin:
     """
 
     @classmethod
-    def new(cls, **kwargs):
-        return cls(**kwargs)
+    def new(cls, allow_default=True, **kwargs):
 
-    def __init__(self, allow_default=True, **kwargs):
+        fd = cls._get_fields()  # Calls classmethod
 
-        fd = self._get_fields()  # Calls classmethod
-
-        field_keys = set(fd.keys())
+        field_keys = {key for key, field in fd.items()}
         kwargs_keys = set(kwargs.keys())
 
         required_keys = {val for key, val in fd.items() if val.required}
@@ -267,49 +268,31 @@ class NewMixin:
             raise ValueError("{} are not set".format(keys_default))
         keys_super = kwargs_keys - keys_to_set - keys_default
 
-        super().__init__(
-            fd={key: field
-                for key, field in fd.items() if key in keys_default},
-            **{key: val for key, val in kwargs.items() if key in keys_super}
-        )
+        d_val_default = {key: field.default_value
+                for key, field in fd.items() if key in keys_default}
+        d_val_provided = {key: kwargs[key] for key in keys_to_set}
+        d_super = {key: kwargs[key] for key in keys_super}
 
-        d_to_set = {key: field for key, field in fd.items()
-                    if key in keys_to_set}
+        return cls(_with_dict={**d_val_default, **d_val_provided}, **d_super)
 
-        for key, val in d_to_set.items():
+    def __init__(self, _with_dict=None, **kwargs):
+        if _with_dict is None:
+            _with_dict = dict()
 
-            assert isinstance(val, fields.Field)
+        for key, val in _with_dict.items():
+            if key not in dir(self):
+                setattr(self, key, val)
 
-            if key in dir(self):
-                continue
-
-            setattr(self, key, kwargs[key])
+        super().__init__(**kwargs)
 
     @classmethod
     def from_dict(cls, d, **kwargs):
         return cls.new({**d, **kwargs})
 
 
-class AutoInitialized:
-
-    def __init__(self, *args, fd=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if fd is None:
-            fd = self._get_fields()
-        initializer(self, fd)
-
-
 class Mutable(BaseRegisteredModel,
-              Schemed, Importable, NewMixin, AutoInitialized, Exportable):
+              Schemed, Importable, NewMixin, Exportable):
     pass
-
-
-def initializer(obj, d):
-    for key, val in d.items():
-        assert isinstance(val, fields.Field)
-        # if not hasattr(obj, key):
-        if key not in dir(obj):
-            setattr(obj, key, val.default_value)
 
 
 class Immutable(BaseRegisteredModel, Schemed, NewMixin, Exportable):
