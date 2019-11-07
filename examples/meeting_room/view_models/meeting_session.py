@@ -1,9 +1,12 @@
 import time
 
+from examples.meeting_room.domain_models import Ticket, User
 from examples.meeting_room.domain_models.location import Location
 from examples.meeting_room.domain_models.meeting import Meeting
 from flask_boiler import fields, schema, view_model, view
 from flask_boiler.mutation import Mutation
+from flask_boiler.view import DocumentAsView
+from flask_boiler.view_model import ViewModelMixin
 
 
 class MeetingSessionSchema(schema.Schema):
@@ -19,66 +22,79 @@ class MeetingSessionMixin:
 
     _schema_cls = MeetingSessionSchema
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, meeting_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.users = dict()
-        self.tickets = dict()
-        self.meeting = None
-        self.location = None
+        self._meeting_id = meeting_id
+
+    @property
+    def _users(self):
+        user_ids = [user_ref.id for user_ref in self._meeting.users]
+        return {
+            user_id: self.business_properties[user_id] for user_id in user_ids
+        }
+
+    @property
+    def _tickets(self):
+        return {
+            self.business_properties[ticket_ref.id].user.id:
+                self.business_properties[ticket_ref.id]
+                for ticket_ref in self._meeting.tickets
+        }
+
+    @property
+    def _meeting(self):
+        """
+        TODO: fix evaluation order in source code (add priority flag to some
+        TODO:    view models to be instantiated first)
+        :return:
+        """
+        return self.business_properties[self._meeting_id]
 
     @property
     def meeting_id(self):
-        return self.meeting.doc_id
+        return self._meeting.doc_id
 
-    def set_user(self, user):
-        self.users[user.doc_id] = user
-
-    def set_ticket(self, ticket):
-        self.tickets[ticket.user.id] = ticket
-
-    def set_meeting(self, meeting):
-        self.meeting = meeting
-
-    def set_location(self, location):
-        self.location = location
+    @property
+    def _location(self):
+        return self.business_properties[self._meeting.location.id]
 
     @property
     def in_session(self):
-        return self.meeting.status == "in-session"
+        return self._meeting.status == "in-session"
 
     @in_session.setter
     def in_session(self, in_session):
-        cur_status = self.meeting.status
+        cur_status = self._meeting.status
         if cur_status == "in-session" and not in_session:
-            self.meeting.status = "closed"
+            self._meeting.status = "closed"
         elif cur_status == "closed" and in_session:
-            self.meeting.status = "in-session"
+            self._meeting.status = "in-session"
         else:
             raise ValueError
 
     @property
     def latitude(self):
-        return self.location.latitude
+        return self._location.latitude
 
     @property
     def longitude(self):
-        return self.location.longitude
+        return self._location.longitude
 
     @property
     def address(self):
-        return self.location.address
+        return self._location.address
 
     @property
     def attending(self):
-        user_ids = [uid for uid in self.users.keys()]
+        user_ids = [uid for uid in self._users.keys()]
 
-        if self.meeting.status == "not-started":
+        if self._meeting.status == "not-started":
             return list()
 
         res = list()
         for user_id in sorted(user_ids):
-            ticket = self.tickets[user_id]
-            user = self.users[user_id]
+            ticket = self._tickets[user_id]
+            user = self._users[user_id]
             if ticket.attendance:
                 d = {
                     "name": user.display_name,
@@ -119,38 +135,29 @@ class MeetingSessionMixin:
 
         m: Meeting = Meeting.get(doc_id=meeting_id)
 
-        def meeting_update_func(vm: MeetingSession, dm):
-            vm.set_meeting(dm)
-        struct[m.doc_id] = ("Meeting", m.doc_ref.id, meeting_update_func)
+        struct[m.doc_id] = (Meeting, m.doc_ref.id)
 
         for user_ref in m.users:
-            obj_type = "User"
+            obj_type = User
             doc_id = user_ref.id
-
-            def update_func(vm: MeetingSession, dm):
-                 vm.set_user(dm)
-
-            struct[doc_id] = (obj_type, user_ref.id, update_func)
+            struct[doc_id] = (obj_type, user_ref.id)
 
         for ticket_ref in m.tickets:
-            obj_type = "Ticket"
+            obj_type = Ticket
             doc_id = ticket_ref.id
 
-            def update_func(vm: MeetingSession, dm):
-                 vm.set_ticket(dm)
+            struct[doc_id] = (obj_type, ticket_ref.id)
 
-            struct[doc_id] = (obj_type, ticket_ref.id, update_func)
+        struct[m.location.id] = (Location, m.location.id)
 
-        def location_update_func(vm: MeetingSession, dm):
-            vm.set_location(dm)
-        struct[m.location.id] = ("Location", m.location.id, location_update_func)
-
-        obj = super().get(struct_d=struct, once=once, **kwargs)
+        obj = cls.get(struct_d=struct, once=once,
+                          meeting_id=m.doc_ref.id,
+                          **kwargs)
         time.sleep(2)  # TODO: delete after implementing sync
         return obj
 
     def propagate_change(self):
-        self.meeting.save()
+        self._meeting.save()
 
 
 class MeetingSession(MeetingSessionMixin, view.FlaskAsView):

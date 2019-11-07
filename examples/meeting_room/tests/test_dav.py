@@ -46,7 +46,8 @@ class MeetingSessionViewMediatorDAV(ViewMediatorDAV):
                 raise ValueError
             doc = snapshots[0]
             data = obj.diff(doc.to_dict())
-            self.mutation_cls.mutate_patch_one(obj=obj, data=data)
+            if data:
+                self.mutation_cls.mutate_patch_one(obj=obj, data=data)
 
         watch = Watch.for_document(
             document_ref=obj.doc_ref,
@@ -263,7 +264,7 @@ class UserViewDAV(UserViewMixin, DocumentAsView):
         return super().get_from_user_id(user_id, once=once, doc_ref=doc_ref)
 
     def propagate_change(self):
-        self.user.save()
+        self._user.save()
 
 
 class UserViewMediatorDAV(ViewMediatorDAV):

@@ -50,13 +50,13 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs):
             struct = dict()
 
             for color_name in color_names:
-                obj_type = "Color"
+                obj_type = Color
                 doc_id = "doc_id_{}".format(color_name)
 
                 def update_func(vm: RainbowViewModel, dm: Color):
                     vm.set_color(dm.name)
 
-                struct[color_name] = (obj_type, doc_id, update_func)
+                struct[color_name] = (obj_type, doc_id)
             return super().get(struct_d=struct, once=True)
 
         @classmethod

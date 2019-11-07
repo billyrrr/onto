@@ -39,7 +39,7 @@ class LuggagesBase(view_model.ViewModel):
         super().__init__(*args, **kwargs)
         self._luggage_d = dict()
 
-    def get_update_func(self, dm_cls, *args, **kwargs):
+    def get_vm_update_callback(self, dm_cls, *args, **kwargs):
         def update_func(*, vm, dm: dm_cls):
             vm.set(dm.doc_id, dm)
         return update_func

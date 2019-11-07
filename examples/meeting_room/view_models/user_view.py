@@ -51,15 +51,18 @@ class UserViewMixin:
     def meetings(self):
         return list(Meeting.where(users=("array_contains", self.user.doc_ref)))
 
+    def get_dm_update_callback(self, dm_cls):
+        def user_update_func(vm: UserView, dm):
+            vm.set_user(dm)
+        return user_update_func
+
     @classmethod
     def get_from_user_id(cls, user_id, once=False, **kwargs):
         struct = dict()
 
         u: User = User.get(doc_id=user_id)
 
-        def user_update_func(vm: UserView, dm):
-            vm.set_user(dm)
-        struct[u.doc_id] = ("User", u.doc_ref.id, user_update_func)
+        struct[u.doc_id] = (User, u.doc_ref.id)
 
         return super().get(struct_d=struct, once=once, **kwargs)
 

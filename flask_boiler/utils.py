@@ -11,6 +11,8 @@ from functools import partial
 from google.cloud.firestore import DocumentSnapshot
 from inflection import camelize, underscore
 
+from flask_boiler.model_registry import ModelRegistry
+
 
 def random_id():
     random_id_str = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
@@ -68,7 +70,7 @@ def snapshot_to_obj(
 
     d = snapshot.to_dict()
     obj_type = d["obj_type"]
-    obj_cls = super_cls.get_cls_from_name(obj_type)
+    obj_cls = ModelRegistry.get_cls_from_name(obj_type)
 
     if obj_cls is None:
         raise ValueError("Cannot read obj_type: {}. "

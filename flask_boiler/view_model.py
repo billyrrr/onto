@@ -3,12 +3,13 @@ from typing import Dict, Tuple, Callable
 from dictdiffer import diff, patch
 from google.cloud.firestore import DocumentReference
 
+from flask_boiler.snapshot_container import SnapshotContainer
 from flask_boiler.watch import DataListener
 from .context import Context as CTX
 from .domain_model import DomainModel
 from flask_boiler.referenced_object import ReferencedObject
 from .serializable import Serializable
-from .utils import random_id
+from .utils import random_id, snapshot_to_obj
 
 
 class PersistableMixin:
@@ -66,7 +67,7 @@ class ViewModelMixin:
         """
         obj = cls(struct_d=struct_d, **kwargs)
         for key, val in obj._structure.items():
-            obj_type, doc_id, update_func = val
+            obj_type, doc_id = val
             obj.bind_to(key=key, obj_type=obj_type, doc_id=doc_id)
         if once:
             obj.listen_once()
@@ -82,7 +83,9 @@ class ViewModelMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.business_properties: Dict[str, DomainModel] = dict()
+        self.snapshot_container = SnapshotContainer()
         self._on_update_funcs: Dict[str, Tuple] = dict()
+        self._vm_update_callbacks = dict()
         self.listener = None
 
     def _bind_to_domain_model(self, *, key, obj_type, doc_id):
@@ -102,33 +105,29 @@ class ViewModelMixin:
         :param doc_id:
         :return:
         """
-        obj_cls: DomainModel = Serializable.get_cls_from_name(obj_type)
+        # obj_cls: DomainModel = Serializable.get_cls_from_name(obj_type)
+        obj_cls: DomainModel = obj_type
 
         if key in self._structure:
-            a, b, update_func=self._structure[key]
+            a, b = self._structure[key]
             if a != obj_type or b != doc_id:
                 raise ValueError("Values disagree. ")
         else:
-            update_func = self.get_update_func(dm_cls=obj_cls)
-            self._structure[key] = (obj_type, doc_id, update_func)
+            # update_func = self.get_update_func(dm_cls=obj_cls)
+            self._structure[key] = (obj_type, doc_id)
+
         self.__subscribe_to(
             key=key,
             dm_cls=obj_cls,
-            update_func=update_func,
-            dm_doc_id=doc_id
+            dm_doc_id=doc_id,
+            vm_update_callback=self.get_vm_update_callback(dm_cls=obj_type)
         )
         # _, doc_watch = self._on_update_funcs[key]
         # assert isinstance(doc_watch, Watch)
 
     def get_on_update(self,
-                  dm_cls=None, dm_doc_id=None,
-                  update_func=None, key=None):
+                  dm_cls=None, dm_doc_id=None, dm_doc_ref_str=None, key=None):
         # do something with this ViewModel
-
-        def __on_update(updated_dm: DomainModel):
-            update_func(vm=self, dm=updated_dm)
-
-            self.business_properties[key] = updated_dm
 
         def _on_update(docs, changes, readtime):
             if len(docs) == 0:
@@ -137,9 +136,8 @@ class ViewModelMixin:
             elif len(docs) != 1:
                 raise NotImplementedError
             doc = docs[0]
-            updated_dm = dm_cls.new(doc_id=dm_doc_id)
-            updated_dm._import_properties(doc.to_dict())
-            __on_update(updated_dm)
+
+            self.snapshot_container.set( (dm_cls, dm_doc_id), doc )
 
         return _on_update
 
@@ -150,8 +148,8 @@ class ViewModelMixin:
         """
         raise NotImplementedError
 
-    def __subscribe_to(self, *, key, dm_cls, update_func,
-                       dm_doc_id):
+    def __subscribe_to(self, *, key, dm_cls,
+                       dm_doc_id, vm_update_callback):
 
         # if key in self._on_update_funcs:
         #     # Release the previous on_snapshot functions
@@ -164,20 +162,23 @@ class ViewModelMixin:
 
         dm_ref: DocumentReference = dm_cls._get_collection().document(dm_doc_id)
         on_update = self.get_on_update(
-                  dm_cls=dm_cls, dm_doc_id=dm_doc_id,
-                  update_func=update_func, key=key)
+            dm_cls=dm_cls, dm_doc_id=dm_doc_id,
+            dm_doc_ref_str=dm_ref._document_path,
+            key=key)
         # doc_watch = dm_ref.on_snapshot(on_update)
         self._on_update_funcs[dm_ref._document_path] = on_update
+        self._vm_update_callbacks[(dm_cls, dm_doc_id)] = vm_update_callback
 
     def diff(self, new_state, allowed=None):
         prev_state = self.to_view_dict()
 
-        if prev_state["lastName"] == "Manes" and new_state["lastName"] == "M.":
-            return {
-                "lastName": "M."
-            }
-        else:
-            return dict()
+        # if prev_state["lastName"] == "Manes" and new_state["lastName"] == "M.":
+        #     return {
+        #         "lastName": "M."
+        #     }
+        # else:
+        #     return dict()
+        return dict()
 
         if allowed is not None:
             prev_state = {key: val
@@ -247,6 +248,9 @@ class ViewModelMixin:
                 on_update = self._on_update_funcs[doc.reference._document_path]
                 # TODO: restore parameter "changes"
                 on_update([doc], None, read_time)
+
+            self._refresh_business_property()
+            self._invoke_vm_callbacks()
             self._notify()
 
         self.listener = DataListener(
@@ -256,6 +260,19 @@ class ViewModelMixin:
             once=False
         )
 
+    def _refresh_business_property(self, ):
+        for key, val in self._structure.items():
+            obj_type, doc_id = val
+            snapshot = self.snapshot_container.get((obj_type, doc_id), )
+            self.business_properties[key] = snapshot_to_obj(snapshot=snapshot)
+
+    def _invoke_vm_callbacks(self):
+        for key, val in self._structure.items():
+            obj_type, doc_id = val
+            vm_update_callback = self._vm_update_callbacks[(obj_type, doc_id)]
+            dm = self.business_properties[key]
+            vm_update_callback(vm=self, dm=dm)
+
     def _notify(self):
         """ Notify that this object has been changed by underlying view models
 
@@ -263,10 +280,13 @@ class ViewModelMixin:
         """
         return
 
-    def get_update_func(self, dm_cls, *args, **kwargs) -> Callable:
+    def get_vm_update_callback(self, dm_cls, *args, **kwargs) -> Callable:
         """ Returns a function for updating a view
         """
-        raise NotImplementedError
+        def default_to_do_nothing(vm: ViewModel, dm: DomainModel):
+            pass
+
+        return default_to_do_nothing
 
     def bind_to(self, key, obj_type, doc_id):
         """ Binds to a domain model so that this view model changes

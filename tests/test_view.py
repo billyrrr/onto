@@ -26,6 +26,10 @@ def v_cls(CTX):
 
         _color_d = dict()
 
+        def __init__(self, order_d=None, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.order = order_d
+
         @property
         def colors(self):
             return [self._color_d[key] for key in sorted(self._color_d)]
@@ -37,22 +41,29 @@ def v_cls(CTX):
         def set_color(self, color_name, order):
             self._color_d[(order, color_name)] = color_name
 
+        def get_vm_update_callback(self, dm_cls, *args, **kwargs):
+            if issubclass(dm_cls, Color):
+                def update_func(vm: RainbowView, dm: Color):
+                    order = self.order[dm.doc_id]
+                    vm.set_color(dm.name, order=order)
+                return update_func
+
         @classmethod
         def get_from_color_names(cls, color_names):
             struct = dict()
 
-            order = count()
+            order_gen = count()
+            order_d = dict()
+
             for color_name in color_names:
-                obj_type = "Color"
+                obj_type = Color
                 doc_id = "doc_id_{}".format(color_name)
 
-                def update_func(order, vm: RainbowView, dm: Color):
-                    vm.set_color(dm.name, order=order)
+                order_d[doc_id] = next(order_gen)
 
-                update_func = partial(update_func, order=next(order))
+                struct[color_name] = (obj_type, doc_id,)
 
-                struct[color_name] = (obj_type, doc_id, update_func)
-            return super().get(struct_d=struct)
+            return cls.get(struct_d=struct, order_d=order_d)
 
     return RainbowView
 
