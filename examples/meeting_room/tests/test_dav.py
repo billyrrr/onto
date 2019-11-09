@@ -264,7 +264,7 @@ class UserViewDAV(UserViewMixin, DocumentAsView):
         return super().get_from_user_id(user_id, once=once, doc_ref=doc_ref)
 
     def propagate_change(self):
-        self._user.save()
+        self.user.save()
 
 
 class UserViewMediatorDAV(ViewMediatorDAV):

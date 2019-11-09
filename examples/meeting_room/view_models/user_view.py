@@ -19,6 +19,7 @@ class UserViewMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = None
 
     @classmethod
     def new(cls, doc_id=None):
@@ -51,7 +52,7 @@ class UserViewMixin:
     def meetings(self):
         return list(Meeting.where(users=("array_contains", self.user.doc_ref)))
 
-    def get_dm_update_callback(self, dm_cls):
+    def get_vm_update_callback(self, dm_cls):
         def user_update_func(vm: UserView, dm):
             vm.set_user(dm)
         return user_update_func

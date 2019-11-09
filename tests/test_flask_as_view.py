@@ -45,6 +45,11 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs):
         def set_color(self, color_name):
             self._color_d[color_name] = color_name
 
+        def get_vm_update_callback(self, dm_cls, *args, **kwargs):
+            def update_func(vm: RainbowViewModel, dm: Color):
+                vm.set_color(dm.name)
+            return update_func
+
         @classmethod
         def get_from_color_names(cls, color_names):
             struct = dict()
@@ -52,9 +57,6 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs):
             for color_name in color_names:
                 obj_type = Color
                 doc_id = "doc_id_{}".format(color_name)
-
-                def update_func(vm: RainbowViewModel, dm: Color):
-                    vm.set_color(dm.name)
 
                 struct[color_name] = (obj_type, doc_id)
             return super().get(struct_d=struct, once=True)

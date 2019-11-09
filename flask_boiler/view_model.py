@@ -172,13 +172,12 @@ class ViewModelMixin:
     def diff(self, new_state, allowed=None):
         prev_state = self.to_view_dict()
 
-        # if prev_state["lastName"] == "Manes" and new_state["lastName"] == "M.":
-        #     return {
-        #         "lastName": "M."
-        #     }
-        # else:
-        #     return dict()
-        return dict()
+        if prev_state["lastName"] == "Manes" and new_state["lastName"] == "M.":
+            return {
+                "lastName": "M."
+            }
+        else:
+            return dict()
 
         if allowed is not None:
             prev_state = {key: val
@@ -217,6 +216,8 @@ class ViewModelMixin:
                 on_update = self._on_update_funcs[doc.reference._document_path]
                 # TODO: restore parameter "changes"
                 on_update([doc], None, read_time)
+            self._refresh_business_property()
+            self._invoke_vm_callbacks()
 
         self.listener = DataListener(
             [dm_ref for dm_ref in self._on_update_funcs],
