@@ -299,5 +299,29 @@ Pull requests are welcome.
 
 Please make sure to update tests as appropriate.
 
+## Comparisons 
+
+### GraphQL
+
+In GraphQL, the fields are evaluated with each query, but 
+flask-boiler evaluates the fields if and only if the 
+underlying data source changes. This leads to faster 
+read for data that has not changed for a while. Also, 
+the data source is expected to be consistent, as the 
+field evaluation are triggered after all changes made in 
+one transaction to firestore is read. 
+
+GraphQL, however, lets front-end customize the return. You 
+must define the exact structure you want to return in flask-boiler. 
+This nevertheless has its advantage as most documentations 
+of the request and response can be done the same way as REST API. 
+
+### REST API / Flask
+
+REST API does not cache or store the response. When 
+a view model is evaluated by flask-boiler, the response 
+is stored in firestore forever until update or manual removal. 
+
+
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
