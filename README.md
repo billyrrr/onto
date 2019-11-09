@@ -322,6 +322,9 @@ REST API does not cache or store the response. When
 a view model is evaluated by flask-boiler, the response 
 is stored in firestore forever until update or manual removal. 
 
+Flask-boiler controls role-based access with security rules 
+integrated with Firestore. REST API usually controls these 
+access with a JWT token. 
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)

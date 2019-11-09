@@ -85,7 +85,6 @@ class ViewModelMixin:
         self.business_properties: Dict[str, DomainModel] = dict()
         self.snapshot_container = SnapshotContainer()
         self._on_update_funcs: Dict[str, Tuple] = dict()
-        self._vm_update_callbacks = dict()
         self.listener = None
 
     def _bind_to_domain_model(self, *, key, obj_type, doc_id):
@@ -120,7 +119,6 @@ class ViewModelMixin:
             key=key,
             dm_cls=obj_cls,
             dm_doc_id=doc_id,
-            vm_update_callback=self.get_vm_update_callback(dm_cls=obj_type)
         )
         # _, doc_watch = self._on_update_funcs[key]
         # assert isinstance(doc_watch, Watch)
@@ -149,7 +147,7 @@ class ViewModelMixin:
         raise NotImplementedError
 
     def __subscribe_to(self, *, key, dm_cls,
-                       dm_doc_id, vm_update_callback):
+                       dm_doc_id):
 
         # if key in self._on_update_funcs:
         #     # Release the previous on_snapshot functions
@@ -167,7 +165,6 @@ class ViewModelMixin:
             key=key)
         # doc_watch = dm_ref.on_snapshot(on_update)
         self._on_update_funcs[dm_ref._document_path] = on_update
-        self._vm_update_callbacks[(dm_cls, dm_doc_id)] = vm_update_callback
 
     def diff(self, new_state, allowed=None):
         prev_state = self.to_view_dict()
@@ -270,7 +267,7 @@ class ViewModelMixin:
     def _invoke_vm_callbacks(self):
         for key, val in self._structure.items():
             obj_type, doc_id = val
-            vm_update_callback = self._vm_update_callbacks[(obj_type, doc_id)]
+            vm_update_callback = self.get_vm_update_callback(dm_cls=obj_type)
             dm = self.business_properties[key]
             vm_update_callback(vm=self, dm=dm)
 
