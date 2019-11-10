@@ -277,7 +277,7 @@ def test_property_get_error_handling():
 
         extra_property = fields.Raw(dump_only=True)
 
-    class City(Serializable):
+    class CityExtra(Serializable):
 
         _schema_cls = CitySchemaExtended
 
@@ -285,7 +285,7 @@ def test_property_get_error_handling():
         def extra_property(self):
             return self.non_existent_property
 
-    city = City.new(city_name="San Diego", country="USA", capital=False)
+    city = CityExtra.new(city_name="San Diego", country="USA", capital=False)
 
     """
     Tests that AttributeError is not swallowed when 
@@ -300,7 +300,7 @@ def test_property_get_error_handling():
     """
     Tests that AttributeError is raised when accessing 
         a property that does not exist 
-    TODO: move to test_schema
+    TODO: move to test_serializable 
     """
     with pytest.raises(AttributeError):
         city.non_existent_property
