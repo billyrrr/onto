@@ -5,7 +5,8 @@ from testfixtures import compare
 
 import flask_boiler.utils
 from flask_boiler import schema, fields
-from flask_boiler.schema import Schema
+from flask_boiler.errors import PropertyEvalError
+from flask_boiler.schema import Schema, BoilerProperty
 from flask_boiler.serializable import Serializable
 
 
@@ -266,8 +267,40 @@ def test_schema_load():
     }
 
 
-# def test_read_only_fields():
-#
-#     class TrivialSchema
-#
+def test_property_get_error_handling():
 
+    class CitySchemaExtended(Schema):
+        city_name = fields.Raw()
+
+        country = fields.Raw()
+        capital = fields.Raw()
+
+        extra_property = fields.Raw(dump_only=True)
+
+    class City(Serializable):
+
+        _schema_cls = CitySchemaExtended
+
+        @BoilerProperty
+        def extra_property(self):
+            return self.non_existent_property
+
+    city = City.new(city_name="San Diego", country="USA", capital=False)
+
+    """
+    Tests that AttributeError is not swallowed when 
+        the property function is located but failed 
+        during evaluation 
+    """
+    with pytest.raises(PropertyEvalError) as excinfo:
+        res = CitySchemaExtended().dump(city)
+
+    assert isinstance(excinfo.value.__cause__, AttributeError)
+
+    """
+    Tests that AttributeError is raised when accessing 
+        a property that does not exist 
+    TODO: move to test_schema
+    """
+    with pytest.raises(AttributeError):
+        city.non_existent_property

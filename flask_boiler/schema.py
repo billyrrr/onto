@@ -1,5 +1,6 @@
 import warnings
 
+from flask_boiler.errors import PropertyEvalError
 from flask_boiler.utils import attr_name_to_firestore_key, \
     firestore_key_to_attr_name
 from .utils import obj_type_serialize, obj_type_deserialize
@@ -53,6 +54,46 @@ class SchemaMixin:
         #
         # self.f_mapping = dict()
         # self.g_mapping = dict()
+
+
+class BoilerProperty(object):
+    """
+    Ref: https://blog.csdn.net/weixin_43265804/article/details/82863984
+        content under CC 4.0
+    """
+
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        self.fget = fget
+        self.fset = fset
+        self.fdel = fdel
+        self.__doc__ = doc
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        else:
+            try:
+                return self.fget(instance)
+            except Exception as exception:
+                """
+                Otherwise AttributeError will be swallowed 
+                """
+                raise PropertyEvalError from exception
+
+    def __set__(self, instance, value):
+        self.fset(instance, value)
+
+    def __delete__(self, instance):
+        self.fdel(instance)
+
+    def getter(self, fget):
+        return BoilerProperty(fget, self.fset, self.fdel, self.__doc__)
+
+    def setter(self, fset):
+        return BoilerProperty(self.fget, fset, self.fdel, self.__doc__)
+
+    def deleter(self, fdel):
+        return BoilerProperty(self.fget, self.fset, fdel, self.__doc__)
 
 
 class Schema(SchemaMixin, marshmallow.Schema):
