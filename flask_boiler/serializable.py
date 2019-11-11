@@ -255,7 +255,7 @@ class NewMixin:
 
         fd = cls._get_fields()  # Calls classmethod
 
-        field_keys = {key for key, field in fd.items()}
+        field_keys = {key for key, field in fd.items() if not field.dump_only}
         kwargs_keys = set(kwargs.keys())
 
         required_keys = {val for key, val in fd.items() if val.required}
@@ -284,10 +284,6 @@ class NewMixin:
                 setattr(self, key, val)
 
         super().__init__(**kwargs)
-
-    @classmethod
-    def from_dict(cls, d, **kwargs):
-        return cls.new({**d, **kwargs})
 
 
 class Mutable(BaseRegisteredModel,

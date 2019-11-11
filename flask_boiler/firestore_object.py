@@ -17,15 +17,15 @@ class FirestoreObjectClsFactory(ClsFactory):
 
 class FirestoreObjectMixin:
 
-    @classmethod
-    def new(cls, doc_ref=None, with_dict=None, **kwargs):
-        if doc_ref is None:
-            raise ValueError
-        if with_dict is not None:
-            obj = cls.from_dict(d=with_dict, doc_ref=doc_ref)
-        else:
-            obj = cls(doc_ref=doc_ref, **kwargs)
-        return obj
+    # @classmethod
+    # def new(cls, doc_ref=None, with_dict=None, **kwargs):
+    #     if doc_ref is None:
+    #         raise ValueError
+    #     if with_dict is not None:
+    #         obj = cls.from_dict(d=with_dict, doc_ref=doc_ref)
+    #     else:
+    #         obj = cls(doc_ref=doc_ref, **kwargs)
+    #     return obj
 
     def get_firestore_ref(self):
         warnings.warn("Please use .doc_ref instead. ", DeprecationWarning)

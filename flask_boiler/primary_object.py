@@ -49,11 +49,10 @@ class PrimaryObject(FirestoreObject, QueryMixin):
         else:
             return cls._schema_cls
 
-    def __init__(self, doc_id=None, doc_ref=None):
+    def __init__(self, doc_id=None, doc_ref=None, **kwargs):
         if doc_ref is None:
             doc_ref = self._doc_ref_from_id(doc_id=doc_id)
-
-        super().__init__(doc_ref=doc_ref)
+        super().__init__(doc_ref=doc_ref, **kwargs)
 
     @property
     def doc_id(self):
