@@ -3,5 +3,5 @@ class BoilerError(Exception):
     pass
 
 
-class PropertyEvalError(Exception):
+class PropertyEvalError(BoilerError):
     pass
