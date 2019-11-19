@@ -1,7 +1,7 @@
 import time
 
 from google.cloud.firestore_v1 import Watch, DocumentSnapshot, \
-    DocumentReference
+    DocumentReference, Query
 
 from examples.meeting_room.domain_models import Meeting, User
 from examples.meeting_room.view_models import UserView
@@ -280,15 +280,15 @@ class UserViewMediatorDAV(ViewMediatorDAV):
             if len(snapshots) != 1:
                 raise ValueError
             doc = snapshots[0]
-            data = obj.diff(doc.to_dict(), allowed={"lastName"})
+            data = doc.to_dict()
             data = {
                 self.view_model_cls.get_schema_cls().g(key): val
                 for key, val in data.items()
             }
             self.mutation_cls.mutate_patch_one(obj=obj, data=data)
 
-        watch = Watch.for_document(
-            document_ref=obj.doc_ref,
+        watch = Watch.for_query(
+            query=Query(parent=obj.doc_ref.collection("_PATCH")),
             snapshot_callback=on_snapshot,
             snapshot_class_instance=DocumentSnapshot,
             reference_class_instance=DocumentReference)
@@ -396,7 +396,7 @@ def test_mutation(users, tickets, location, meeting):
     time.sleep(3)  # TODO: delete after implementing sync
 
     ref = Context.db.collection("UserViewDAV").document(user_id)
-    ref.update({
+    ref.collection("_PATCH").add({
         "lastName": "M."
     })
 
