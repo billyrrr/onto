@@ -4,7 +4,7 @@ from examples.meeting_room.domain_models import Ticket, User
 from examples.meeting_room.domain_models.location import Location
 from examples.meeting_room.domain_models.meeting import Meeting
 from flask_boiler import fields, schema, view_model, view
-from flask_boiler.mutation import Mutation
+from flask_boiler.mutation import Mutation, PatchMutation
 from flask_boiler.view import DocumentAsView
 from flask_boiler.view_model import ViewModelMixin
 
@@ -172,6 +172,6 @@ class MeetingSession(MeetingSessionMixin, view.FlaskAsView):
     pass
 
 
-class MeetingSessionMutation(Mutation):
+class MeetingSessionMutation(PatchMutation):
 
     view_model_cls = MeetingSession
