@@ -209,4 +209,29 @@ class Embedded(fields.Raw, Field):
             )
 
 
+class BusinessPropertyFieldBase(fields.Raw, Field):
+    pass
+
+
+class BusinessPropertyFieldMany(BusinessPropertyFieldBase):
+
+    @property
+    def default_value(self):
+        return set()
+
+
+class BusinessPropertyFieldOne(BusinessPropertyFieldBase):
+
+    @property
+    def default_value(self):
+        return None
+
+
+# class BpStoreField(fields.Raw, Field):
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, data_key="_structure", **kwargs)
+#         self.many = many
+
+
 Str = String

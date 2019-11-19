@@ -18,6 +18,14 @@ class MeetingSessionSchema(schema.Schema):
     num_hearing_aid_requested = fields.Raw()
 
 
+class MeetingSessionBpStoreSchema:
+
+    _users = fields.BusinessPropertyFieldMany(referenced_cls=User)
+    _tickets = fields.BusinessPropertyFieldMany(referenced_cls=Ticket)
+    _meeting = fields.BusinessPropertyFieldOne(referenced_cls=Meeting)
+    _location = fields.BusinessPropertyFieldOne(referenced_cls=Location)
+
+
 class MeetingSessionMixin:
 
     _schema_cls = MeetingSessionSchema

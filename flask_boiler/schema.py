@@ -56,6 +56,10 @@ class SchemaMixin:
         # self.g_mapping = dict()
 
 
+class BusinessPropertyStoreSchemaMixin():
+    pass
+
+
 class BoilerProperty(object):
     """
     Ref: https://blog.csdn.net/weixin_43265804/article/details/82863984
@@ -96,7 +100,18 @@ class BoilerProperty(object):
         return BoilerProperty(self.fget, self.fset, fdel, self.__doc__)
 
 
-class Schema(SchemaMixin, marshmallow.Schema):
+class SchemaBase(SchemaMixin, marshmallow.Schema):
+
+    @classmethod
+    def _get_reserved_fieldnames(cls):
+        return set()
+
+
+class BasicSchema(SchemaBase):
+    pass
+
+
+class Schema(SchemaBase):
     """
     Attributes:
     ============
