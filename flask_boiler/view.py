@@ -63,6 +63,17 @@ class FlaskAsView(FlaskAsViewMixin,
 class DocumentAsViewMixin:
 
     @classmethod
+    def _get_collection_name(cls):
+        return cls.__name__
+
+    @classmethod
+    def _get_patch_query(cls) -> firestore.Query:
+        collection_group_id = "_PATCH_{}" \
+            .format(cls._get_collection_name())
+        collection_group_query = CTX.db.collection_group(collection_group_id)
+        return collection_group_query
+
+    @classmethod
     def new(cls, *args, **kwargs):
         """
         Should override in subclass

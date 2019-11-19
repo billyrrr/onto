@@ -8,6 +8,12 @@ class Mutation(BaseRegisteredModel,
 
     view_model_cls = None
 
+
+class PatchMutation(Mutation):
+
+    def __init__(self):
+        super().__init__()
+
     # @classmethod
     # def mutate_create(cls, doc_id=None, data=None):
     #     obj = cls.domain_model_cls.new(

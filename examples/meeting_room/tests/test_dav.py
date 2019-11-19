@@ -8,7 +8,7 @@ from examples.meeting_room.view_models import UserView
 from examples.meeting_room.view_models.meeting_session import \
     MeetingSessionMutation, MeetingSessionMixin
 from examples.meeting_room.view_models.user_view import UserViewMixin
-from flask_boiler.mutation import Mutation
+from flask_boiler.mutation import Mutation, PatchMutation
 from flask_boiler.view import DocumentAsView
 from flask_boiler.view_mediator_dav import ViewMediatorDAV
 from ..views import meeting_session_ops
@@ -109,7 +109,7 @@ def test_start(users, tickets, location, meeting):
 
     for user in users:
         Context.db.collection("users").document(user.doc_id) \
-            .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)\
+            .collection(MeetingSessionDAV.__name__).document(meeting.doc_id) \
             .delete()
 
 
@@ -146,7 +146,7 @@ def test_mutate(users, tickets, location, meeting):
 
     for user in users:
         Context.db.collection("users").document(user.doc_id) \
-            .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)\
+            .collection(MeetingSessionDAV.__name__).document(meeting.doc_id) \
             .delete()
 
 
@@ -220,7 +220,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
 
     for user in users:
         Context.db.collection("users").document(user.doc_id) \
-            .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)\
+            .collection(MeetingSessionDAV.__name__).document(meeting.doc_id) \
             .delete()
 
 
@@ -260,7 +260,8 @@ class UserViewDAV(UserViewMixin, DocumentAsView):
 
     @classmethod
     def get_from_user_id(cls, user_id, once=False):
-        doc_ref = Context.db.collection(UserViewDAV.__name__).document(user_id)
+        doc_ref = Context.db.collection(cls._get_collection_name()) \
+            .document(user_id)
         return super().get_from_user_id(user_id, once=once, doc_ref=doc_ref)
 
     def propagate_change(self):
@@ -273,22 +274,28 @@ class UserViewMediatorDAV(ViewMediatorDAV):
         super().__init__(*args, **kwargs)
         self.user_cls = user_cls
 
-    def _listen_to_view_model(self, user_id):
-        obj: UserViewDAV = self.instances[user_id]
+    def _listen_to_patch(self):
+        # NOTE: index for subcollection group may need to be created
+        #   See: https://firebase.google.com/docs/firestore/query-data/queries#top_of_page
 
         def on_snapshot(snapshots, changes, timestamp):
-            if len(snapshots) != 1:
-                raise ValueError
-            doc = snapshots[0]
-            data = doc.to_dict()
-            data = {
-                self.view_model_cls.get_schema_cls().g(key): val
-                for key, val in data.items()
-            }
-            self.mutation_cls.mutate_patch_one(obj=obj, data=data)
+            for doc in snapshots:
+                # doc: DocumentSnapshot = snapshots[0]
+                data = doc.to_dict()
+                data = {
+                    self.view_model_cls.get_schema_cls().g(key): val
+                    for key, val in data.items()
+                }
+
+                # ie. doc from /UserViewDAV/user_id_a/_PATCH_UserViewDAV/patch_id_1
+                user_view_ref = doc.reference.parent.parent
+                user_id = user_view_ref.id
+                obj = self.instances[user_id]
+
+                self.mutation_cls.mutate_patch_one(obj=obj, data=data)
 
         watch = Watch.for_query(
-            query=Query(parent=obj.doc_ref.collection("_PATCH")),
+            query=self.view_model_cls._get_patch_query(),
             snapshot_callback=on_snapshot,
             snapshot_class_instance=DocumentSnapshot,
             reference_class_instance=DocumentReference)
@@ -296,9 +303,7 @@ class UserViewMediatorDAV(ViewMediatorDAV):
     def start(self):
         self.generate_entries()
         time.sleep(3)  # TODO: delete after implementing sync
-        for user_id in self.instances:
-            self._listen_to_view_model(
-                user_id=user_id)
+        self._listen_to_patch()
 
     def generate_entries(self):
 
@@ -306,14 +311,13 @@ class UserViewMediatorDAV(ViewMediatorDAV):
         for user in users:
             assert isinstance(user, User)
             obj = self.view_model_cls.new(
-                    user_id=user.doc_id,
-                    once=False,
-                )
+                user_id=user.doc_id,
+                once=False,
+            )
             self.instances[user.doc_id] = obj
 
 
 def test_user_view(users, tickets, location, meeting):
-
     user_view = UserViewDAV.new(user_id="thomasina", )
 
     time.sleep(3)  # TODO: delete after implementing sync
@@ -330,15 +334,16 @@ def test_user_view(users, tickets, location, meeting):
                       'address': '9500 Gilman Drive, La Jolla, CA',
                       'longitude': -117.242929},
          'tickets': [
-            {'attendance': True, 'role': 'Participant',
-             'user': {'lastName': 'Furlong', 'firstName': 'Tijuana',
-                      'hearingAidRequested': True, 'organization': 'UCSD'}},
-            {'attendance': True, 'role': 'Organizer',
-             'user': {'lastName': 'Manes', 'firstName': 'Thomasina',
-                      'hearingAidRequested': False, 'organization': 'UCSD'}},
-            {'attendance': True, 'role': 'Participant',
-             'user': {'lastName': 'Pendergrast', 'firstName': 'Joshua',
-                      'hearingAidRequested': True, 'organization': 'SDSU'}}]}],
+             {'attendance': True, 'role': 'Participant',
+              'user': {'lastName': 'Furlong', 'firstName': 'Tijuana',
+                       'hearingAidRequested': True, 'organization': 'UCSD'}},
+             {'attendance': True, 'role': 'Organizer',
+              'user': {'lastName': 'Manes', 'firstName': 'Thomasina',
+                       'hearingAidRequested': False, 'organization': 'UCSD'}},
+             {'attendance': True, 'role': 'Participant',
+              'user': {'lastName': 'Pendergrast', 'firstName': 'Joshua',
+                       'hearingAidRequested': True,
+                       'organization': 'SDSU'}}]}],
         'lastName': 'Manes',
         'firstName': 'Thomasina',
         'hearingAidRequested': False,
@@ -346,7 +351,6 @@ def test_user_view(users, tickets, location, meeting):
 
 
 def test_user_view_diff(users, tickets, location, meeting):
-
     user_view = UserViewDAV.new(user_id="thomasina", )
 
     time.sleep(3)  # TODO: delete after implementing sync
@@ -361,7 +365,6 @@ def test_user_view_diff(users, tickets, location, meeting):
 
 
 def test_propagate_change(users, tickets, location, meeting):
-
     user_id = users[1].doc_id
 
     user_view = UserViewDAV.new(user_id=user_id, )
@@ -375,12 +378,11 @@ def test_propagate_change(users, tickets, location, meeting):
     assert user_ref.get().to_dict()["lastName"] == "M."
 
 
-class UserViewMutationDAV(Mutation):
+class UserViewMutationDAV(PatchMutation):
     pass
 
 
 def test_mutation(users, tickets, location, meeting):
-
     user_id = users[1].doc_id
 
     mediator = UserViewMediatorDAV(
@@ -396,16 +398,16 @@ def test_mutation(users, tickets, location, meeting):
     time.sleep(3)  # TODO: delete after implementing sync
 
     ref = Context.db.collection("UserViewDAV").document(user_id)
-    ref.collection("_PATCH").add({
-        "lastName": "M."
+    ref.collection("_PATCH_UserViewDAV").add({
+        "lastName": "Manes-Kennedy"
     })
 
     time.sleep(3)
 
     updated_user = User.get(doc_id=user_id)
 
-    assert updated_user.last_name == "M."
+    assert updated_user.last_name == "Manes-Kennedy"
 
     res = user_view._export_as_view_dict()
 
-    assert res['lastName'] == 'M.'
+    assert res['lastName'] == "Manes-Kennedy"
