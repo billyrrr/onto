@@ -421,10 +421,6 @@ When you need better performance or relational database
 support, you can always refactor a specific layer by
 adding modules such as `flask-sqlalchemy`.
 
-## Contributing
-Pull requests are welcome. 
-
-Please make sure to update tests as appropriate.
 
 ## Comparisons 
 
@@ -470,6 +466,41 @@ Nevertheless, you can still add function callbacks that are
 triggered after a domain model is updated, but this 
 may introduce concurrency issues and is not perfectly supported 
 due to the design tradeoff in flask-boiler. 
+
+## Design Philosophies
+
+### Scalability Valued Over Server Cost
+
+At the starting stage of a project, you have a boutique 
+user base, and it may be feasible to afford higher server 
+cost to provide reliable and reactive services to 
+these users. As your user base grow, you may take other 
+actions to reduce cost while maintaining the quality 
+of your product (such as moving to a different architecture 
+to present view models). Overall, flask-boiler gives 
+you a quality jump-start so that you can focus on 
+transforming ideas. 
+
+### ViewModel Made Eventually Consistent
+
+When DomainModel changes, the relevant view models may 
+not change immediately, but gradually changed overtime. 
+The information on a view model will eventually be 
+correct and up-to-date, and some view models may be 
+update sooner than others. For example, some users 
+may receive the update to their 
+meeting session sooner than others. 
+
+Rest assured, the write to DomainModel is still designed 
+to be strongly consistent. When a user makes changes, 
+it is designed to validate that they have the latest 
+data before the domain model is updated. 
+ 
+
+## Contributing
+Pull requests are welcome. 
+
+Please make sure to update tests as appropriate.
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
