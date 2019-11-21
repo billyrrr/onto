@@ -15,7 +15,8 @@ class UserViewSchema(schema.Schema):
 
 class UserViewMixin:
 
-    _schema_cls = UserViewSchema
+    class Meta:
+        schema_cls = UserViewSchema
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

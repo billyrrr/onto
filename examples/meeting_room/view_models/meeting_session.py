@@ -28,7 +28,8 @@ class MeetingSessionBpStoreSchema:
 
 class MeetingSessionMixin:
 
-    _schema_cls = MeetingSessionSchema
+    class Meta:
+        schema_cls = MeetingSessionSchema
 
     def __init__(self, *args, meeting_id=None, **kwargs):
         super().__init__(*args, **kwargs)
