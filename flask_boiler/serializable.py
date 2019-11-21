@@ -4,7 +4,7 @@ from marshmallow.utils import is_iterable_but_not_string
 
 from flask_boiler import fields
 from flask_boiler.helpers import EmbeddedElement
-from .model_registry import BaseRegisteredModel
+from .model_registry import BaseRegisteredModel, ModelRegistry
 
 
 # from abc import ABC, abstractmethod
@@ -286,6 +286,17 @@ class NewMixin:
         super().__init__(**kwargs)
 
 
+class SerializableMeta(ModelRegistry):
+
+    def __new__(mcs, name, bases, attrs):
+        klass = super().__new__(mcs, name, bases, attrs)
+        if hasattr(klass, "Meta"):
+            meta = klass.Meta
+            if hasattr(meta, "schema_cls"):
+                klass._schema_cls = meta.schema_cls
+        return klass
+
+
 class Mutable(BaseRegisteredModel,
               Schemed, Importable, NewMixin, Exportable):
     pass
@@ -295,7 +306,14 @@ class Immutable(BaseRegisteredModel, Schemed, NewMixin, Exportable):
     pass
 
 
-class Serializable(Mutable):
+class Serializable(Mutable, metaclass=SerializableMeta):
+
+    # class Meta:
+    #     """
+    #     Options object for a Serializable model.
+    #     """
+    #     schema_cls = None
+
     pass
 
 

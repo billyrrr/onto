@@ -40,21 +40,19 @@ class StandardCitySchema(CitySchema):
 
 
 class City(DomainModel):
-    _collection_name = "City"
+    class Meta:
+        schema_cls = CitySchema
+        collection_name = "City"
 
 
-Municipality = FirestoreObjectClsFactory.create(
-    name="Municipality",
-    schema=MunicipalitySchema,
-    base=City,
-)
+class Municipality(City):
+    class Meta:
+        schema_cls = MunicipalitySchema
 
 
-StandardCity = FirestoreObjectClsFactory.create(
-    name="StandardCity",
-    schema=StandardCitySchema,
-    base=City
-)
+class StandardCity(City):
+    class Meta:
+        schema_cls = StandardCitySchema
 
 
 @pytest.fixture

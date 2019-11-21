@@ -3,9 +3,7 @@ from flask_boiler.context import Context as CTX
 
 class CollectionMixin:
 
-    # To initialize:
-    # class AustralianPhilosopher(Philosopher, collection_name="Bruce"):
-    _collection_name = None
+    # _collection_name = None
 
     @classmethod
     def _doc_ref_from_id(cls, doc_id):

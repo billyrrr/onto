@@ -31,6 +31,28 @@ def ModelA(ModelASchema):
     return ModelA
 
 
+def test_create_model():
+
+    class ModelKSchema(schema.Schema):
+        int_a = fields.Integer(load_from="intA", dump_to="intA")
+        int_b = fields.Integer(load_from="intB", dump_to="intB")
+
+    class ModelK(serializable.Serializable):
+        class Meta:
+            schema_cls = ModelKSchema
+
+    obj: ModelK = ModelK.new()
+
+    assert obj.int_a == 0
+    assert obj.int_b == 0
+
+    assert obj.to_dict() == {
+        "intA": 0,
+        "intB": 0,
+        "obj_type": "ModelK",
+    }
+
+
 def test_cls_factory(ModelA):
     obj: ModelA = ModelA.new()
 

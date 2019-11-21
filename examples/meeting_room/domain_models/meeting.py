@@ -12,11 +12,11 @@ class MeetingSchema(schema.Schema):
 
 class MeetingBase(domain_model.DomainModel):
 
-    _collection_name = "meetings"
+    class Meta:
+        collection_name = "meetings"
 
 
-Meeting = factory.ClsFactory.create(
-    "Meeting", MeetingSchema, base=MeetingBase)
+class Meeting(MeetingBase):
 
-
-
+    class Meta:
+        schema_cls = MeetingSchema

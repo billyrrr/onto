@@ -9,9 +9,11 @@ class LocationSchema(schema.Schema):
 
 
 class LocationBase(domain_model.DomainModel):
+    class Meta:
+        collection_name = "locations"
 
-    _collection_name = "locations"
 
+class Location(LocationBase):
 
-Location = factory.ClsFactory.create(
-    "Location", LocationSchema, base=LocationBase)
+    class Meta:
+        schema_cls = LocationSchema

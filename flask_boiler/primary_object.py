@@ -3,12 +3,24 @@ from google.cloud.firestore_v1 import Transaction
 from flask_boiler.context import Context as CTX
 from flask_boiler.firestore_object import FirestoreObject
 from flask_boiler.query_mixin import QueryMixin
+from flask_boiler.serializable import SerializableMeta
 from flask_boiler.utils import random_id
 
 from flask_boiler.schema import Schema
 
 
-class PrimaryObject(FirestoreObject, QueryMixin):
+class PrimaryObjectMeta(SerializableMeta):
+
+    def __new__(mcs, name, bases, attrs):
+        klass = super().__new__(mcs, name, bases, attrs)
+        if hasattr(klass, "Meta"):
+            meta = klass.Meta
+            if hasattr(meta, "collection_name"):
+                klass._collection_name = meta.collection_name
+        return klass
+
+
+class PrimaryObject(FirestoreObject, QueryMixin, metaclass=PrimaryObjectMeta):
     """
     Primary Object is placed in a collection in root directory only.
     the document will be stored in and accessed from

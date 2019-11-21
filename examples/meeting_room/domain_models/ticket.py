@@ -10,10 +10,12 @@ class TicketSchema(schema.Schema):
 
 class TicketBase(domain_model.DomainModel):
 
-    _collection_name = "tickets"
+    class Meta:
+        collection_name = "tickets"
 
 
-Ticket = factory.ClsFactory.create(
-    "Ticket", TicketSchema, base=TicketBase)
+class Ticket(TicketBase):
 
+    class Meta:
+        schema_cls = TicketSchema
 

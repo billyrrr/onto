@@ -12,13 +12,15 @@ class UserSchema(schema.Schema):
 
 class UserBase(domain_model.DomainModel):
 
-    _collection_name = "users"
+    class Meta:
+        collection_name = "users"
 
     @property
     def display_name(self):
         return "{} {}".format(self.first_name, self.last_name)
 
 
-User = factory.ClsFactory.create(
-    "User", UserSchema, base=UserBase)
+class User(UserBase):
 
+    class Meta:
+        schema_cls = UserSchema
