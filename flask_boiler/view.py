@@ -45,7 +45,13 @@ class FlaskAsViewMixin:
     #     on_update([dm_ref.get()], changes=None, readtime=None)
 
 
-class FlaskAsView(FlaskAsViewMixin,
+class FlaskAsView(ViewModel):
+    pass
+
+class DocumentAsView(ViewModel):
+    pass
+
+class _FlaskAsView(FlaskAsViewMixin,
                   ViewModelMixin,
                   PersistableMixin,
                   SerializableFO
@@ -61,17 +67,6 @@ class FlaskAsView(FlaskAsViewMixin,
 
 
 class DocumentAsViewMixin:
-
-    @classmethod
-    def _get_collection_name(cls):
-        return cls.__name__
-
-    @classmethod
-    def _get_patch_query(cls) -> firestore.Query:
-        collection_group_id = "_PATCH_{}" \
-            .format(cls._get_collection_name())
-        collection_group_query = CTX.db.collection_group(collection_group_id)
-        return collection_group_query
 
     @classmethod
     def new(cls, *args, **kwargs):
@@ -96,7 +91,7 @@ class DocumentAsViewMixin:
         self.save()
 
 
-class DocumentAsView(DocumentAsViewMixin,
+class _DocumentAsView(DocumentAsViewMixin,
                      ViewModelMixin,
                      PersistableMixin,
                      ReferencedObject):

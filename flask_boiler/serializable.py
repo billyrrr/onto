@@ -196,6 +196,9 @@ class Exportable:
         """
         d = self.schema_obj.dump(self)
 
+        # print("----")
+        # print(d)
+
         res = dict()
         for key, val in d.items():
             res[key] = self._export_val(val, to_save=to_save)

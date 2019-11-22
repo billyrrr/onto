@@ -8,6 +8,7 @@ from flask_boiler import schema, fields, view, domain_model, factory, \
     view_model, view_mediator
 from flask_boiler.referenced_object import ReferencedObject
 from flask_boiler.utils import random_id
+from flask_boiler.view_mediator_dav import ViewMediatorDAV
 from flask_boiler.view_model import PersistableMixin, ViewModelMixin
 
 from .fixtures import CTX
@@ -58,7 +59,7 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs):
                 return super().get_vm_update_callback(dm_cls, *args, **kwargs)
 
         @classmethod
-        def create_from_color_names(cls, color_names):
+        def create_from_color_names(cls, color_names, **kwargs):
             struct = dict()
 
             for color_name in color_names:
@@ -67,14 +68,24 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs):
 
                 struct[color_name] = (obj_type, doc_id)
             doc_ref = CTX.db.collection("RainbowDAV").document(vm_id)
-            return super().get(doc_ref=doc_ref, struct_d=struct, once=False)
+            return super().get(doc_ref=doc_ref,
+                               struct_d=struct,
+                               once=False,
+                               **kwargs)
 
         @classmethod
-        def new(cls, color_names: str=None):
+        def new(cls, color_names: str=None, **kwargs):
             color_name_list = color_names.split("+")
-            return cls.create_from_color_names(color_names=color_name_list)
+            return cls.create_from_color_names(
+                color_names=color_name_list,
+                **kwargs)
 
-    obj = RainbowViewModelDAV.new("yellow+magenta+cian")
+    def notify(self):
+        self.save()
+
+    obj = RainbowViewModelDAV.new("yellow+magenta+cian",
+                                  f_notify=notify)
+
     time.sleep(3)
 
     assert CTX.db.collection("RainbowDAV").document(vm_id).get().to_dict() == {

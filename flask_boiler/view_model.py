@@ -81,12 +81,20 @@ class ViewModelMixin:
         return [cls.get(struct_d=struct_d, once=once)
                 for struct_d in struct_d_iterable]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, f_notify=None, *args, **kwargs):
+        """
+
+        :param f_notify: callback to notify that view model's
+            business properties have finished updating
+        :param args:
+        :param kwargs:
+        """
         super().__init__(*args, **kwargs)
         self.business_properties: Dict[str, DomainModel] = dict()
         self.snapshot_container = SnapshotContainer()
         self._on_update_funcs: Dict[str, Tuple] = dict()
         self.listener = None
+        self.f_notify = f_notify
 
     def _bind_to_domain_model(self, *, key, obj_type, doc_id):
         """
@@ -167,30 +175,30 @@ class ViewModelMixin:
         # doc_watch = dm_ref.on_snapshot(on_update)
         self._on_update_funcs[dm_ref._document_path] = on_update
 
-    def diff(self, new_state, allowed=None):
-        prev_state = self.to_view_dict()
-
-        if prev_state["lastName"] == "Manes" and new_state["lastName"] == "M.":
-            return {
-                "lastName": "M."
-            }
-        else:
-            return dict()
-
-        if allowed is not None:
-            prev_state = {key: val
-                          for key, val in prev_state.items()
-                          if key in allowed}
-            new_state = {key: val
-                         for key, val in new_state.items()
-                         if key in allowed}
-
-        diff_res = diff(prev_state, new_state)
-        result = patch(diff_result=diff_res,
-                       destination=dict(),
-                       in_place=False
-                       )
-        return result
+    # def diff(self, new_state, allowed=None):
+    #     prev_state = self.to_view_dict()
+    #
+    #     if prev_state["lastName"] == "Manes" and new_state["lastName"] == "M.":
+    #         return {
+    #             "lastName": "M."
+    #         }
+    #     else:
+    #         return dict()
+    #
+    #     if allowed is not None:
+    #         prev_state = {key: val
+    #                       for key, val in prev_state.items()
+    #                       if key in allowed}
+    #         new_state = {key: val
+    #                      for key, val in new_state.items()
+    #                      if key in allowed}
+    #
+    #     diff_res = diff(prev_state, new_state)
+    #     result = patch(diff_result=diff_res,
+    #                    destination=dict(),
+    #                    in_place=False
+    #                    )
+    #     return result
 
     def listen_once(self):
 
@@ -277,7 +285,8 @@ class ViewModelMixin:
 
         :return:
         """
-        return
+        if self.f_notify is not None:
+            self.f_notify(self)
 
     def get_vm_update_callback(self, dm_cls, *args, **kwargs) -> Callable:
         """ Returns a function for updating a view
@@ -309,4 +318,6 @@ class ViewModelMixin:
 
 
 class ViewModel(ViewModelMixin, PersistableMixin, ReferencedObject):
-    pass
+
+    def __init__(self, *args, doc_ref=None, **kwargs):
+        super().__init__(*args, doc_ref=doc_ref, **kwargs)
