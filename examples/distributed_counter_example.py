@@ -15,7 +15,6 @@ class Shard(DomainModel):
 
     class Meta:
         schema_cls = ShardSchema
-        collection_id = "CounterAShards"
 
 
 class CounterViewSchema(Schema):
