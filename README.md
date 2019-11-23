@@ -495,7 +495,19 @@ Rest assured, the write to DomainModel is still designed
 to be strongly consistent. When a user makes changes, 
 it is designed to validate that they have the latest 
 data before the domain model is updated. 
- 
+
+### Update One Document Per Field
+
+For example, if user A wants to change their display name or
+preferred pronoun, you should update only one document to
+reflect this change. In alternative designs, you may update
+several other documents, for example, the friend list of
+user B and user E to reflect this change, but flask-boiler
+does not favor this approach. It is recommended
+that you build friend list as a ViewModel, and do not update
+its values directly, so that you update only
+***one*** document per field (in this case the User
+domain model of user A).
 
 ## Contributing
 Pull requests are welcome. 
