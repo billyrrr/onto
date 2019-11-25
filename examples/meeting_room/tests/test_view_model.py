@@ -110,7 +110,7 @@ def test_view(users, tickets, location, meeting, setup_app):
             "inSession": False
         })
 
-    # time.sleep(3)
+    time.sleep(3)
 
     res = test_client.get(
         path='meeting_sessions/meeting_1')
