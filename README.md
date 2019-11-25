@@ -13,6 +13,15 @@ ORM wrapper for firestore ORM, this framework support an entire set of features 
 using "flask-boiler architecture". It works with flask so you may build new services using flask-boiler
 to run with your current flask app.
 
+Some reasons that you may want to use this framework:
+- The automatically documented API accelerates your development
+- You want to use Firestore to build your front end, but
+    you have to give up because your data contains many
+    relational reference
+- You want to move some business logic to back end
+- You are open to trying something new and contributing to a framework
+- You want to develop a new reactive service to your existing flask app
+
 This framework is at ***development stage***. 
 API is not guaranteed and ***will*** change often. 
 
