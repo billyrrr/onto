@@ -72,7 +72,7 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs):
     )
     mediator.add_instance_get(rule="/rainbow/<string:color_names>")
 
-    time.sleep(1)
+    # time.sleep(1)
 
     res = test_client.get(
         path="/rainbow/yellow+magenta+cian")

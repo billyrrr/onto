@@ -1,3 +1,5 @@
+import time
+
 from google.cloud.firestore_v1 import DocumentSnapshot, DocumentReference
 from google.cloud.firestore_v1.watch import Watch, WATCH_TARGET_ID, document_watch_comparator
 
@@ -37,4 +39,6 @@ class DataListener:
     def wait_for_once_done(self):
         # TODO: Find a better way
         # TODO: review and test
-        self.watch._consumer._thread.join()
+        while not self.watch.has_pushed:
+            time.sleep(2)
+        # self.watch._consumer._thread.join()

@@ -81,7 +81,7 @@ class ViewMediatorDAV:
                 the view model.
         """
         self.instances = self.generate_entries()
-        time.sleep(3)  # TODO: delete after implementing sync
+        # time.sleep(3)  # TODO: delete after implementing sync
         self._listen_to_patch()
 
     def generate_entries(self):

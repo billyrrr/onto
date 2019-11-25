@@ -170,7 +170,7 @@ class ViewMediator:
                 }
                 _self.mutation_cls.mutate_patch(
                     doc_id=doc_id, data=d)
-                time.sleep(1)  # TODO: delete after implementing sync
+                # time.sleep(1)  # TODO: delete after implementing sync
                 return {
                     "operation_status": "success"
                 }
@@ -208,7 +208,7 @@ class ViewMediator:
 
             def get(self, *args, **kwargs):
                 instance = _self.view_model_cls.new(*args, **kwargs)
-                time.sleep(1)  # TODO: delete after implementing sync
+                # time.sleep(1)  # TODO: delete after implementing sync
                 return instance.to_view_dict()
 
         return GetView

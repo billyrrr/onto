@@ -285,6 +285,8 @@ class ViewModelMixin:
             once=False
         )
 
+        self.listener.wait_for_once_done()
+
     def _refresh_business_property(self, ):
         for key, val in self._structure.items():
             obj_type, doc_id = val

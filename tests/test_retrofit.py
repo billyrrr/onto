@@ -17,4 +17,4 @@ def test_retrofit(CTX):
 
     retrofit._retrofit(view=ExampleView(), collection_path="hellos")
 
-    time.sleep(5)
+    # time.sleep(5)

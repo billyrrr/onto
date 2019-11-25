@@ -86,7 +86,7 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs):
     obj = RainbowViewModelDAV.new("yellow+magenta+cian",
                                   f_notify=notify)
 
-    time.sleep(3)
+    # time.sleep(3)
 
     assert CTX.db.collection("RainbowDAV").document(vm_id).get().to_dict() == {
         'rainbowName': 'cian-magenta-yellow',

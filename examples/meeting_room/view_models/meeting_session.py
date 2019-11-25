@@ -162,7 +162,7 @@ class MeetingSessionMixin:
         obj = cls.get(struct_d=struct, once=once,
                           meeting_id=m.doc_ref.id,
                           **kwargs)
-        time.sleep(2)  # TODO: delete after implementing sync
+        # time.sleep(2)  # TODO: delete after implementing sync
         return obj
 
     def propagate_change(self):

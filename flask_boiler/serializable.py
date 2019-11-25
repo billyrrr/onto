@@ -4,7 +4,6 @@ from marshmallow.utils import is_iterable_but_not_string
 
 from flask_boiler import fields
 from flask_boiler.helpers import EmbeddedElement
-from flask_boiler.schema import Schema
 from .model_registry import BaseRegisteredModel, ModelRegistry
 
 
@@ -36,13 +35,13 @@ class Schemed(SchemedBase):
         # self._schema_obj = self._schema_cls()
 
     @classmethod
-    def get_schema_cls(cls) -> Type['Schema']:
+    def get_schema_cls(cls):
         """ Returns the Schema class associated with the model class.
         """
         return cls._schema_cls
 
     @classmethod
-    def get_schema_obj(cls) -> Type[Schema]:
+    def get_schema_obj(cls):
         """ Returns an instantiated object for Schema associated
                 with the model class
         """

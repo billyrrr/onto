@@ -64,7 +64,7 @@ def test_start(users, tickets, location, meeting):
 
     mediator.start()
 
-    time.sleep(5)
+    # time.sleep(5)
 
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
@@ -101,7 +101,7 @@ def test_mutate(users, tickets, location, meeting):
 
     mediator.start()
 
-    time.sleep(5)
+    # time.sleep(5)
 
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
@@ -146,7 +146,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
     mediator.start()
 
     time.sleep(5)
-
+    #
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
 
@@ -173,7 +173,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
     tickets[0].save()
 
     time.sleep(3)
-
+    #
     """
     Expect the document to be updated to exclude Tijuana Furlong from a
       list of people attending the meeting session and the hearing aid
@@ -276,7 +276,7 @@ class UserViewMediatorDAV(ViewMediatorDAV):
 def test_user_view(users, tickets, location, meeting):
     user_view = UserViewDAV.new(user_id="thomasina", )
 
-    time.sleep(3)  # TODO: delete after implementing sync
+    # time.sleep(3)  # TODO: delete after implementing sync
 
     assert user_view._export_as_view_dict() == {'meetings': [
         {'status': 'in-session', 'users': [
@@ -310,7 +310,7 @@ def test_user_view(users, tickets, location, meeting):
 def test_user_view_diff(users, tickets, location, meeting):
     user_view = UserViewDAV.new(user_id="thomasina", )
 
-    time.sleep(3)  # TODO: delete after implementing sync
+    # time.sleep(3)  # TODO: delete after implementing sync
 
     updated_dict = user_view._export_as_view_dict().copy()
     updated_dict["lastName"] = 'M.'
@@ -326,7 +326,7 @@ def test_propagate_change(users, tickets, location, meeting):
 
     user_view = UserViewDAV.new(user_id=user_id, )
 
-    time.sleep(3)
+    # time.sleep(3)
 
     user_view.user.last_name = "M."
     user_view.propagate_change()
@@ -352,15 +352,15 @@ def test_mutation(users, tickets, location, meeting):
 
     ref = Context.db.collection("UserViewDAV").document(user_id)
 
-    time.sleep(3)  # TODO: delete after implementing sync
-
+    # time.sleep(3)  # TODO: delete after implementing sync
+    #
     user_view = mediator.instances[ref._document_path]
 
     ref.collection("_PATCH_UserViewDAV").add({
         "lastName": "Manes-Kennedy"
     })
 
-    time.sleep(3)
+    # time.sleep(3)
 
     updated_user = User.get(doc_id=user_id)
 

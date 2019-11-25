@@ -70,7 +70,7 @@ def v_cls(CTX):
 
 def test_to_dict_view(v_cls, color_refs):
     vm = v_cls.get_from_color_names(["yellow", "magenta", "cian"])
-    time.sleep(3)
+    # time.sleep(3)
     assert vm.to_view_dict() == {
         'rainbowName': 'yellow-magenta-cian',
         'colors': ['yellow', 'magenta', 'cian']

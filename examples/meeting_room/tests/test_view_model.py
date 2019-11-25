@@ -50,7 +50,7 @@ def test_view(users, tickets, location, meeting, setup_app):
         list_get_view=meeting_session_ops.ListGet
     )
 
-    time.sleep(2)  # TODO: delete after implementing sync
+    # time.sleep(2)  # TODO: delete after implementing sync
 
     test_client = app.test_client()
 
@@ -110,7 +110,7 @@ def test_view(users, tickets, location, meeting, setup_app):
             "inSession": False
         })
 
-    time.sleep(3)
+    # time.sleep(3)
 
     res = test_client.get(
         path='meeting_sessions/meeting_1')
@@ -139,7 +139,7 @@ def test_view(users, tickets, location, meeting, setup_app):
 def test_user_view(users, meeting):
     user_view = view_models.UserView.get_from_user_id(user_id="thomasina", )
 
-    time.sleep(2)  # TODO: delete after implementing sync
+    # time.sleep(2)  # TODO: delete after implementing sync
 
     assert user_view._export_as_view_dict() == {'meetings': [
         {'status': 'in-session', 'users': [
@@ -171,12 +171,12 @@ def test_view_model_update(users, tickets, location, meeting):
     meeting_session = view_models.MeetingSession \
         .get_from_meeting_id(meeting_id=meeting.doc_id, once=False)
 
-    time.sleep(2)  # TODO: delete after implementing sync
+    # time.sleep(2)  # TODO: delete after implementing sync
 
     tickets[0].attendance = False
     tickets[0].save()
 
-    time.sleep(5)  # TODO: delete after implementing sync
+    time.sleep(5)
 
     assert meeting_session._export_as_view_dict() == {'inSession': True,
                                                       'longitude': -117.242929,

@@ -23,7 +23,7 @@ class ListGet(SwaggerView):
         query_d = request.args.to_dict()
         meeting_sessions = MeetingSession.get_many_from_query(
             query_d=query_d, once=False)
-        time.sleep(1)  # TODO: delete after implementing sync
+        # time.sleep(1)  # TODO: delete after implementing sync
         results = {meeting_session.meeting_id: meeting_session.to_view_dict()
                    for meeting_session in meeting_sessions}
         return {
