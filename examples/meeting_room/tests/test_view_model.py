@@ -50,7 +50,7 @@ def test_view(users, tickets, location, meeting, setup_app):
         list_get_view=meeting_session_ops.ListGet
     )
 
-    # time.sleep(2)  # TODO: delete after implementing sync
+    time.sleep(2)  # TODO: delete after implementing sync
 
     test_client = app.test_client()
 
