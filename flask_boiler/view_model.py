@@ -60,10 +60,10 @@ class ViewModelMixin:
 
     @classmethod
     def get(cls, struct_d=None, once=False, **kwargs):
-        """
+        """ Returns an instance of view model with listener activated.
 
-        :param struct_d:
-        :param once: If set to True, do not listen to document changes
+        :param struct_d: Binding structure.
+        :param once: If set to True, do not listen to future document updates
         :return:
         """
         obj = cls(struct_d=struct_d, **kwargs)
@@ -78,6 +78,13 @@ class ViewModelMixin:
 
     @classmethod
     def get_many(cls, struct_d_iterable=None, once=False):
+        """ Gets a list of view models from a list of
+            binding structures.
+
+        :param struct_d_iterable: Binding structure.
+        :param once: If set to True, do not listen to future document updates
+        :return:
+        """
         return [cls.get(struct_d=struct_d, once=once)
                 for struct_d in struct_d_iterable]
 
@@ -201,6 +208,11 @@ class ViewModelMixin:
     #     return result
 
     def listen_once(self):
+        """ Retrieves domain models binded to a view model in an async
+                operation and disconnects the listener once the data
+                is retrieved so that no future updates to the domain
+                models are processed.
+        """
 
         def snapshot_callback(docs, changes, read_time):
             """
@@ -235,6 +247,12 @@ class ViewModelMixin:
         self.listener.wait_for_once_done()
 
     def register_listener(self):
+        """ Listens to domain models binded to a view model in an async
+                operation.
+
+            Note that the domain models may not yet be retrieved
+                after this function returns.
+        """
 
         def snapshot_callback(docs, changes, read_time):
             """
@@ -282,8 +300,6 @@ class ViewModelMixin:
 
     def _notify(self):
         """ Notify that this object has been changed by underlying view models
-
-        :return:
         """
         if self.f_notify is not None:
             self.f_notify(self)

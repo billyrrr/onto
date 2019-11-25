@@ -1,9 +1,10 @@
-from typing import TypeVar
+from typing import TypeVar, Type
 
 from marshmallow.utils import is_iterable_but_not_string
 
 from flask_boiler import fields
 from flask_boiler.helpers import EmbeddedElement
+from flask_boiler.schema import Schema
 from .model_registry import BaseRegisteredModel, ModelRegistry
 
 
@@ -35,21 +36,31 @@ class Schemed(SchemedBase):
         # self._schema_obj = self._schema_cls()
 
     @classmethod
-    def get_schema_cls(cls):
+    def get_schema_cls(cls) -> Type['Schema']:
+        """ Returns the Schema class associated with the model class.
+        """
         return cls._schema_cls
 
     @classmethod
-    def get_schema_obj(cls):
+    def get_schema_obj(cls) -> Type[Schema]:
+        """ Returns an instantiated object for Schema associated
+                with the model class
+        """
         if cls._schema_obj is None:
             cls._schema_obj = cls._schema_cls()
         return cls._schema_obj
 
     @property
     def schema_cls(self):
+        """ Returns the Schema class associated with the model object.
+        """
         return self.get_schema_cls()
 
     @property
     def schema_obj(self):
+        """ Returns an instantiated object for Schema associated
+                with the model object.
+        """
         return self.get_schema_obj()
 
     @classmethod
@@ -255,6 +266,17 @@ class NewMixin:
 
     @classmethod
     def new(cls, allow_default=True, **kwargs):
+        """ Instantiates a new instance to the model.
+                This is similar to the use of "new" in Java.
+                It is recommended that you use "new" to initialize
+                    an object, rather than the native initializer.
+
+        :param allow_default: if set to False, an error will be
+            raised if value is not provided for a field.
+        :param kwargs: keyword arguments to pass to the class
+            initializer.
+        :return:
+        """
 
         fd = cls._get_fields()  # Calls classmethod
 
@@ -279,6 +301,12 @@ class NewMixin:
         return cls(_with_dict={**d_val_default, **d_val_provided}, **d_super)
 
     def __init__(self, _with_dict=None, **kwargs):
+        """ Private initializer; do not call directly.
+            Use "YourModelClass.new(...)" instead.
+
+        :param _with_dict:
+        :param kwargs:
+        """
         if _with_dict is None:
             _with_dict = dict()
 
@@ -290,10 +318,14 @@ class NewMixin:
 
 
 class SerializableMeta(ModelRegistry):
+    """
+    Metaclass for serializable models.
+    """
 
     def __new__(mcs, name, bases, attrs):
         klass = super().__new__(mcs, name, bases, attrs)
         if hasattr(klass, "Meta"):
+            # Moves Model.Meta.schema_cls to Model._schema_cls
             meta = klass.Meta
             if hasattr(meta, "schema_cls"):
                 klass._schema_cls = meta.schema_cls

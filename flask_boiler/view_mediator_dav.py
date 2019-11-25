@@ -34,6 +34,12 @@ class ViewMediatorDAV:
 
     @classmethod
     def notify(cls, obj):
+        """ Specifies what to do with the view model newly generated
+                from an update.
+
+        :param obj:
+        :return:
+        """
         obj.save()
 
     def _get_collection_name(self):
@@ -71,6 +77,9 @@ class ViewMediatorDAV:
             reference_class_instance=DocumentReference)
 
     def start(self):
+        """ Generates view models and listen to changes proposed to
+                the view model.
+        """
         self.instances = self.generate_entries()
         time.sleep(3)  # TODO: delete after implementing sync
         self._listen_to_patch()
