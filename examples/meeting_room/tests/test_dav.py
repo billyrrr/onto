@@ -360,7 +360,7 @@ def test_mutation(users, tickets, location, meeting):
         "lastName": "Manes-Kennedy"
     })
 
-    # time.sleep(3)
+    time.sleep(3)
 
     updated_user = User.get(doc_id=user_id)
 

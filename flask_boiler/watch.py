@@ -42,3 +42,6 @@ class DataListener:
         while not self.watch.has_pushed:
             time.sleep(2)
         # self.watch._consumer._thread.join()
+
+    def __del__(self):
+        self.watch.close()
