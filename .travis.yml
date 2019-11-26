@@ -10,7 +10,7 @@ install:
   - pip install -r dev-requirements.txt
 # command to run tests
 script:
-  - pytest --cov=flask_boiler tests
+  - pytest --cov=flask_boiler -vv tests
 after_success:
   - coveralls
 notifications:
