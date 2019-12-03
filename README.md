@@ -4,14 +4,17 @@
 [![Coverage Status](https://coveralls.io/repos/github/billyrrr/flask-boiler/badge.svg?branch=master)](https://coveralls.io/github/billyrrr/flask-boiler?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/flask-boiler/badge/?version=latest)](https://flask-boiler.readthedocs.io/en/latest/?badge=latest)
 
-![IMG_2602](https://user-images.githubusercontent.com/24789156/67615967-90976f80-f787-11e9-9788-5b11e5ba4175.PNG)
+![logo](https://user-images.githubusercontent.com/24789156/70083370-1c8b8b00-15c1-11ea-8042-815f6456524a.PNG)
 
 "boiler": **B**ackend-**O**riginated **I**nstantly-**L**oaded **E**ntity **R**epository 
 
 Flask-boiler helps you build fast-prototype of your backend. Other than providing an easy-to-use
 ORM wrapper for firestore ORM, this framework support an entire set of features to build a backend
-using "flask-boiler architecture". It works with flask so you may build new services using flask-boiler
+that is reactive. It works with flask so you may build new services using flask-boiler
 to run with your current flask app.
+
+![Architecture Diagram](https://user-images.githubusercontent.com/24789156/70083123-ab4bd800-15c0-11ea-970d-99902829646f.png)
+
 
 Some reasons that you may want to use this framework:
 - The automatically documented API accelerates your development
@@ -114,11 +117,6 @@ class MeetingSessionMixin:
 
     @property
     def _meeting(self):
-        """
-        TODO: fix evaluation order in source code (add priority flag to some
-        TODO:    view models to be instantiated first)
-        :return:
-        """
         return self.business_properties[self._meeting_id]
 
     @property
@@ -236,24 +234,9 @@ class MeetingSession(MeetingSessionMixin, view.FlaskAsView):
 
 
 class MeetingSessionMutation(Mutation):
-
     view_model_cls = MeetingSession
 
 ```
-
-
-
-### Add data
-
-```python
-user = User.new(doc_id="alovelace")
-user.first = 'Ada'
-user.last = 'Lovelace'
-user.born = "1815"
-user.save()
-```
-
-(*Extra steps required to declare model. See quickstart for details.)
 
 
 ### Save data
@@ -505,7 +488,7 @@ to be strongly consistent. When a user makes changes,
 it is designed to validate that they have the latest 
 data before the domain model is updated. 
 
-### Update One Document Per Field
+### "Update One Document Per Field"
 
 For example, if user A wants to change their display name or
 preferred pronoun, you should update only one document to
