@@ -13,7 +13,7 @@ ORM wrapper for firestore ORM, this framework support an entire set of features 
 that is reactive. It works with flask so you may build new services using flask-boiler
 to run with your current flask app.
 
-![Architecture Diagram](https://user-images.githubusercontent.com/24789156/70083123-ab4bd800-15c0-11ea-970d-99902829646f.png)
+![Architecture Diagram](https://user-images.githubusercontent.com/24789156/70380617-06e4d100-18f3-11ea-9111-4398ed0e865c.png)
 
 
 Some reasons that you may want to use this framework:
