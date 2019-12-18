@@ -86,3 +86,25 @@ class ViewMediatorDAV:
 
     def generate_entries(self):
         raise NotImplementedError
+
+
+class ViewMediatorDeltaDAV(ViewMediatorDAV):
+
+    def _get_query_and_on_snapshot(self):
+        """
+        Implement in subclass
+        :return:
+        """
+        raise NotImplementedError
+
+    def start(self):
+
+        query, on_snapshot = self._get_query_and_on_snapshot()
+
+        watch = Watch.for_query(
+            query=query,
+            snapshot_callback=on_snapshot,
+            snapshot_class_instance=DocumentSnapshot,
+            reference_class_instance=DocumentReference
+        )
+
