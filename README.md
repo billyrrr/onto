@@ -4,14 +4,23 @@
 [![Coverage Status](https://coveralls.io/repos/github/billyrrr/flask-boiler/badge.svg?branch=master)](https://coveralls.io/github/billyrrr/flask-boiler?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/flask-boiler/badge/?version=latest)](https://flask-boiler.readthedocs.io/en/latest/?badge=latest)
 
-![logo](https://user-images.githubusercontent.com/24789156/70083370-1c8b8b00-15c1-11ea-8042-815f6456524a.PNG)
-
 "boiler": **B**ackend-**O**riginated **I**nstantly-**L**oaded **E**ntity **R**epository 
 
-Flask-boiler helps you build fast-prototype of your backend. Other than providing an easy-to-use
-ORM wrapper for firestore ORM, this framework support an entire set of features to build a backend
-that is reactive. It works with flask so you may build new services using flask-boiler
-to run with your current flask app.
+Flask-boiler manages your application state with Firestore. 
+You can create view models that aggregates underlying data 
+sources and store them immediately and permanently in Firestore. 
+As a result, your front end development will be as easy as 
+using Firestore. 
+
+Demo: 
+
+When you change the attendance status of one of the participants 
+in the meeting, all other participants receive an updated version 
+of the list of people attending the meeting. 
+
+![Untitled_2](https://user-images.githubusercontent.com/24789156/71137341-be0e1000-2242-11ea-98cb-53ad237cac43.gif)
+
+Architecture Diagram: 
 
 ![Architecture Diagram](https://user-images.githubusercontent.com/24789156/70380617-06e4d100-18f3-11ea-9111-4398ed0e865c.png)
 
