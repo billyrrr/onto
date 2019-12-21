@@ -42,6 +42,7 @@ setuptools.setup(
         "apispec>=2.0.2",
         "flasgger",
         "dictdiffer",
-        "celery"
+        "celery",
+        "firestore-odm"
     ],
 )

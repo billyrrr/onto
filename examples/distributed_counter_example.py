@@ -1,6 +1,6 @@
 from firestore_odm.context import Context as CTX
 from firestore_odm.schema import Schema
-from flask_boiler.fields import Integer
+from firestore_odm.fields import Integer
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.view_mediator_dav import ViewMediatorDAV
 from flask_boiler.view_model import ViewModel

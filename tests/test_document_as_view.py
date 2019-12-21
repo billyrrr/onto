@@ -4,7 +4,7 @@ from flask_boiler import schema, fields, view
 from firestore_odm.utils import random_id
 
 from .color_fixtures import Color
-from .fixtures import CTX
+from .fixtures import CTX, setup_app
 
 
 def test_rainbow_stuffs(CTX, setup_app, color_refs):

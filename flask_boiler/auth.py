@@ -9,8 +9,7 @@ import firebase_admin
 from firebase_admin import auth
 from flask import request, Response
 from flask_restful import abort
-
-from .context import Context
+from firestore_odm.context import Context
 
 # Flag for whether main app is in TESTING mode
 def is_testing():

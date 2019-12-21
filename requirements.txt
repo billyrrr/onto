@@ -21,3 +21,5 @@ flasgger
 dictdiffer
 
 celery
+
+firestore-odm
