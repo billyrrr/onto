@@ -1,4 +1,4 @@
-from flask_boiler.context import Context as CTX
+from .context import Context as CTX
 
 
 class CollectionMixin:

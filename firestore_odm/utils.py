@@ -11,7 +11,7 @@ from functools import partial
 from google.cloud.firestore import DocumentSnapshot
 from inflection import camelize, underscore
 
-from flask_boiler.model_registry import ModelRegistry
+from .model_registry import ModelRegistry
 
 
 def random_id():

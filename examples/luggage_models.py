@@ -1,5 +1,5 @@
 from flask_boiler import serializable, schema, fields, domain_model, view_model
-from flask_boiler.firestore_object import FirestoreObjectClsFactory
+from firestore_odm.firestore_object import FirestoreObjectClsFactory
 
 Schema = schema.Schema
 

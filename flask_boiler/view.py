@@ -1,13 +1,13 @@
 from flasgger import SwaggerView
 from flask import jsonify
 
-from flask_boiler.firestore_object import SerializableFO
-from flask_boiler.referenced_object import ReferencedObject
-from .serializable import Serializable
+from firestore_odm.firestore_object import SerializableFO
+from firestore_odm.referenced_object import ReferencedObject
+from firestore_odm.serializable import Serializable
 from .domain_model import DomainModel
 from .view_model import ViewModel, ViewModelMixin, PersistableMixin
 from google.cloud import firestore
-from .context import Context as CTX
+from firestore_odm.context import Context as CTX
 
 
 class FlaskAsViewMixin:

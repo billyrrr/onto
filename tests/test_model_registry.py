@@ -1,4 +1,4 @@
-from flask_boiler import model_registry
+from firestore_odm import model_registry
 
 
 class RModelSup(model_registry.BaseRegisteredModel):

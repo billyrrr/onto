@@ -3,12 +3,12 @@ import warnings
 from google.cloud.firestore import DocumentReference
 from google.cloud.firestore import Transaction
 
-from flask_boiler.helpers import RelationshipReference, EmbeddedElement
+from firestore_odm.helpers import RelationshipReference
 # from flask_boiler.view_model import ViewModel
-from flask_boiler.collection_mixin import CollectionMixin
-from flask_boiler.serializable import Serializable
+from .collection_mixin import CollectionMixin
+from .serializable import Serializable
 from flask_boiler.factory import ClsFactory
-from flask_boiler.utils import snapshot_to_obj
+from firestore_odm.utils import snapshot_to_obj
 
 
 class FirestoreObjectClsFactory(ClsFactory):

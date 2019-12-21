@@ -1,19 +1,10 @@
-import time
-
-import pytest
-from flasgger import SwaggerView, Swagger
 from flask import Flask
 
-from flask_boiler import schema, fields, view, domain_model, factory, \
-    view_model, view_mediator
-from flask_boiler.referenced_object import ReferencedObject
-from flask_boiler.utils import random_id
-from flask_boiler.view_mediator_dav import ViewMediatorDAV
-from flask_boiler.view_model import PersistableMixin, ViewModelMixin
+from flask_boiler import schema, fields, view
+from firestore_odm.utils import random_id
 
+from .color_fixtures import Color
 from .fixtures import CTX
-from .color_fixtures import color_refs, ColorSchema, ColorDomainModelBase, Color
-from tests.fixtures import setup_app
 
 
 def test_rainbow_stuffs(CTX, setup_app, color_refs):

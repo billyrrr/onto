@@ -3,7 +3,7 @@ from flasgger import SwaggerView
 from flask import request
 from google.cloud.firestore import DocumentSnapshot
 
-from flask_boiler.context import Context as CTX
+from firestore_odm.context import Context as CTX
 
 
 def _retrofit(view: SwaggerView, collection_path: str):

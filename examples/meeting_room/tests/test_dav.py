@@ -18,7 +18,7 @@ from flask_boiler import view_mediator
 # Import the fixtures used by fixtures
 from tests.fixtures import CTX, setup_app
 from .fixtures import users, tickets, location, meeting
-from flask_boiler.context import Context
+from firestore_odm.context import Context
 
 
 class MeetingSessionDAV(MeetingSessionMixin, DocumentAsView):

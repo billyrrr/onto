@@ -1,8 +1,7 @@
 from google.cloud.firestore import DocumentReference
 from marshmallow import fields
 
-from flask_boiler.helpers import RelationshipReference, EmbeddedElement
-from flask_boiler.serializable import Serializable, Importable, Exportable
+from firestore_odm.helpers import RelationshipReference, EmbeddedElement
 
 
 class Field(fields.Field):

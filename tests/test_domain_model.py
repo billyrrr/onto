@@ -9,12 +9,12 @@ import pytest
 from google.cloud.firestore import Query, DocumentReference, \
     CollectionReference
 
-from flask_boiler.config import Config
-from flask_boiler.context import Context as CTX
+from firestore_odm.config import Config
+from firestore_odm.context import Context as CTX
 
-from flask_boiler.firestore_object import FirestoreObjectClsFactory
+from firestore_odm.firestore_object import FirestoreObjectClsFactory
 from flask_boiler.domain_model import DomainModel
-from flask_boiler.schema import Schema
+from firestore_odm.schema import Schema
 from flask_boiler import fields, collection_mixin
 
 # For pytest, DO NOT DELETE

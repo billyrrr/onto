@@ -1,5 +1,5 @@
-from flask_boiler.schema import Schema
-from flask_boiler.serializable import Schemed
+from firestore_odm.schema import Schema
+from firestore_odm.serializable import Schemed
 
 
 class BusinessPropertyStore(Schemed):

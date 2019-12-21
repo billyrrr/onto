@@ -1,4 +1,4 @@
-from flask_boiler.serializable import BaseRegisteredModel, Schemed, \
+from firestore_odm.serializable import BaseRegisteredModel, Schemed, \
     Importable, NewMixin, Exportable
 from flask_boiler.view_model import ViewModel, ViewModelMixin
 

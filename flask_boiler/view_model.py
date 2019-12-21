@@ -1,16 +1,13 @@
 from typing import Dict, Tuple, Callable
 
-from dictdiffer import diff, patch
 from google.cloud.firestore import DocumentReference
 
-from flask_boiler.business_property_store import BusinessPropertyStore
 from flask_boiler.snapshot_container import SnapshotContainer
 from flask_boiler.watch import DataListener
-from .context import Context as CTX
+from firestore_odm.context import Context as CTX
 from .domain_model import DomainModel
-from flask_boiler.referenced_object import ReferencedObject
-from .serializable import Serializable
-from .utils import random_id, snapshot_to_obj
+from firestore_odm.referenced_object import ReferencedObject
+from firestore_odm.utils import random_id, snapshot_to_obj
 
 
 class PersistableMixin:

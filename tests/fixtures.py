@@ -11,8 +11,8 @@ def CTX():
     :return:
     """
 
-    from flask_boiler.context import Context as TST_CTX
-    from flask_boiler.config import Config
+    from firestore_odm.context import Context as TST_CTX
+    from firestore_odm.config import Config
 
     config = Config(
         app_name="flask-boiler-testing",

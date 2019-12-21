@@ -1,6 +1,6 @@
 import time
 
-from flask_boiler.context import Context as CTX
+from firestore_odm.context import Context as CTX
 from flasgger import SwaggerView
 from flask import request
 

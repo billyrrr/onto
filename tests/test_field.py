@@ -1,6 +1,6 @@
 import pytest
 
-from flask_boiler import utils
+from firestore_odm import utils
 from flask_boiler import schema as fb_schema
 from flask_boiler import fields as fb_fields
 from marshmallow import fields as marshmallow_fields

@@ -1,7 +1,7 @@
 from typing import Union
 
-from flask_boiler.model_registry import BaseRegisteredModel
-from flask_boiler.serializable import T, Schemed, NewMixin, \
+from firestore_odm.model_registry import BaseRegisteredModel
+from firestore_odm.serializable import T, Schemed, NewMixin, \
     Importable, Exportable, U, Serializable
 
 

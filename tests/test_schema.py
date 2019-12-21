@@ -3,11 +3,11 @@ from unittest import mock, skip
 import pytest
 from testfixtures import compare
 
-import flask_boiler.utils
+import firestore_odm.utils
 from flask_boiler import schema, fields
 from flask_boiler.errors import PropertyEvalError
-from flask_boiler.schema import Schema, BoilerProperty
-from flask_boiler.serializable import Serializable
+from firestore_odm.schema import Schema, BoilerProperty
+from firestore_odm.serializable import Serializable
 
 
 def test__get_instance_vars():
@@ -122,10 +122,10 @@ def test_conversion():
         target instance variable names.
     """
 
-    res = flask_boiler.utils.firestore_key_to_attr_name("intA")
+    res = firestore_odm.utils.firestore_key_to_attr_name("intA")
     assert res == "int_a"
 
-    r_res = flask_boiler.utils.attr_name_to_firestore_key("int_a")
+    r_res = firestore_odm.utils.attr_name_to_firestore_key("int_a")
     assert r_res == "intA"
 
 

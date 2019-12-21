@@ -1,6 +1,6 @@
 from google.cloud.firestore import DocumentSnapshot, CollectionReference, Query
 
-from flask_boiler.utils import snapshot_to_obj
+from firestore_odm.utils import snapshot_to_obj
 
 
 def convert_query_ref(func):

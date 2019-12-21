@@ -1,6 +1,6 @@
 from google.cloud.firestore_v1 import Transaction
 
-from flask_boiler.firestore_object import FirestoreObject
+from .firestore_object import FirestoreObject
 
 
 class ReferencedObject(FirestoreObject):

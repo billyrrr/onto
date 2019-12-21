@@ -1,10 +1,10 @@
 import warnings
 
 from flask_boiler.errors import PropertyEvalError
-from flask_boiler.utils import attr_name_to_firestore_key, \
+from firestore_odm.utils import attr_name_to_firestore_key, \
     firestore_key_to_attr_name
-from .utils import obj_type_serialize, obj_type_deserialize
-from . import fields
+from firestore_odm.utils import obj_type_serialize, obj_type_deserialize
+from flask_boiler import fields
 import marshmallow
 from marshmallow import post_dump, pre_load, post_load, EXCLUDE
 

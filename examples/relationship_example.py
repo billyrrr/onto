@@ -1,8 +1,6 @@
-from datetime import datetime
-from flask_boiler import schema, fields, domain_model, utils
+from flask_boiler import schema, fields, domain_model
+from firestore_odm import utils
 from flask_boiler.config import Config
-from flask_boiler.serializable import BaseRegisteredModel, Schemed, Exportable, \
-    NewMixin
 from flask_boiler.context import Context as CTX
 
 if __name__ == "__main__":

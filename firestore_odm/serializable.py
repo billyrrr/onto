@@ -1,9 +1,8 @@
-from typing import TypeVar, Type
+from typing import TypeVar
 
 from marshmallow.utils import is_iterable_but_not_string
 
-from flask_boiler import fields
-from flask_boiler.helpers import EmbeddedElement
+from firestore_odm.helpers import EmbeddedElement
 from .model_registry import BaseRegisteredModel, ModelRegistry
 
 

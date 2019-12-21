@@ -2,11 +2,11 @@ import pytest
 from testfixtures import compare
 
 from flask_boiler import schema, fields
-from flask_boiler.context import Context as CTX
-from flask_boiler.config import Config
-from flask_boiler.firestore_object import FirestoreObject, \
+from firestore_odm.context import Context as CTX
+from firestore_odm.config import Config
+from firestore_odm.firestore_object import FirestoreObject, \
     FirestoreObjectClsFactory
-from flask_boiler.primary_object import PrimaryObject
+from firestore_odm.primary_object import PrimaryObject
 
 config = Config(
     app_name="flask-boiler-testing",

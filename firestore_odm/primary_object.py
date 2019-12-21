@@ -1,12 +1,12 @@
 from google.cloud.firestore_v1 import Transaction
 
-from flask_boiler.context import Context as CTX
-from flask_boiler.firestore_object import FirestoreObject
+from .context import Context as CTX
+from .firestore_object import FirestoreObject
 from flask_boiler.query_mixin import QueryMixin
-from flask_boiler.serializable import SerializableMeta
-from flask_boiler.utils import random_id
+from .serializable import SerializableMeta
+from firestore_odm.utils import random_id
 
-from flask_boiler.schema import Schema
+from .schema import Schema
 
 
 class PrimaryObjectMeta(SerializableMeta):

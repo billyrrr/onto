@@ -1,4 +1,4 @@
-from flask_boiler.primary_object import PrimaryObject
+from firestore_odm.primary_object import PrimaryObject
 
 
 class DomainModel(PrimaryObject):
