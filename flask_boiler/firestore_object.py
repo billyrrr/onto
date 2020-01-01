@@ -17,6 +17,9 @@ class FirestoreObjectClsFactory(ClsFactory):
 
 class FirestoreObjectMixin:
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     # @classmethod
     # def new(cls, doc_ref=None, with_dict=None, **kwargs):
     #     if doc_ref is None:
@@ -70,6 +73,10 @@ class FirestoreObjectMixin:
 
 
 class FirestoreObjectValMixin:
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def _export_val(self, val, to_save=False):
 
         def is_nested_relationship(val):
