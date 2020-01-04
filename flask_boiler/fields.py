@@ -1,3 +1,5 @@
+import typing
+
 from google.cloud.firestore import DocumentReference
 from marshmallow import fields
 
@@ -54,6 +56,13 @@ class List(fields.Raw, Field):
     @property
     def default_value(self):
         return list()
+
+
+class Dict(fields.Raw, Field):
+
+    @property
+    def default_value(self):
+        return dict()
 
 
 class Function(fields.Function, Field):
@@ -207,6 +216,14 @@ class Embedded(fields.Raw, Field):
             return EmbeddedElement(
                 d=value
             )
+
+
+class Remainder(fields.Dict, Field):
+    """
+    To match fields that are not declared.
+    """
+
+    pass
 
 
 class BusinessPropertyFieldBase(fields.Raw, Field):

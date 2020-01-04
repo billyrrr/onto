@@ -147,6 +147,50 @@ class Schema(SchemaBase):
         required=False
     )
 
+    _remainder = fields.Remainder(attribute="_remainder", required=False)
+
+    @pre_load(pass_many=True)
+    def collect_remainder(self, data, many, **kwargs):
+        _fds = self.fields
+
+        field_keys = {field.data_key for key, field in _fds.items()
+                      if not field.dump_only}
+
+        # Keys to set value from keyword arguments
+        data_keys = data.keys()
+        remainder_keys = data_keys - field_keys
+        remainder = {
+            key: data[key]
+            for key in remainder_keys
+        }
+
+        if len(remainder) == 0:
+            return data
+
+        for key, val in remainder.items():
+            del data[key]
+        data["_remainder"] = remainder
+
+        return data
+
+    @post_dump(pass_many=True)
+    def release_remainder(self, data, many, **kwargs):
+
+        if "_remainder" not in data:
+            return data
+
+        if data["_remainder"] is not None:
+            remainder = data["_remainder"]
+        else:
+            remainder = dict()
+
+        for key, val in remainder.items():
+            if key not in data:
+                data[key] = val
+        del data["_remainder"]
+
+        return data
+
     @classmethod
     def _get_reserved_fieldnames(cls):
         """ Returns a list of fieldnames to hide when calling

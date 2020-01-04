@@ -186,18 +186,18 @@ def test_schema_new():
 
     assert set(CitySchema().fields.keys()) == {
         "city_name", "country", "capital",
-        "doc_id", "doc_ref", "obj_type"
+        "doc_id", "doc_ref", "obj_type", "_remainder"
     }
 
     assert set(MunicipalitySchema().fields.keys()) == {
         "city_name", "country", "capital",
-        "doc_id", "doc_ref", "obj_type"
+        "doc_id", "doc_ref", "obj_type", "_remainder"
     }
 
     assert set(StandardCitySchema().fields.keys()) == {
         "city_state", "regions",
         "city_name", "country", "capital",
-        "doc_id", "doc_ref", "obj_type"
+        "doc_id", "doc_ref", "obj_type", "_remainder"
     }
 
 
