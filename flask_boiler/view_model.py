@@ -226,14 +226,16 @@ class ViewModelMixin:
             :return:
             """
 
-            n = len(docs)
-            for i in range(n):
+            with self.snapshot_container.lock:
+                n = len(docs)
+                for i in range(n):
 
-                doc = docs[i]
+                    doc = docs[i]
 
-                on_update = self._on_update_funcs[doc.reference._document_path]
-                # TODO: restore parameter "changes"
-                on_update([doc], None, read_time)
+                    on_update = self._on_update_funcs[doc.reference._document_path]
+                    # TODO: restore parameter "changes"
+                    on_update([doc], None, read_time)
+
             self._refresh_business_property()
             self._invoke_vm_callbacks()
 
@@ -265,18 +267,21 @@ class ViewModelMixin:
                         snapshot was obtained.
             :return:
             """
-            n = len(docs)
-            for i in range(n):
+            with self.snapshot_container.lock:
 
-                doc = docs[i]
+                n = len(docs)
+                for i in range(n):
 
-                on_update = self._on_update_funcs[doc.reference._document_path]
-                # TODO: restore parameter "changes"
-                on_update([doc], None, read_time)
+                    doc = docs[i]
+
+                    on_update = self._on_update_funcs[doc.reference._document_path]
+                    # TODO: restore parameter "changes"
+                    on_update([doc], None, read_time)
 
             self._refresh_business_property()
             self._invoke_vm_callbacks()
-            self._notify()
+            with self.snapshot_container.lock:
+                self._notify()
 
         self.listener = DataListener(
             [dm_ref for dm_ref in self._on_update_funcs],
@@ -288,10 +293,11 @@ class ViewModelMixin:
         self.listener.wait_for_once_done()
 
     def _refresh_business_property(self, ):
-        for key, val in self._structure.items():
-            obj_type, doc_id = val
-            snapshot = self.snapshot_container.get((obj_type, doc_id), )
-            self.business_properties[key] = snapshot_to_obj(snapshot=snapshot)
+        with self.snapshot_container.lock:
+            for key, val in self._structure.items():
+                obj_type, doc_id = val
+                snapshot = self.snapshot_container.get((obj_type, doc_id), )
+                self.business_properties[key] = snapshot_to_obj(snapshot=snapshot)
 
     def _invoke_vm_callbacks(self):
         for key, val in self._structure.items():

@@ -1,3 +1,4 @@
+import threading
 
 
 class SnapshotContainer:
@@ -11,10 +12,10 @@ class SnapshotContainer:
 
     def __init__(self):
         self.store = dict()
+        self.lock = threading.Lock()
 
     def get(self, key):
         return self.store[key]
 
     def set(self, key, val):
         self.store[key] = val
-
