@@ -151,6 +151,30 @@ class Relationship(fields.Str, Field):
         )
 
 
+class StructuralRef(fields.Str, Field):
+
+    @property
+    def default_value(self):
+        if self.many:
+            return dict()
+        else:
+            return None
+
+    def __init__(self, *args, nested=False, many=False, dm_cls, **kwargs):
+        """ Initializes a relationship. A field of the master object
+                to describe relationship to another object or document
+                being referenced.
+
+        :param args: Positional arguments to pass to marshmallow.fields.Str
+        :param many: If set to True, will deserialize and serialize the field
+                    as a dict. (TODO: add support for more iterables)
+        :param kwargs: Keyword arguments to pass to marshmallow.fields.Str
+        """
+        super().__init__(*args, **kwargs)
+        self.many = many
+        self.dm_cls = dm_cls
+
+
 class Embedded(fields.Raw, Field):
     """
     Note that when many is set to True, default value of this field
