@@ -1,49 +1,63 @@
+from collections import defaultdict
+from typing import Tuple
+
+from google.cloud.firestore import DocumentReference
+
 from flask_boiler.schema import Schema
 from flask_boiler.serializable import Schemed
+from flask_boiler.snapshot_container import SnapshotContainer
+from flask_boiler.utils import snapshot_to_obj
 
 
-class BusinessPropertyStore(Schemed):
+def to_ref(val):
+    """
+    TODO: check doc_ref._document_path alternatives that are compatible
+        with firestore listeners
 
-    def _get_property_object(self, key):
+    :param val:
+    :return:
+    """
+    dm_cls, dm_doc_id = val
+    doc_ref: DocumentReference = dm_cls._get_collection().document(dm_doc_id)
+    return doc_ref._document_path
 
-        if not isinstance(key, str):
-            """
-            Key must be deep copied 
-            """
-            raise TypeError
 
-        def getter(_self):
-            return _self.store.get_by_key(key)
+class BusinessPropertyStore:
 
-        return property(fget=getter)
+    def __init__(self, struct):
+        self._container = SnapshotContainer()
+        self.struct = struct
+        self._g, self._gr, self._manifest = self._get_manifests(struct)
 
-    @classmethod
-    def from_schema(cls, schema: Schema):
-        class Store(cls):
-            _schema_cls = schema
-        return Store
+    def __getattr__(self, item):
 
-    def __init__(self):
-        self.fmap = dict()
-        self.gmap = dict()
-        self.d = dict()
-
-        fd = self._get_fields()  # Calls classmethod
-
-        for key, val in fd.items():
-            setattr(self, key, val.default_value)
-
-    def set(self, *, key, property_cls, _id, val):
-        if isinstance(self.fmap[key], list):
-            self.fmap[key].add( (property_cls, _id) )
-            self.gmap[(property_cls, _id)] = key
+        if isinstance(self._g[item], dict):
+            return {
+                k: snapshot_to_obj(self._container.get(v))
+                for k, v in self._g[item].items()
+            }
         else:
-            self.fmap[key] = (property_cls, _id)
-            self.gmap[(property_cls, _id)] = key
-        self.d[(property_cls, _id)] = val
+            return snapshot_to_obj(self._container.get(self._g[item]))
 
-    def get_by_key(self, key):
-        res = dict()
-        for property_cls, _id in self.fmap[key]:
-            res[_id] = self.d[(property_cls, _id)]
-        return res
+    @staticmethod
+    def _get_manifests(struct) -> Tuple:
+
+        g, gr, manifest = dict(), defaultdict(list), set()
+
+        for key, val in struct.items():
+            if "." in key:
+                raise ValueError
+            if isinstance(val, dict):
+                g[key] = dict()
+                for k, v in val.items():
+                    doc_ref = to_ref(v)
+                    g[key][k] = doc_ref
+                    gr[doc_ref].append("{}.{}".format(key, k))
+                    manifest.add(doc_ref)
+            else:
+                doc_ref = to_ref(val)
+                g[key] = doc_ref
+                gr[doc_ref].append(key)
+                manifest.add(doc_ref)
+
+        return dict(g), dict(gr), manifest
