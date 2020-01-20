@@ -172,7 +172,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
     tickets[0].attendance = False
     tickets[0].save()
 
-    time.sleep(3)
+    time.sleep(5)
     #
     """
     Expect the document to be updated to exclude Tijuana Furlong from a
