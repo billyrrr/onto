@@ -39,6 +39,10 @@ class BusinessPropertyStore(Schemed):
         self._g, self._gr, self._manifest = \
             self._get_manifests(self.struct, self.schema_obj)
 
+    @property
+    def bprefs(self):
+        return self._manifest.copy()
+
     def __getattr__(self, item):
 
         if isinstance(self._g[item], dict):
