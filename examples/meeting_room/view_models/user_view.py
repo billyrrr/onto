@@ -1,6 +1,8 @@
 from examples.meeting_room.domain_models.user import User
 from examples.meeting_room.domain_models.meeting import Meeting
 from flask_boiler import fields, schema, view_model, view
+from flask_boiler.business_property_store import BPSchema
+from flask_boiler.struct import Struct
 
 
 class UserViewSchema(schema.Schema):
@@ -13,6 +15,10 @@ class UserViewSchema(schema.Schema):
     meetings = fields.Relationship(many=True, dump_only=True)
 
 
+class UserBpss(BPSchema):
+    user = fields.StructuralRef(dm_cls=User)
+
+
 class UserViewMixin:
 
     class Meta:
@@ -20,51 +26,42 @@ class UserViewMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user = None
 
     @classmethod
     def new(cls, doc_id=None):
         return cls.get_from_user_id(user_id=doc_id)
 
-    def set_user(self, user):
-        self.user = user
-
     @property
     def first_name(self):
-        return self.user.first_name
+        return self.store.user.first_name
 
     @property
     def last_name(self):
-        return self.user.last_name
+        return self.store.user.last_name
 
     @last_name.setter
     def last_name(self, new_last_name):
-        self.user.last_name = new_last_name
+        self.store.user.last_name = new_last_name
 
     @property
     def organization(self):
-        return self.user.organization
+        return self.store.user.organization
 
     @property
     def hearing_aid_requested(self):
-        return self.user.hearing_aid_requested
+        return self.store.user.hearing_aid_requested
 
     @property
     def meetings(self):
-        return list(Meeting.where(users=("array_contains", self.user.doc_ref)))
-
-    def get_vm_update_callback(self, dm_cls):
-        def user_update_func(vm: UserView, dm):
-            vm.set_user(dm)
-        return user_update_func
+        return list(Meeting.where(users=("array_contains", self.store.user.doc_ref)))
 
     @classmethod
     def get_from_user_id(cls, user_id, once=False, **kwargs):
-        struct = dict()
+        struct = Struct(schema_obj=UserBpss())
 
         u: User = User.get(doc_id=user_id)
 
-        struct[u.doc_id] = (User, u.doc_ref.id)
+        struct["user"] = (User, u.doc_ref.id)
 
         return super().get(struct_d=struct, once=once, **kwargs)
 

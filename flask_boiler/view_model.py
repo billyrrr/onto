@@ -3,13 +3,14 @@ from typing import Dict, Tuple, Callable
 from dictdiffer import diff, patch
 from google.cloud.firestore import DocumentReference
 
-from flask_boiler.business_property_store import BusinessPropertyStore
+from flask_boiler.business_property_store import BusinessPropertyStore, to_ref
 from flask_boiler.snapshot_container import SnapshotContainer
 from flask_boiler.watch import DataListener
 from .context import Context as CTX
 from .domain_model import DomainModel
 from flask_boiler.referenced_object import ReferencedObject
 from .serializable import Serializable
+from .struct import Struct
 from .utils import random_id, snapshot_to_obj
 
 
@@ -67,14 +68,21 @@ class ViewModelMixin:
         :return:
         """
         obj = cls(struct_d=struct_d, **kwargs)
-        for key, val in obj._structure.items():
-            obj_type, doc_id = val
-            obj.bind_to(key=key, obj_type=obj_type, doc_id=doc_id)
+        obj.bind_all()
+
         if once:
             obj.listen_once()
         else:
             obj.register_listener()
         return obj
+
+    def bind_all(self):
+
+        for obj_type, doc_id in self._struct_d.vals:
+            self.__subscribe_to(
+                dm_cls=obj_type,
+                dm_doc_id=doc_id,
+            )
 
     @classmethod
     def get_many(cls, struct_d_iterable=None, once=False):
@@ -88,7 +96,7 @@ class ViewModelMixin:
         return [cls.get(struct_d=struct_d, once=once)
                 for struct_d in struct_d_iterable]
 
-    def __init__(self, f_notify=None, *args, **kwargs):
+    def __init__(self, struct_d=None, f_notify=None, *args, **kwargs):
         """
 
         :param f_notify: callback to notify that view model's
@@ -99,6 +107,12 @@ class ViewModelMixin:
         super().__init__(*args, **kwargs)
         self.business_properties: Dict[str, DomainModel] = dict()
         self.snapshot_container = SnapshotContainer()
+        if not isinstance(struct_d, Struct):
+            raise ValueError
+        self._struct_d = struct_d
+        self.store = BusinessPropertyStore(
+            struct=self._struct_d, schema_obj=struct_d.schema_obj,
+            snapshot_container=self.snapshot_container)
         self._on_update_funcs: Dict[str, Tuple] = dict()
         self.listener = None
         self.f_notify = f_notify
@@ -120,27 +134,16 @@ class ViewModelMixin:
         :param doc_id:
         :return:
         """
-        # obj_cls: DomainModel = Serializable.get_cls_from_name(obj_type)
-        obj_cls: DomainModel = obj_type
 
-        if key in self._structure:
-            a, b = self._structure[key]
-            if a != obj_type or b != doc_id:
-                raise ValueError("Values disagree. ")
-        else:
-            # update_func = self.get_update_func(dm_cls=obj_cls)
-            self._structure[key] = (obj_type, doc_id)
+        self._struct_d[key] = (obj_type, doc_id)
 
         self.__subscribe_to(
-            key=key,
-            dm_cls=obj_cls,
+            dm_cls=obj_type,
             dm_doc_id=doc_id,
         )
-        # _, doc_watch = self._on_update_funcs[key]
-        # assert isinstance(doc_watch, Watch)
 
     def get_on_update(self,
-                  dm_cls=None, dm_doc_id=None, dm_doc_ref_str=None, key=None):
+                  dm_cls=None, dm_doc_id=None, dm_doc_ref_str=None):
         # do something with this ViewModel
 
         def _on_update(docs, changes, readtime):
@@ -151,7 +154,7 @@ class ViewModelMixin:
                 raise NotImplementedError
             doc = docs[0]
 
-            self.snapshot_container.set( (dm_cls, dm_doc_id), doc )
+            self.snapshot_container.set(to_ref(dm_cls, dm_doc_id), doc )
 
         return _on_update
 
@@ -162,23 +165,30 @@ class ViewModelMixin:
         """
         raise NotImplementedError
 
-    def __subscribe_to(self, *, key, dm_cls,
-                       dm_doc_id):
+    def __subscribe_to(self, *, dm_cls,dm_doc_id):
+        """
 
-        # if key in self._on_update_funcs:
-        #     # Release the previous on_snapshot functions
-        #     #   https://firebase.google.com/docs/firestore/query-data/listen
-        #     f, doc_watch = self._on_update_funcs[key]
-        #     # TODO: add back, see:
-        #     # https://github.com/googleapis/google-cloud-python/issues/9008
-        #     # https://github.com/googleapis/google-cloud-python/issues/7826
-        #     # doc_watch.unsubscribe()
+        :param dm_cls:
+        :param dm_doc_id:
+        :return:
+        """
+
+        """
+        if key in self._on_update_funcs:
+            # Release the previous on_snapshot functions
+            #   https://firebase.google.com/docs/firestore/query-data/listen
+            f, doc_watch = self._on_update_funcs[key]
+            # TODO: add back, see:
+            # https://github.com/googleapis/google-cloud-python/issues/9008
+            # https://github.com/googleapis/google-cloud-python/issues/7826
+            # doc_watch.unsubscribe()
+        """
 
         dm_ref: DocumentReference = dm_cls._get_collection().document(dm_doc_id)
         on_update = self.get_on_update(
             dm_cls=dm_cls, dm_doc_id=dm_doc_id,
             dm_doc_ref_str=dm_ref._document_path,
-            key=key)
+            )
         # doc_watch = dm_ref.on_snapshot(on_update)
         self._on_update_funcs[dm_ref._document_path] = on_update
 
@@ -236,7 +246,7 @@ class ViewModelMixin:
                     # TODO: restore parameter "changes"
                     on_update([doc], None, read_time)
 
-            self._refresh_business_property()
+            self.store.refresh()
             self._invoke_vm_callbacks()
 
         self.listener = DataListener(
@@ -278,7 +288,7 @@ class ViewModelMixin:
                     # TODO: restore parameter "changes"
                     on_update([doc], None, read_time)
 
-            self._refresh_business_property()
+            self.store.refresh()
             self._invoke_vm_callbacks()
             with self.snapshot_container.lock:
                 self._notify()
@@ -292,19 +302,27 @@ class ViewModelMixin:
 
         self.listener.wait_for_once_done()
 
-    def _refresh_business_property(self, ):
-        with self.snapshot_container.lock:
-            for key, val in self._structure.items():
-                obj_type, doc_id = val
-                snapshot = self.snapshot_container.get((obj_type, doc_id), )
-                self.business_properties[key] = snapshot_to_obj(snapshot=snapshot)
+    # def _refresh_business_property(self, ):
+    #     with self.snapshot_container.lock:
+    #         for key, val in self._structure.items():
+    #             obj_type, doc_id = val
+    #             snapshot = self.snapshot_container.get((obj_type, doc_id), )
+    #             self.business_properties[key] = snapshot_to_obj(snapshot=snapshot)
 
     def _invoke_vm_callbacks(self):
-        for key, val in self._structure.items():
-            obj_type, doc_id = val
-            vm_update_callback = self.get_vm_update_callback(dm_cls=obj_type)
-            dm = self.business_properties[key]
-            vm_update_callback(vm=self, dm=dm)
+        for key, val in self._struct_d.items():
+            b = getattr(self.store, key)
+            if isinstance(val, dict):
+                for k, v in val.items():
+                    obj_type, doc_id = v
+                    vm_update_callback = self.get_vm_update_callback(
+                        dm_cls=obj_type)
+                    vm_update_callback(vm=self, dm=b[k])
+            else:
+                obj_type, doc_id = val
+                vm_update_callback = self.get_vm_update_callback(dm_cls=obj_type)
+                vm_update_callback(vm=self, dm=b)
+
 
     def _notify(self):
         """ Notify that this object has been changed by underlying view models

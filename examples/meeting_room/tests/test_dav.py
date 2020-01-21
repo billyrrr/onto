@@ -245,7 +245,7 @@ class UserViewDAV(UserViewMixin, ViewModel):
                                         **kwargs)
 
     def propagate_change(self):
-        self.user.save()
+        self.store.user.save()
 
 
 class UserViewMediatorDAV(ViewMediatorDAV):
@@ -328,7 +328,7 @@ def test_propagate_change(users, tickets, location, meeting):
 
     # time.sleep(3)
 
-    user_view.user.last_name = "M."
+    user_view.store.user.last_name = "M."
     user_view.propagate_change()
 
     user_ref = Context.db.collection("users").document(user_id)
