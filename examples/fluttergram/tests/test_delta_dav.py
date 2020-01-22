@@ -5,6 +5,8 @@ from google.cloud.firestore_v1 import Watch, DocumentSnapshot, \
     DocumentReference, Query
 
 from examples.fluttergram.domain_models import Post, User
+from flask_boiler.business_property_store import BPSchema
+from flask_boiler.struct import Struct
 
 from flask_boiler.view import DocumentAsView
 from flask_boiler.view_mediator_dav import ViewMediatorDAV, \
@@ -21,20 +23,25 @@ class PostDAVSchema(schema.Schema):
     post = fields.Embedded(dump_only=True)
 
 
+class PostStoreBpss(BPSchema):
+    consumer = fields.StructuralRef(dm_cls=User)
+    post = fields.StructuralRef(dm_cls=Post)
+
+
 class PostDAV(DocumentAsView):
     class Meta:
         schema_cls = PostDAVSchema
 
     @property
     def post(self):
-        return self.business_properties["post"]
+        return self.store.post
 
     @classmethod
     def new(cls, *args, consumer_id, post_id, **kwargs):
         ref = User._get_collection().document(consumer_id).collection("feed") \
             .document(post_id)
 
-        struct = dict()
+        struct = Struct(schema_obj=PostStoreBpss())
         struct["consumer"] = (User, consumer_id)
         struct["post"] = (Post, post_id)
 

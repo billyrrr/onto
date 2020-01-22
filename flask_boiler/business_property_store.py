@@ -31,7 +31,7 @@ class BPSchema(Schema):
 
 class BusinessPropertyStore:
 
-    def __init__(self, struct, snapshot_container, schema_obj):
+    def __init__(self, struct, snapshot_container):
         super().__init__()
         self._container = snapshot_container
         self.struct = struct

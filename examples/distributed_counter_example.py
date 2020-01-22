@@ -1,7 +1,10 @@
+from flask_boiler import fields
+from flask_boiler.business_property_store import BPSchema
 from flask_boiler.context import Context as CTX
 from flask_boiler.schema import Schema
 from flask_boiler.fields import Integer
 from flask_boiler.domain_model import DomainModel
+from flask_boiler.struct import Struct
 from flask_boiler.view_mediator_dav import ViewMediatorDAV
 from flask_boiler.view_model import ViewModel
 
@@ -22,6 +25,10 @@ class CounterViewSchema(Schema):
     total_count = Integer(dump_only=True)
 
 
+class ShardsStoreBpss(BPSchema):
+    shards = fields.StructuralRef(dm_cls=Shard, many=True)
+
+
 class CounterView(ViewModel):
 
     class Meta:
@@ -34,7 +41,7 @@ class CounterView(ViewModel):
 
     @property
     def total_count(self):
-        return sum(v.count for _, v in self.shards.items())
+        return sum(v.count for _, v in self.store.shards.items())
 
     def set_shard(self, sid, shard):
         self.shards[sid] = shard
@@ -62,16 +69,15 @@ class CounterMediator(ViewMediatorDAV):
 
     def start(self):
 
-        struct = dict()
+        struct = Struct(schema_obj=ShardsStoreBpss())
 
         for i in range(self.shard_size):
             doc_id = str(i)
             shard = Shard.new(doc_id=doc_id, )
             shard.save()
-            struct[shard.doc_id] = (Shard, doc_id)
+            struct["shards"][shard.doc_id] = (Shard, doc_id)
 
         self.view_model = self.view_model_cls.get(
             f_notify=self.notify,
             struct_d=struct,
             once=False)
-

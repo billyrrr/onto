@@ -105,13 +105,12 @@ class ViewModelMixin:
         :param kwargs:
         """
         super().__init__(*args, **kwargs)
-        self.business_properties: Dict[str, DomainModel] = dict()
         self.snapshot_container = SnapshotContainer()
         if not isinstance(struct_d, Struct):
             raise ValueError
         self._struct_d = struct_d
         self.store = BusinessPropertyStore(
-            struct=self._struct_d, schema_obj=struct_d.schema_obj,
+            struct=self._struct_d,
             snapshot_container=self.snapshot_container)
         self._on_update_funcs: Dict[str, Tuple] = dict()
         self.listener = None

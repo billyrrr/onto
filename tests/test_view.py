@@ -8,7 +8,9 @@ from flask_boiler import schema, fields, view_model, view
 
 from flask import Flask
 
-from tests.color_fixtures import Color, PaletteViewModel, vm, color_refs
+from flask_boiler.struct import Struct
+from tests.color_fixtures import Color, PaletteViewModel, vm, color_refs, \
+    RainbowStoreBpss
 from tests.fixtures import setup_app
 from .fixtures import CTX
 
@@ -50,7 +52,8 @@ def v_cls(CTX):
 
         @classmethod
         def get_from_color_names(cls, color_names):
-            struct = dict()
+
+            struct = Struct(schema_obj=RainbowStoreBpss())
 
             order_gen = count()
             order_d = dict()
@@ -61,9 +64,9 @@ def v_cls(CTX):
 
                 order_d[doc_id] = next(order_gen)
 
-                struct[color_name] = (obj_type, doc_id,)
+                struct["colors"][doc_id] = (obj_type, doc_id,)
 
-            return cls.get(struct_d=struct, order_d=order_d)
+            return cls.get(struct_d=struct, order_d=order_d, once=True)
 
     return RainbowView
 

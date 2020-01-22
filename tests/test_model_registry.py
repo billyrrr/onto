@@ -30,3 +30,13 @@ def test_get_children():
     assert RModelSup._get_children() == {RModelA, RModelB}
     assert RModelA._get_parents() == {RModelSup,}
 
+
+def test_register_subclass():
+
+    class CModelParent(model_registry.BaseRegisteredModel):
+        pass
+
+    class CModelChild(CModelParent):
+        pass
+
+    assert CModelChild.__name__ == "CModelChild"
