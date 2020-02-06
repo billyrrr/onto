@@ -8,9 +8,10 @@ from google.cloud.firestore import Watch, DocumentSnapshot, \
     DocumentReference, Query
 
 from flask_boiler.domain_model import DomainModel
+from flask_boiler.view_mediator import ViewMediatorBase
 
 
-class ViewMediatorDAV:
+class ViewMediatorDAV(ViewMediatorBase):
     """
     Watches and updates Firestore for DocumentAsView view models
     """
@@ -26,8 +27,8 @@ class ViewMediatorDAV:
                 POST, PATCH, UPDATE, PUT, DELETE made to the list of view
                 models or a single view model.
         """
-        self.view_model_cls = view_model_cls
-        self.mutation_cls = mutation_cls
+        super().__init__(view_model_cls=view_model_cls,
+                         mutation_cls=mutation_cls)
         self.rule_view_cls_mapping = dict()
         self.default_tag = self.view_model_cls.__name__
         self.instances = dict()

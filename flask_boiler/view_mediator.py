@@ -4,23 +4,33 @@ from flasgger import SwaggerView
 from flask import request, jsonify
 
 
-class ViewMediator:
-    """
-    Registers a REST API Resource for a view model
-    """
-
-    def __init__(self, view_model_cls=None, app=None, mutation_cls=None):
+class ViewMediatorBase:
+    def __init__(self, view_model_cls=None, mutation_cls=None, *args, **kwargs):
         """
 
-        :param view_model_cls: the view model to be exposed in REST API
-        :param app: Flask App
+        :param view_model_cls
         :param mutation_cls: a subclass of Mutation to handle the changes
                 POST, PATCH, UPDATE, PUT, DELETE made to the list of view
                 models or a single view model.
         """
+        super().__init__(*args, **kwargs)
         self.view_model_cls = view_model_cls
-        self.app = app
         self.mutation_cls = mutation_cls
+
+
+class ViewMediator(ViewMediatorBase):
+    """
+    Registers a REST API Resource for a view model
+    """
+
+    def __init__(self, *args, app=None, **kwargs):
+        """ Initialize a ViewMediator for REST API
+        :param app: Flask App
+        :param args:
+        :param kwargs:
+        """
+        super().__init__(*args, **kwargs)
+        self.app = app
         self.rule_view_cls_mapping = dict()
         self.default_tag = self.view_model_cls.__name__
 

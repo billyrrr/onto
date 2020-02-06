@@ -24,3 +24,5 @@ flasgger
 dictdiffer
 
 celery
+
+flask-socketio

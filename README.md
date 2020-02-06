@@ -377,6 +377,19 @@ app.run(debug=True)
 
 ```
 
+## Object Lifecycle
+
+### Once
+
+Object created with ```cls.new``` -> 
+Object exported with ```obj.to_view_dict```. 
+
+### Multi
+
+Object created when a new domain model is created in database -> 
+Object changed when underlying datasource changes -> 
+Object calls ```self.notify``` 
+
 ## Advantages
 
 ### Decoupled Domain Model and View Model
