@@ -43,3 +43,10 @@ def test_connect(setup_app, rainbow_vm, color_refs):
                        'rainbowName': 'cian-magenta-yellow'}],
              'name': 'updated',
              'namespace': '/palette'}]
+
+    color_refs[0].update({"name": "cyan"})
+
+    time.sleep(1)
+
+    assert client.get_received(namespace="/palette") == [{'name': 'updated', 'args': [{'colors': ['cyan', 'magenta', 'yellow'], 'rainbowName': 'cyan-magenta-yellow'}], 'namespace': '/palette'}]
+

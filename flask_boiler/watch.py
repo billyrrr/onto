@@ -39,9 +39,9 @@ class DataListener:
     def wait_for_once_done(self):
         # TODO: Find a better way
         # TODO: review and test
-        time.sleep(2)
-        # while not self.watch.has_pushed:
-        #     time.sleep(2)
+        # time.sleep(2)
+        while not self.watch.has_pushed:
+            time.sleep(2)
         # self.watch._consumer._thread.join()
 
     def __del__(self):

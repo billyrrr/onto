@@ -40,14 +40,14 @@ class ViewMediatorWebsocket(ViewMediatorBase, Namespace):
         self.instances = dict()
 
     @classmethod
-    def notify(cls, obj):
+    def notify(cls, self, obj):
         """ Specifies what to do with the view model newly generated
                 from an update.
 
         :param obj:
         :return:
         """
-        pass
+        self.emit("updated", obj.to_view_dict())
 
     def on_connect(self):
         """
@@ -66,11 +66,9 @@ class ViewMediatorWebsocket(ViewMediatorBase, Namespace):
         pass
 
     def on_subscribe_view_model(self, data):
+        emit("subscribed")
         self.instances[0] = self.view_model_cls.new(
             **data,
             once=False,
-            f_notify=self.notify
+            f_notify=partial(self.notify, self=self)
         )
-        emit("subscribed")
-        time.sleep(5)
-        emit("updated", self.instances[0].to_view_dict())

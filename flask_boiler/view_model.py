@@ -327,7 +327,7 @@ class ViewModelMixin:
         """ Notify that this object has been changed by underlying view models
         """
         if self.f_notify is not None:
-            self.f_notify(self)
+            self.f_notify(obj=self)
 
     def get_vm_update_callback(self, dm_cls, *args, **kwargs) -> Callable:
         """ Returns a function for updating a view

@@ -52,14 +52,14 @@ def rainbow_vm(CTX):
                 res.append(self._color_d[key])
             return "-".join(res)
 
-        def set_color(self, color_name):
-            self._color_d[color_name] = color_name
+        def set_color(self, color_id, color_name):
+            self._color_d[color_id] = color_name
 
         def get_vm_update_callback(self, dm_cls, *args, **kwargs):
 
             if dm_cls == Color:
                 def callback(vm: RainbowViewModelDAV, dm: Color):
-                    vm.set_color(dm.name)
+                    vm.set_color(dm.doc_id, dm.name)
                 return callback
             else:
                 return super().get_vm_update_callback(dm_cls, *args, **kwargs)
