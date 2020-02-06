@@ -1,7 +1,7 @@
 import time
 
 from flasgger import SwaggerView
-from flask import request
+from flask import request, jsonify
 
 
 class ViewMediator:
@@ -126,11 +126,11 @@ class ViewMediator:
                     }
                 ]
 
-            def post(self, *args, doc_id=None, **kwargs):
-                _self.mutation_cls.mutate_create(
-                    doc_id=doc_id,
+            def post(self, *args, **kwargs):
+                obj = _self.mutation_cls.mutate_create(
                     data=request.json
                 )
+                return jsonify(obj.to_dict())
 
         return PostView
 
