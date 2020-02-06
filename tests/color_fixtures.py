@@ -65,7 +65,7 @@ def rainbow_vm(CTX):
                 return super().get_vm_update_callback(dm_cls, *args, **kwargs)
 
         @classmethod
-        def create_from_color_names(cls, color_names, **kwargs):
+        def create_from_color_names(cls, color_names, once=False, **kwargs):
             struct = Struct(schema_obj=RainbowStoreBpss())
             struct["colors"] = {
                 "doc_id_{}".format(color_name):
@@ -77,7 +77,7 @@ def rainbow_vm(CTX):
             doc_ref = CTX.db.collection("RainbowDAV").document(vm_id)
             return super().get(doc_ref=doc_ref,
                                struct_d=struct,
-                               once=False,
+                               once=once,
                                **kwargs)
 
         @classmethod

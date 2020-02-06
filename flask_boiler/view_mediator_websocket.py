@@ -12,6 +12,8 @@ from flask_boiler.view_mediator import ViewMediatorBase
 
 from flask_socketio import Namespace, emit, send
 
+from functools import partial
+
 import json
 
 
@@ -45,7 +47,7 @@ class ViewMediatorWebsocket(ViewMediatorBase, Namespace):
         :param obj:
         :return:
         """
-        obj.save()
+        pass
 
     def on_connect(self):
         """
@@ -63,6 +65,12 @@ class ViewMediatorWebsocket(ViewMediatorBase, Namespace):
     def on_disconnect(self):
         pass
 
-    def on_subscribe_view_model(self, data, *args, **kwargs):
-        emit('my custom namespace response', data, namespace='/palette')
-
+    def on_subscribe_view_model(self, data):
+        self.instances[0] = self.view_model_cls.new(
+            **data,
+            once=False,
+            f_notify=self.notify
+        )
+        emit("subscribed")
+        time.sleep(5)
+        emit("updated", self.instances[0].to_view_dict())
