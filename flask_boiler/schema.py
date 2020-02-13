@@ -14,6 +14,8 @@ class SchemaMixin:
     f = staticmethod(attr_name_to_firestore_key)
     g = staticmethod(firestore_key_to_attr_name)
 
+    case_conversion = True
+
     def on_bind_field(self, field_name, field_obj):
         """Hook to modify a field when it is bound to the `Schema`.
 
@@ -24,7 +26,10 @@ class SchemaMixin:
             field_obj.attribute = field_name
 
         if field_obj.data_key is None:
-            default_data_key = self.f(field_obj.attribute)
+            if self.case_conversion:
+                default_data_key = self.f(field_obj.attribute)
+            else:
+                default_data_key = field_obj.attribute
             field_obj.data_key = default_data_key
 
         # if field_obj.attribute in self.f_mapping:
