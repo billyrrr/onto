@@ -11,6 +11,7 @@ from .domain_model import DomainModel
 from flask_boiler.referenced_object import ReferencedObject
 from .serializable import Serializable
 from .struct import Struct
+from .business_property_store import BPSchema
 from .utils import random_id, snapshot_to_obj
 
 
@@ -106,8 +107,8 @@ class ViewModelMixin:
         """
         super().__init__(*args, **kwargs)
         self.snapshot_container = SnapshotContainer()
-        if not isinstance(struct_d, Struct):
-            raise ValueError
+        if struct_d is None:
+            struct_d = Struct(BPSchema())
         self._struct_d = struct_d
         self.store = BusinessPropertyStore(
             struct=self._struct_d,
