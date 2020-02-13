@@ -5,6 +5,7 @@ from marshmallow import fields
 
 from flask_boiler.helpers import RelationshipReference, EmbeddedElement
 from flask_boiler.serializable import Serializable, Importable, Exportable
+from datetime import datetime
 
 
 class Field(fields.Field):
@@ -240,6 +241,23 @@ class Embedded(fields.Raw, Field):
             return EmbeddedElement(
                 d=value
             )
+
+
+class Localtime(fields.NaiveDateTime, Field):
+
+    def _serialize(
+        self, value, *args, **kwargs
+    ):
+        if value is None:
+            return None
+        value = datetime.fromtimestamp(value)
+        return super()._serialize(value, *args, **kwargs)
+
+    def _deserialize(self, value, *args, **kwargs):
+        if value is None:
+            return None
+        value = super()._deserialize(value, *args, **kwargs)
+        return value.timestamp()
 
 
 class Remainder(fields.Dict, Field):
