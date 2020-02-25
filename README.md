@@ -20,9 +20,6 @@ of the list of people attending the meeting.
 
 ![Untitled_2](https://user-images.githubusercontent.com/24789156/71137341-be0e1000-2242-11ea-98cb-53ad237cac43.gif)
 
-Architecture Diagram: 
-
-![Architecture Diagram](https://user-images.githubusercontent.com/24789156/70380617-06e4d100-18f3-11ea-9111-4398ed0e865c.png)
 
 
 Some reasons that you may want to use this framework:
@@ -42,6 +39,8 @@ Documentations: [readthedocs](https://flask-boiler.readthedocs.io/)
 Quickstart: [Quickstart](https://flask-boiler.readthedocs.io/en/latest/quickstart_link.html)
 
 API Documentations: [API Docs](https://flask-boiler.readthedocs.io/en/latest/apidoc/flask_boiler.html)
+
+Example of a Project using flask-boiler: [gravitate-backend](https://github.com/billyrrr/gravitate-backend)
 
 ## Installation
 In your project's requirements.txt, 
@@ -70,21 +69,21 @@ pip install -r requirements.txt
 
 See more in [Quickstart](https://flask-boiler.readthedocs.io/en/latest/quickstart_link.html). 
 
-## Usage
+<!--## Usage-->
 
-### Business Properties Binding
-You can bind a view model to its business properties (underlying domain model).
-See `examples/binding_example.py`.
+<!--### Business Properties Binding-->
+<!--You can bind a view model to its business properties (underlying domain model).-->
+<!--See `examples/binding_example.py`. (Currently breaking)-->
 
-```python
+<!--```python-->
 
-vm: Luggages = Luggages.new(vm_ref)
+<!--vm: Luggages = Luggages.new(vm_ref)-->
 
-vm.bind_to(key=id_a, obj_type="LuggageItem", doc_id=id_a)
-vm.bind_to(key=id_b, obj_type="LuggageItem", doc_id=id_b)
-vm.register_listener()
+<!--vm.bind_to(key=id_a, obj_type="LuggageItem", doc_id=id_a)-->
+<!--vm.bind_to(key=id_b, obj_type="LuggageItem", doc_id=id_b)-->
+<!--vm.register_listener()-->
 
-```
+<!--```-->
 
 ### State Management
 
@@ -95,158 +94,9 @@ without client-side queries and excessive server roundtrip time.
 There is a medium [article](https://medium.com/resolvejs/resolve-redux-backend-ebcfc79bbbea) 
  that explains a similar architecture called "reSolve" architecture. 
 
-The example below explains how to use flask-boiler to expose a "view model" 
-in firestore to save front end from querying 3 separate domain models. 
-(See ```examples/meeting_room/view_models``` for details.)
-
-```python
-
-class MeetingSessionMixin:
-
-    _schema_cls = MeetingSessionSchema
-
-    def __init__(self, *args, meeting_id=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._meeting_id = meeting_id
-
-    @property
-    def _users(self):
-        user_ids = [user_ref.id for user_ref in self._meeting.users]
-        return {
-            user_id: self.business_properties[user_id] for user_id in user_ids
-        }
-
-    @property
-    def _tickets(self):
-        return {
-            self.business_properties[ticket_ref.id].user.id:
-                self.business_properties[ticket_ref.id]
-                for ticket_ref in self._meeting.tickets
-        }
-
-    @property
-    def _meeting(self):
-        return self.business_properties[self._meeting_id]
-
-    @property
-    def meeting_id(self):
-        return self._meeting.doc_id
-
-    @property
-    def _location(self):
-        return self.business_properties[self._meeting.location.id]
-
-    @property
-    def in_session(self):
-        return self._meeting.status == "in-session"
-
-    @in_session.setter
-    def in_session(self, in_session):
-        cur_status = self._meeting.status
-        if cur_status == "in-session" and not in_session:
-            self._meeting.status = "closed"
-        elif cur_status == "closed" and in_session:
-            self._meeting.status = "in-session"
-        else:
-            raise ValueError
-
-    @property
-    def latitude(self):
-        return self._location.latitude
-
-    @property
-    def longitude(self):
-        return self._location.longitude
-
-    @property
-    def address(self):
-        return self._location.address
-
-    @property
-    def attending(self):
-        user_ids = [uid for uid in self._users.keys()]
-
-        if self._meeting.status == "not-started":
-            return list()
-
-        res = list()
-        for user_id in sorted(user_ids):
-            ticket = self._tickets[user_id]
-            user = self._users[user_id]
-            if ticket.attendance:
-                d = {
-                    "name": user.display_name,
-                    "organization": user.organization,
-                    "hearing_aid_requested": user.hearing_aid_requested
-                }
-                res.append(d)
-
-        return res
-
-    @property
-    def num_hearing_aid_requested(self):
-        count = 0
-        for d in self.attending:
-            if d["hearing_aid_requested"]:
-                count += 1
-        return count
-
-    @classmethod
-    def get_many_from_query(cls, query_d=None, once=False):
-        """ Note that once kwarg apply to the snapshot but not the query.
-
-        :param query_d:
-        :param once: attaches a listener to individual snapshots
-        :return:
-        """
-        return [
-            cls.get_from_meeting_id(meeting_id=obj.doc_id, once=once)
-            for obj in Meeting.where(**query_d)]
-
-    @classmethod
-    def new(cls, doc_id=None):
-        return cls.get_from_meeting_id(meeting_id=doc_id)
-
-    @classmethod
-    def get_from_meeting_id(cls, meeting_id, once=False, **kwargs):
-        struct = dict()
-
-        m: Meeting = Meeting.get(doc_id=meeting_id)
-
-        struct[m.doc_id] = (Meeting, m.doc_ref.id)
-
-        for user_ref in m.users:
-            obj_type = User
-            doc_id = user_ref.id
-            struct[doc_id] = (obj_type, user_ref.id)
-
-        for ticket_ref in m.tickets:
-            obj_type = Ticket
-            doc_id = ticket_ref.id
-
-            struct[doc_id] = (obj_type, ticket_ref.id)
-
-        struct[m.location.id] = (Location, m.location.id)
-
-        obj = cls.get(struct_d=struct, once=once,
-                          meeting_id=m.doc_ref.id,
-                          **kwargs)
-        time.sleep(2)  # TODO: delete after implementing sync
-        return obj
-
-    def propagate_change(self):
-        self._meeting.save()
-
-
-class MeetingSession(MeetingSessionMixin, view.FlaskAsView):
-    pass
-
-
-class MeetingSessionMutation(Mutation):
-    view_model_cls = MeetingSession
-
-```
-
+See ```examples/meeting_room/view_models``` on how to use flask-boiler 
+to expose a "view model" in firestore that can be queried directly 
+by front end without aggregation.  
 
 ### Save data
 
@@ -481,47 +331,10 @@ triggered after a domain model is updated, but this
 may introduce concurrency issues and is not perfectly supported 
 due to the design tradeoff in flask-boiler. 
 
-## Design Philosophies
 
-### Scalability Valued Over Server Cost
+### Architecture Diagram: 
 
-At the starting stage of a project, you have a boutique 
-user base, and it may be feasible to afford higher server 
-cost to provide reliable and reactive services to 
-these users. As your user base grow, you may take other 
-actions to reduce cost while maintaining the quality 
-of your product (such as moving to a different architecture 
-to present view models). Overall, flask-boiler gives 
-you a quality jump-start so that you can focus on 
-transforming ideas. 
-
-### ViewModel Made Eventually Consistent
-
-When DomainModel changes, the relevant view models may 
-not change immediately, but gradually changed overtime. 
-The information on a view model will eventually be 
-correct and up-to-date, and some view models may be 
-update sooner than others. For example, some users 
-may receive the update to their 
-meeting session sooner than others. 
-
-Rest assured, the write to DomainModel is still designed 
-to be strongly consistent. When a user makes changes, 
-it is designed to validate that they have the latest 
-data before the domain model is updated. 
-
-### "Update One Document Per Field"
-
-For example, if user A wants to change their display name or
-preferred pronoun, you should update only one document to
-reflect this change. In alternative designs, you may update
-several other documents, for example, the friend list of
-user B and user E to reflect this change, but flask-boiler
-does not favor this approach. It is recommended
-that you build friend list as a ViewModel, and do not update
-its values directly, so that you update only
-***one*** document per field (in this case the User
-domain model of user A).
+![Architecture Diagram](https://user-images.githubusercontent.com/24789156/70380617-06e4d100-18f3-11ea-9111-4398ed0e865c.png)
 
 ## Contributing
 Pull requests are welcome. 
