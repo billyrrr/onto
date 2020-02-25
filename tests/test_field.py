@@ -26,6 +26,25 @@ def test_init_read_only():
 
     assert int_a_field.dump_only
 
+
+# def test_projected():
+#
+#     from flask_boiler.schema import Schema
+#     from flask_boiler import fields
+#
+#     class ArtistSchema(Schema):
+#         id = fields.Integer()
+#         name = fields.String()
+#
+#     class AlbumSchema(Schema):
+#         id = fields.Projected(ArtistSchema, 'artist')
+#
+#     in_data = {'id': 42}
+#     loaded = AlbumSchema().load(in_data)  # => {'artist': {'id': 42}}
+#     print(loaded)
+#     dumped = AlbumSchema().dump(loaded)  # => {'id': 42}
+#     print(dumped)
+
 #
 # def test_init_camelize():
 #

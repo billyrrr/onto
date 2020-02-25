@@ -1,3 +1,4 @@
+import sys
 import time
 
 import pytest
@@ -25,8 +26,8 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs, rainbow_vm):
 
     assert isinstance(app, Flask)
 
-    def notify(self):
-        self.save()
+    def notify(obj):
+        obj.save()
 
     obj = RainbowViewModelDAV.new("yellow+magenta+cian",
                                   f_notify=notify)
@@ -34,6 +35,18 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs, rainbow_vm):
     vm_id = obj.doc_ref.id
 
     # time.sleep(3)
+
+    # import logging
+    #
+    # root = logging.getLogger()
+    # root.setLevel(logging.DEBUG)
+    #
+    # handler = logging.StreamHandler(sys.stdout)
+    # handler.setLevel(logging.DEBUG)
+    # formatter = logging.Formatter(
+    #     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # handler.setFormatter(formatter)
+    # root.addHandler(handler)
 
     assert CTX.db.collection("RainbowDAV").document(vm_id).get().to_dict() == {
         'rainbowName': 'cian-magenta-yellow',
