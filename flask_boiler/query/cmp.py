@@ -51,7 +51,7 @@ class Condition:
         :param item:
         :return:
         """
-        self.constraints.append(("_in", item))
+        self.constraints.append(("array_contains", item))
         return self
 
 
