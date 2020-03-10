@@ -89,10 +89,9 @@ def test_query_with_cmp():
 
     res_dict = dict()
 
-    for obj in City.where(v().country == "USA"):
+    for obj in City.where(v.country == "USA", v.city_state == "CA"):
         d = obj.to_dict()
         res_dict[d["cityName"]] = d
 
-    assert res_dict['Washington D.C.'] == expected_dict['Washington D.C.']
     assert res_dict['San Francisco'] == expected_dict['San Francisco']
     assert res_dict['Los Angeles'] == expected_dict['Los Angeles']

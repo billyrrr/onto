@@ -100,7 +100,8 @@ class QueryMixin:
             raise ValueError
 
         cmp_args = [arg for arg in args if isinstance(arg, cmp.Condition)]
-        remaining_args = [arg for arg in args if arg not in cmp_args]
+        remaining_args = [arg for arg in args
+                          if not isinstance(arg, cmp.Condition)]
         cur_where = cls._append_cmp_style(*cmp_args, cur_where=cur_where)
         cur_where = cls._append_original(*remaining_args, cur_where=cur_where)
         cur_where = cls._append_new_style(**kwargs, cur_where=cur_where)

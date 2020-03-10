@@ -55,4 +55,4 @@ class Condition:
         return self
 
 
-v = CMP
+v = CMP()
