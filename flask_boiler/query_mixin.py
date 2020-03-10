@@ -1,5 +1,6 @@
 from google.cloud.firestore import DocumentSnapshot, CollectionReference, Query
 
+from flask_boiler.query import cmp
 from flask_boiler.utils import snapshot_to_obj
 
 
@@ -64,13 +65,44 @@ class QueryMixin:
         return cur_where
 
     @classmethod
+    def _append_cmp_style(cls, *args, cur_where=None):
+
+        if cur_where is None:
+            raise ValueError
+
+        if len(args) != 0:
+
+            arg_stack = list( args )
+
+            while len(arg_stack) != 0:
+
+                condition = arg_stack.pop(0)
+                key = condition.fieldname
+                firestore_key = cls.get_schema_cls().f(key)
+
+                for comp, other in condition.constraints:
+                    if comp == "_in":
+                        # Reverse argument order for "in" comparator
+                        cur_where = cur_where.where(
+                            other, "in", firestore_key)
+                    else:
+                        # Append comparator for normal cases
+                        cur_where = cur_where.where(
+                            firestore_key, comp, other)
+
+        return cur_where
+
+    @classmethod
     def _where_query(cls, *args, cur_where=None, **kwargs):
         # if len(args) == 0 and len(kwargs) == 0:
         #     raise ValueError("Empty where")
         if cur_where is None:
             raise ValueError
 
-        cur_where = cls._append_original(*args, cur_where=cur_where)
+        cmp_args = [arg for arg in args if isinstance(arg, cmp.Condition)]
+        remaining_args = [arg for arg in args if arg not in cmp_args]
+        cur_where = cls._append_cmp_style(*cmp_args, cur_where=cur_where)
+        cur_where = cls._append_original(*remaining_args, cur_where=cur_where)
         cur_where = cls._append_new_style(**kwargs, cur_where=cur_where)
         return cur_where
 
