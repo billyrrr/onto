@@ -76,6 +76,8 @@ class PrimaryObject(FirestoreObject, QueryMixin, metaclass=PrimaryObjectMeta):
             self._doc_ref = self.collection.document(random_id())
         return self._doc_ref
 
+    random_id = random_id
+
     @classmethod
     def new(cls, doc_id=None, doc_ref=None, **kwargs):
         """
@@ -86,7 +88,7 @@ class PrimaryObject(FirestoreObject, QueryMixin, metaclass=PrimaryObjectMeta):
         if doc_ref is None:
 
             if doc_id is None:
-                doc_id = random_id()
+                doc_id = cls.random_id()
             doc_ref = cls._get_collection().document(doc_id)
             obj = super().new(doc_ref=doc_ref, **kwargs)
             return obj

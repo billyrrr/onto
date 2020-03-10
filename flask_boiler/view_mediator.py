@@ -109,6 +109,26 @@ class ViewMediator(ViewMediatorBase):
         )
         self.rule_view_cls_mapping[(rule, 'PATCH')] = instance_patch_view
 
+    def add_instance_delete(self, rule=None, instance_delete_view=None):
+        """ Add DELETE operation for making changes to an instance
+
+        :param rule:
+        :param instance_patch_view: Flask View
+        :return:
+        """
+
+        if instance_delete_view is None:
+            instance_delete_view = self._default_instance_delete_view()
+
+        name = self.view_model_cls.__name__ + "InstanceDeleteView"
+        assert rule is not None
+        self.app.add_url_rule(
+            rule,
+            view_func=instance_delete_view.as_view(name=name),
+            methods=['DELETE']
+        )
+        self.rule_view_cls_mapping[(rule, 'DELETE')] = instance_delete_view
+
     def _default_list_post_view(_self):
         """ Returns a default flask view to handle POST to a list of instances
 
@@ -186,6 +206,45 @@ class ViewMediator(ViewMediatorBase):
                 }
 
         return PatchView
+
+    def _default_instance_delete_view(_self):
+        """ Returns a default flask view to handle PATCH to an instance
+
+        """
+        # TODO: change to dynamically construct class to avoid class
+        #           name conflict
+
+        class DeleteView(SwaggerView):
+
+            tags = [_self.default_tag]
+
+            description = "Deletes a specific instance "
+
+            responses = {
+                200: {
+                    "description": description,
+                    "schema": _self.view_model_cls.get_schema_cls()
+                }
+            }
+
+            parameters = [
+                {
+                    "name": "doc_id",
+                    "in": "path",
+                    "type": "string",
+                    "required": True,
+                }
+            ]
+
+            def delete(self, doc_id=None, **kwargs):
+                _self.mutation_cls.mutate_delete(
+                    doc_id=doc_id)
+                # time.sleep(1)  # TODO: delete after implementing sync
+                return jsonify({
+                    "operation_status": "success"
+                })
+
+        return DeleteView
 
     def _default_instance_get_view(_self):
         """ Returns a default flask view to handle GET to an instance

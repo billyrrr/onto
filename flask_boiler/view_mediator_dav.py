@@ -30,7 +30,11 @@ class ViewMediatorDAV(ViewMediatorBase):
         super().__init__(view_model_cls=view_model_cls,
                          mutation_cls=mutation_cls)
         self.rule_view_cls_mapping = dict()
-        self.default_tag = self.view_model_cls.__name__
+        if self.view_model_cls is not None:
+            self.default_tag = self.view_model_cls.__name__
+        else:
+            # Add default_tag as HIDDEN for internal hooks
+            self.default_tag = "HIDDEN"
         self.instances = dict()
 
     @classmethod

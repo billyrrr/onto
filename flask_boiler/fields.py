@@ -1,11 +1,23 @@
 import typing
 
+import iso8601
+import pytz
 from google.cloud.firestore import DocumentReference
 from marshmallow import fields
 
 from flask_boiler.helpers import RelationshipReference, EmbeddedElement
 from flask_boiler.serializable import Serializable, Importable, Exportable
 from datetime import datetime
+from math import inf
+
+from marshmallow import utils as mutils
+
+
+# Firestore Integer supports up to 64-bit signed
+# Note that this may result in defect where business data reaches
+#   this maximum.
+_POS_INF_APPROX = 2**63 - 1
+_NEGATIVE_INF_APPROX = -2**63
 
 
 class Field(fields.Field):
@@ -21,7 +33,11 @@ class Field(fields.Field):
 
         :return:
         """
-        return None
+        if self.default == mutils.missing:
+            return None
+        else:
+            value = self.default() if callable(self.default) else self.default
+            return value
 
 
 class Boolean(fields.Bool, Field):
@@ -34,6 +50,10 @@ class Boolean(fields.Bool, Field):
         return bool()
 
 
+class NumberTimestamp(fields.Raw, Field):
+    pass
+
+
 class Integer(fields.Integer, Field):
     """Field that serializes to an integer and deserializes
             to an integer.
@@ -42,6 +62,22 @@ class Integer(fields.Integer, Field):
     @property
     def default_value(self):
         return int()
+
+    def _serialize(self, value, *args, **kwargs):
+        if value == inf:
+            return _POS_INF_APPROX
+        elif value == -inf:
+            return _NEGATIVE_INF_APPROX
+        else:
+            return value
+
+    def _deserialize(self, value, *args, **kwargs):
+        if value >= _POS_INF_APPROX:
+            return inf
+        elif value <= _NEGATIVE_INF_APPROX:
+            return -inf
+        else:
+            return value
 
 
 class Raw(fields.Raw, Field):
@@ -127,10 +163,16 @@ class Relationship(fields.Str, Field):
 
     def _serialize(self, value, *args, **kwargs):
         if value is None:
-            raise ValueError
+            return None
+            # raise ValueError
 
         if isinstance(value, list) and self.many:
             return [self._serialize(val, *args, **kwargs) for val in value]
+        elif isinstance(value, dict) and self.many:
+            val_d = dict()
+            for k, v in value.items():
+                val_d[k] = self._serialize(v, *args, **kwargs)
+            return val_d
 
         if isinstance(value, DocumentReference):
             # Note that AssertionError is not always thrown
@@ -140,10 +182,16 @@ class Relationship(fields.Str, Field):
 
     def _deserialize(self, value, *args, **kwargs):
         if value is None:
-            raise ValueError
+            return None
+            # raise ValueError
 
         if isinstance(value, list) and self.many:
             return [self._deserialize(val, *args, *kwargs) for val in value]
+        elif isinstance(value, dict) and self.many:
+            val_d = dict()
+            for k, v in value.items():
+                val_d[k] = self._deserialize(v, *args, **kwargs)
+            return val_d
 
         assert isinstance(value, DocumentReference)
         return RelationshipReference(
@@ -243,6 +291,28 @@ class Embedded(fields.Raw, Field):
             )
 
 
+def local_time_from_timestamp(timestamp) -> str:
+    """
+
+    :param timestamp: for example: 1545062400
+    :return: for example: "2018-12-17T08:00:00"
+    """
+    tz = pytz.timezone('US/Pacific') #('America/Los_Angeles')
+
+    d: datetime = datetime.fromtimestamp(timestamp, tz=tz)
+    d = d.replace(tzinfo=None) # Convert to local time
+    return d.isoformat()
+
+
+def str_to_local_time(s) -> datetime:
+    tz = pytz.timezone('America/Los_Angeles')
+    return tz.localize(iso8601.parse_date(s, default_timezone=None))
+
+
+def timestamp_from_local_time(s) -> int:
+    return int(str_to_local_time(s).timestamp())
+
+
 class Localtime(fields.NaiveDateTime, Field):
 
     def _serialize(
@@ -250,14 +320,14 @@ class Localtime(fields.NaiveDateTime, Field):
     ):
         if value is None:
             return None
-        value = datetime.fromtimestamp(value)
-        return super()._serialize(value, *args, **kwargs)
+        else:
+            return local_time_from_timestamp(value)
 
     def _deserialize(self, value, *args, **kwargs):
         if value is None:
-            return None
-        value = super()._deserialize(value, *args, **kwargs)
-        return value.timestamp()
+            return mutils.missing
+        else:
+            return timestamp_from_local_time(value)
 
 
 class Remainder(fields.Dict, Field):

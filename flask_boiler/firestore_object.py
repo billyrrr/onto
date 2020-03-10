@@ -57,12 +57,16 @@ class FirestoreObjectMixin:
         obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
         return obj
 
-    def save(self, transaction: Transaction = None):
-        d = self._export_as_dict(to_save=True)
+    def save(self, transaction: Transaction = None, doc_ref=None, save_rel=True):
+        if doc_ref is None:
+            doc_ref = self.doc_ref
+
+        d = self._export_as_dict(to_save=save_rel)
+
         if transaction is None:
-            self.doc_ref.set(document_data=d)
+            doc_ref.set(document_data=d)
         else:
-            transaction.set(reference=self.doc_ref,
+            transaction.set(reference=doc_ref,
                             document_data=d)
 
     def delete(self, transaction: Transaction = None):
@@ -129,12 +133,12 @@ class FirestoreObjectValMixin:
             return isinstance(val, RelationshipReference) and not val.nested
 
         def nest_relationship(val: RelationshipReference):
-            res = None
             if self.transaction is None:
-                res = val.doc_ref.get().to_dict()
+                snapshot = val.doc_ref.get()
+                return snapshot_to_obj(snapshot)
             else:
-                res = val.doc_ref.get(transaction=self.transaction).to_dict()
-            return res
+                snapshot = val.doc_ref.get(transaction=self.transaction)
+                return snapshot_to_obj(snapshot)
 
         if is_nested_relationship(val):
             if to_get:

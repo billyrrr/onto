@@ -97,7 +97,8 @@ class ViewModelMixin:
         return [cls.get(struct_d=struct_d, once=once)
                 for struct_d in struct_d_iterable]
 
-    def __init__(self, struct_d=None, f_notify=None, *args, **kwargs):
+    def __init__(
+            self, struct_d=None, f_notify=None, store=None, *args, **kwargs):
         """
 
         :param f_notify: callback to notify that view model's
@@ -105,14 +106,17 @@ class ViewModelMixin:
         :param args:
         :param kwargs:
         """
+        if store is None:
+            self.snapshot_container = SnapshotContainer()
+            if struct_d is None:
+                struct_d = Struct(BPSchema())
+            self._struct_d = struct_d
+            self.store = BusinessPropertyStore(
+                struct=self._struct_d,
+                snapshot_container=self.snapshot_container)
+        else:
+            self.store = store
         super().__init__(*args, **kwargs)
-        self.snapshot_container = SnapshotContainer()
-        if struct_d is None:
-            struct_d = Struct(BPSchema())
-        self._struct_d = struct_d
-        self.store = BusinessPropertyStore(
-            struct=self._struct_d,
-            snapshot_container=self.snapshot_container)
         self._on_update_funcs: Dict[str, Tuple] = dict()
         self.listener = None
         self.f_notify = f_notify

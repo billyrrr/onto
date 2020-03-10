@@ -151,7 +151,7 @@ class Importable:
             setattr(self, key, self._import_val(val, to_get=False))
 
     @classmethod
-    def from_dict(cls, d, to_get=False, **kwargs):
+    def from_dict(cls, d, to_get=True, **kwargs):
 
         obj_cls = cls
 
@@ -324,8 +324,8 @@ class NewMixin:
         for key, val in _with_dict.items():
             if key not in dir(self):
                 setattr(self, key, val)
-            elif isinstance(getattr(self.__class__, key), property):
-                setattr(self, key, val)
+            # elif isinstance(getattr(self.__class__, key), property):
+            #     setattr(self, key, val)
 
         super().__init__(**kwargs)
 

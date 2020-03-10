@@ -90,3 +90,10 @@ class BusinessPropertyStore:
                 manifest.add(doc_ref)
 
         return dict(g), dict(gr), manifest
+
+
+class SimpleStore:
+    """
+    To store simple business properties
+    """
+    pass

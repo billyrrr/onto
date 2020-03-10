@@ -82,3 +82,20 @@ def snapshot_to_obj(
 
     obj = obj_cls.from_dict(d=d, doc_ref=snapshot.reference)
     return obj
+
+
+def get_property(attr_name, inner_attr):
+    def fget(self):
+        inner = getattr(self, inner_attr)
+        return getattr(inner, attr_name)
+
+    # def fset(self, value):
+    #     inner = getattr(self, inner_attr)
+    #     setattr(inner, attr_name, value)
+    #
+    # def fdel(self):
+    #     inner = getattr(self, inner_attr)
+    #     delattr(inner, attr_name)
+
+    return property(fget=fget)
+
