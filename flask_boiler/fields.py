@@ -301,7 +301,7 @@ def local_time_from_timestamp(timestamp) -> str:
 
     d: datetime = datetime.fromtimestamp(timestamp, tz=tz)
     d = d.replace(tzinfo=None) # Convert to local time
-    return d.isoformat()
+    return d
 
 
 def str_to_local_time(s) -> datetime:
