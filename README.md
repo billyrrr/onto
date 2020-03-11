@@ -31,8 +31,8 @@ Some reasons that you may want to use this framework:
 - You are open to trying something new and contributing to a framework
 - You want to develop a new reactive service to your existing flask app
 
-This framework is at ***development stage***. 
-API is not guaranteed and ***will*** change often. 
+This framework is at ***beta testing stage***. 
+API is not guaranteed and ***may*** change. 
 
 Documentations: [readthedocs](https://flask-boiler.readthedocs.io/)
 
