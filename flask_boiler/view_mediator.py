@@ -5,17 +5,7 @@ from flask import request, jsonify
 
 
 class ViewMediatorBase:
-    def __init__(self, view_model_cls=None, mutation_cls=None, *args, **kwargs):
-        """
-
-        :param view_model_cls
-        :param mutation_cls: a subclass of Mutation to handle the changes
-                POST, PATCH, UPDATE, PUT, DELETE made to the list of view
-                models or a single view model.
-        """
-        super().__init__(*args, **kwargs)
-        self.view_model_cls = view_model_cls
-        self.mutation_cls = mutation_cls
+    pass
 
 
 class ViewMediator(ViewMediatorBase):
@@ -23,13 +13,25 @@ class ViewMediator(ViewMediatorBase):
     Registers a REST API Resource for a view model
     """
 
-    def __init__(self, *args, app=None, **kwargs):
+    def __init__(self,
+                 view_model_cls=None,
+                 mutation_cls=None,
+                 *args,
+                 app=None,
+                 **kwargs):
         """ Initialize a ViewMediator for REST API
-        :param app: Flask App
+
+        :param view_model_cls
+        :param mutation_cls: a subclass of Mutation to handle the changes
+                POST, PATCH, UPDATE, PUT, DELETE made to the list of view
+                models or a single view model.
         :param args:
+        :param app: Flask App
         :param kwargs:
         """
         super().__init__(*args, **kwargs)
+        self.view_model_cls = view_model_cls
+        self.mutation_cls = mutation_cls
         self.app = app
         self.rule_view_cls_mapping = dict()
         self.default_tag = self.view_model_cls.__name__

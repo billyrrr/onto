@@ -241,6 +241,7 @@ class ViewModelMixin:
             """
 
             with self.snapshot_container.lock:
+
                 n = len(docs)
                 for i in range(n):
 

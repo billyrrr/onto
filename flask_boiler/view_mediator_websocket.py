@@ -33,8 +33,9 @@ class ViewMediatorWebsocket(ViewMediatorBase, Namespace):
                 POST, PATCH, UPDATE, PUT, DELETE made to the list of view
                 models or a single view model.
         """
-        super().__init__(view_model_cls=view_model_cls,
-                         mutation_cls=mutation_cls, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+        self.view_model_cls = view_model_cls
+        self.mutation_cls = mutation_cls
         self.rule_view_cls_mapping = dict()
         self.default_tag = self.view_model_cls.__name__
         self.instances = dict()

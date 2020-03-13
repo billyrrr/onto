@@ -2,7 +2,7 @@ import time
 
 import pytest
 from google.cloud.firestore_v1 import Watch, DocumentSnapshot, \
-    DocumentReference, Query
+    DocumentReference, Query, CollectionReference
 
 from examples.meeting_room.domain_models import Meeting, User
 from examples.meeting_room.view_models import UserView
@@ -11,10 +11,11 @@ from examples.meeting_room.view_models.meeting_session import \
 from examples.meeting_room.view_models.user_view import UserViewMixin
 from flask_boiler.mutation import Mutation, PatchMutation
 from flask_boiler.view import DocumentAsView
-from flask_boiler.view_mediator_dav import ViewMediatorDAV
+from flask_boiler.view_mediator_dav import ViewMediatorDAV, ProtocolBase, \
+    ViewMediatorDeltaDAV
 from flask_boiler.view_model import ViewModel
 from ..views import meeting_session_ops
-from flask_boiler import view_mediator
+from flask_boiler import view_mediator, utils
 # Import the fixtures used by fixtures
 from tests.fixtures import CTX, setup_app
 from .fixtures import users, tickets, location, meeting
@@ -32,6 +33,62 @@ class MeetingSessionDAV(MeetingSessionMixin, DocumentAsView):
         doc_ref = user.doc_ref.collection(cls.__name__).document(meeting_id)
         return super().get_from_meeting_id(
             meeting_id, once=once, doc_ref=doc_ref, **kwargs)
+
+
+class MeetingSessionPatchProtocol(ProtocolBase):
+
+    @staticmethod
+    def on_create(snapshot, mediator):
+        d = snapshot.to_dict()
+        meeting_id = d["target_meeting_id"]
+
+        d = {
+            Meeting.get_schema_cls().g(key): val
+            for key, val in d.items() if key in {"inSession"}
+        }
+
+        ref = snapshot.reference
+        user_id = ref.parent.parent.id
+        user = User.get(doc_id=user_id)
+
+        obj = MeetingSessionDAV.new(
+            meeting_id=meeting_id,
+            once=True,
+            user=user
+        )
+        obj.update_vals(with_dict=d)
+        # TODO: switch to notify
+        obj.propagate_change()
+
+
+class MeetingSessionPatch(ViewMediatorDeltaDAV):
+
+    Protocol = MeetingSessionPatchProtocol
+
+
+class MeetingSessionGetProtocol(ProtocolBase):
+
+    @staticmethod
+    def on_create(snapshot, mediator):
+        meeting = utils.snapshot_to_obj(snapshot)
+
+        assert isinstance(meeting, Meeting)
+        for user_ref in meeting.users:
+
+            user = User.get(doc_ref=user_ref)
+            obj = MeetingSessionDAV.new(
+                meeting_id=meeting.doc_id,
+                once=True,
+                user=user
+            )
+            mediator.notify(obj=obj)
+
+    on_update = on_create
+
+
+class MeetingSessionGet(ViewMediatorDeltaDAV):
+
+    Protocol = MeetingSessionGetProtocol
 
 
 class MeetingSessionViewMediatorDAV(ViewMediatorDAV):
@@ -57,14 +114,13 @@ class MeetingSessionViewMediatorDAV(ViewMediatorDAV):
 
 
 def test_start(users, tickets, location, meeting):
-    mediator = MeetingSessionViewMediatorDAV(
-        view_model_cls=MeetingSessionDAV,
-        meeting_cls=Meeting,
-    )
+    mediator = MeetingSessionGet(query=
+                                 Query(parent=Meeting._get_collection())
+                                 )
 
     mediator.start()
 
-    # time.sleep(5)
+    time.sleep(5)
 
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
@@ -93,15 +149,22 @@ def test_start(users, tickets, location, meeting):
 
 
 def test_mutate(users, tickets, location, meeting):
-    mediator = MeetingSessionViewMediatorDAV(
-        view_model_cls=MeetingSessionDAV,
-        meeting_cls=Meeting,
-        mutation_cls=MeetingSessionMutation
+    """
+    Tests that mutate actions affect domain model and view model.
+
+    :param users:
+    :param tickets:
+    :param location:
+    :param meeting:
+    :return:
+    """
+    mediator = MeetingSessionGet(
+        query=Query(parent=Meeting._get_collection())
     )
 
     mediator.start()
 
-    # time.sleep(5)
+    time.sleep(5)
 
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
@@ -122,6 +185,50 @@ def test_mutate(users, tickets, location, meeting):
                                    'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
                                    'inSession': True,
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
+
+    patch_collection_name = "{}_PATCH".format(MeetingSessionDAV.__name__)
+
+    patch_mediator = MeetingSessionPatch(
+        query=Context.db.collection_group(patch_collection_name)
+    )
+
+    patch_mediator.start()
+
+    ref: CollectionReference = Context.db.collection(
+        'users/tijuana/MeetingSessionDAV_PATCH'
+    )
+    ref.add(
+        dict(
+            target_meeting_id="meeting_1",
+            inSession=False
+        )
+    )
+
+    time.sleep(5)
+
+    m = Meeting.get(doc_id="meeting_1")
+    assert m.status == "closed"
+
+    ref = Context.db.collection("users").document(users[0].doc_id) \
+        .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
+    assert ref.get().to_dict() == {'latitude': 32.880361,
+                                   'obj_type': 'MeetingSessionDAV',
+                                   'numHearingAidRequested': 2,
+                                   'attending': [
+                                       {'hearing_aid_requested': True,
+                                        'name': 'Joshua Pendergrast',
+                                        'organization': 'SDSU'},
+                                       {'organization': 'UCSD',
+                                        'hearing_aid_requested': False,
+                                        'name': 'Thomasina Manes'},
+                                       {'organization': 'UCSD',
+                                        'hearing_aid_requested': True,
+                                        'name': 'Tijuana Furlong'}],
+                                   'longitude': -117.242929,
+                                   'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
+                                   'inSession': False,
+                                   'address': '9500 Gilman Drive, La Jolla, CA'}
+
 
     for user in users:
         Context.db.collection("users").document(user.doc_id) \

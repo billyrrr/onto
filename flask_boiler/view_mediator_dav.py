@@ -1,3 +1,4 @@
+import abc
 import time
 
 from flask_boiler.context import Context as CTX
@@ -27,8 +28,9 @@ class ViewMediatorDAV(ViewMediatorBase):
                 POST, PATCH, UPDATE, PUT, DELETE made to the list of view
                 models or a single view model.
         """
-        super().__init__(view_model_cls=view_model_cls,
-                         mutation_cls=mutation_cls)
+        super().__init__()
+        self.view_model_cls = view_model_cls
+        self.mutation_cls = mutation_cls
         self.rule_view_cls_mapping = dict()
         if self.view_model_cls is not None:
             self.default_tag = self.view_model_cls.__name__
@@ -93,18 +95,58 @@ class ViewMediatorDAV(ViewMediatorBase):
         raise NotImplementedError
 
 
-class ViewMediatorDeltaDAV(ViewMediatorDAV):
+class ViewMediatorDeltaDAV(ViewMediatorBase):
 
-    def _get_query_and_on_snapshot(self):
+    def notify(self, obj):
+        obj.save()
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if not hasattr(cls, "Protocol"):
+            raise NotImplementedError
+
+    def __init__(self, *args, query, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.query = query
+
+    def _get_on_snapshot(self):
         """
         Implement in subclass
         :return:
         """
-        raise NotImplementedError
+        def on_snapshot(snapshots, changes, timestamp):
+            """
+            Note that server reboot will result in some "Modified" objects
+                to be routed as "Added" objects
+
+            :param snapshots:
+            :param changes:
+            :param timestamp:
+            :return:
+            """
+            for change, snapshot in zip(changes, snapshots):
+                assert isinstance(snapshot, DocumentSnapshot)
+                if change.type.name == 'ADDED':
+                    self.Protocol.on_create(
+                        snapshot=snapshot,
+                        mediator=self
+                    )
+                elif change.type.name == 'MODIFIED':
+                    self.Protocol.on_update(
+                        snapshot=snapshot,
+                        mediator=self
+                    )
+                elif change.type.name == 'REMOVED':
+                    self.Protocol.on_delete(
+                        snapshot=snapshot,
+                        mediator=self
+                    )
+
+        return on_snapshot
 
     def start(self):
 
-        query, on_snapshot = self._get_query_and_on_snapshot()
+        query, on_snapshot = self.query, self._get_on_snapshot()
 
         watch = Watch.for_query(
             query=query,
@@ -113,3 +155,35 @@ class ViewMediatorDeltaDAV(ViewMediatorDAV):
             reference_class_instance=DocumentReference
         )
 
+
+class ProtocolBase:
+    """
+    Protocol to specify actions when a document is 'ADDED', 'MODIFIED', and
+        'REMOVED'.
+    """
+
+    @staticmethod
+    def on_create(snapshot, mediator):
+        pass
+
+    @staticmethod
+    def on_update(snapshot, mediator):
+        pass
+
+    @staticmethod
+    def on_delete(snapshot, mediator):
+        pass
+
+
+def create_mutation_protocol(mutation):
+
+    class _MutationProtocol:
+
+        @staticmethod
+        def on_create(snapshot, mediator):
+            mutation.mutate_create(
+                doc_id=snapshot.reference.id,
+                data=snapshot.to_dict()
+            )
+
+    return _MutationProtocol

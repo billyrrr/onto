@@ -40,6 +40,21 @@ class Context:
             cls.__instance.__initialized = False
         return cls.__instance
 
+    @staticmethod
+    def _enable_logging():
+        import sys
+        import logging
+
+        root = logging.getLogger()
+        root.setLevel(logging.DEBUG)
+
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        root.addHandler(handler)
+
     @classmethod
     def read(cls, config):
         """ Description
@@ -55,6 +70,7 @@ class Context:
         :rtype:
         """
         cls.config = config
+        cls._enable_logging()
         cls._reload_debug_flag(cls.config.DEBUG)
         cls._reload_testing_flag(cls.config.TESTING)
         cls._reload_firebase_app(cls.config.FIREBASE_CERTIFICATE_JSON_PATH)

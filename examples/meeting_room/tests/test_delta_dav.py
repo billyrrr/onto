@@ -12,7 +12,7 @@ from examples.meeting_room.view_models.user_view import UserViewMixin
 from flask_boiler.mutation import Mutation, PatchMutation
 from flask_boiler.view import DocumentAsView
 from flask_boiler.view_mediator_dav import ViewMediatorDAV, \
-    ViewMediatorDeltaDAV
+    ViewMediatorDeltaDAV, ProtocolBase
 from flask_boiler.view_model import ViewModel
 from ..views import meeting_session_ops
 from flask_boiler import view_mediator, utils
@@ -35,42 +35,31 @@ class MeetingSessionDAV(MeetingSessionMixin, DocumentAsView):
             meeting_id, once=once, doc_ref=doc_ref, **kwargs)
 
 
+class MeetingSessionProtocol(ProtocolBase):
+
+    @staticmethod
+    def on_create(snapshot, mediator):
+        meeting = utils.snapshot_to_obj(snapshot)
+
+        assert isinstance(meeting, Meeting)
+        for user_ref in meeting.users:
+            user = User.get(doc_ref=user_ref)
+            _ = MeetingSessionDAV.new(
+                meeting_id=meeting.doc_id,
+                once=False,
+                user=user,
+                f_notify=mediator.notify
+            )
+
+
 class MeetingSessionViewMediatorDeltaDAV(ViewMediatorDeltaDAV):
 
-    def __init__(self, *args, meeting_cls=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.meeting_cls = meeting_cls
-
-    def _get_query_and_on_snapshot(self):
-        query = Query(parent=self.meeting_cls._get_collection())
-
-        def on_snapshot(snapshots, changes, timestamp):
-            for change, snapshot in zip(changes, snapshots):
-                if change.type.name == 'ADDED':
-
-                    assert issubclass(self.meeting_cls, Meeting)
-                    meeting = utils.snapshot_to_obj(
-                        snapshot,
-                        super_cls=self.meeting_cls
-                    )
-
-                    assert isinstance(meeting, Meeting)
-                    for user_ref in meeting.users:
-                        user = User.get(doc_ref=user_ref)
-                        obj = self.view_model_cls.new(
-                            meeting_id=meeting.doc_id,
-                            once=False,
-                            user=user,
-                            f_notify=self.notify
-                        )
-
-        return query, on_snapshot
+    Protocol = MeetingSessionProtocol
 
 
 def test_start(users, tickets, location, meeting):
     mediator = MeetingSessionViewMediatorDeltaDAV(
-        view_model_cls=MeetingSessionDAV,
-        meeting_cls=Meeting,
+        query=Query(parent=Meeting._get_collection()),
     )
 
     mediator.start()
