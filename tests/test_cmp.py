@@ -41,7 +41,7 @@ class MyTestCase(unittest.TestCase):
         assert isinstance(a, cmp.Condition)
         b = a.has("user_k")
         assert isinstance(b, cmp.Condition)
-        assert b.constraints == [("_in", "user_k")]
+        assert b.constraints == [("array_contains", "user_k")]
         assert b.fieldname == "friends"
 
 
