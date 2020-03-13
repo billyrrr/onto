@@ -61,6 +61,8 @@ def test_new(CTX):
     # obj = TestViewObject.new("viewId1")
 
 
+@pytest.mark.skip(reason="DocumentAsView with mutable struct "
+                         "is no longer supported for now. ")
 def test_binding(CTX):
     d_a = {
         "luggage_type": "large",
