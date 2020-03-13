@@ -152,6 +152,14 @@ class Importable:
 
     @classmethod
     def from_dict(cls, d, to_get=True, **kwargs):
+        """
+        TODO: fix to_get not applying to new(**kwargs)
+
+        :param d:
+        :param to_get:
+        :param kwargs:
+        :return:
+        """
 
         obj_cls = cls
 

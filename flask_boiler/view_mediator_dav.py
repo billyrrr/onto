@@ -163,15 +163,36 @@ class ProtocolBase:
     """
 
     @staticmethod
-    def on_create(snapshot, mediator):
+    def on_create(snapshot: DocumentSnapshot, mediator: ViewMediatorBase):
+        """
+        Called when a document is 'ADDED' to the result of a query
+
+        :param snapshot:
+        :param mediator:
+        :return:
+        """
         pass
 
     @staticmethod
-    def on_update(snapshot, mediator):
+    def on_update(snapshot: DocumentSnapshot, mediator: ViewMediatorBase):
+        """
+        Called when a document is 'MODIFIED' in the result of a query
+
+        :param snapshot:
+        :param mediator:
+        :return:
+        """
         pass
 
     @staticmethod
-    def on_delete(snapshot, mediator):
+    def on_delete(snapshot: DocumentSnapshot, mediator: ViewMediatorBase):
+        """
+        Called when a document is 'REMOVED' in the result of a query
+
+        :param snapshot:
+        :param mediator:
+        :return:
+        """
         pass
 
 
