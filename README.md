@@ -10,7 +10,7 @@ Flask-boiler manages your application state with Firestore.
 You can create view models that aggregates underlying data 
 sources and store them immediately and permanently in Firestore. 
 As a result, your front end development will be as easy as 
-using Firestore. 
+using Firestore. Flask-boiler is comparable to Spring Web Reactive. 
 
 Demo: 
 
