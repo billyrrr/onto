@@ -161,7 +161,7 @@ class Importable:
         :return:
         """
 
-        obj_cls = cls
+        super_cls = cls
 
         if "obj_type" in d:
             obj_type = d["obj_type"]
