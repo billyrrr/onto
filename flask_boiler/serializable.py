@@ -161,7 +161,7 @@ class Importable:
         :return:
         """
 
-        super_cls = cls
+        super_cls, obj_cls = cls, cls
 
         if "obj_type" in d:
             obj_type = d["obj_type"]
@@ -372,6 +372,3 @@ class Serializable(Mutable, metaclass=SerializableMeta):
 
     pass
 
-
-T = TypeVar('T')
-U = TypeVar('U')

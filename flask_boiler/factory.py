@@ -1,22 +1,26 @@
-from typing import Union
+from typing import TypeVar, Type
 
 from flask_boiler.model_registry import BaseRegisteredModel
-from flask_boiler.serializable import T, Schemed, NewMixin, \
-    Importable, Exportable, U, Serializable
+from flask_boiler.serializable import Schemed, NewMixin, \
+    Importable, Exportable, Serializable
+
+
+T = TypeVar('T')
+U = TypeVar('U')
 
 
 class ClsFactory:
 
     @classmethod
     def create_from_root(
-            cls, name, schema: T,
+            cls, name, schema,
             root_cls=None,
             additional_base_tuple=None):
         pass
 
     @classmethod
     def create_customized(
-            cls, name, schema: T,
+            cls, name, schema,
             importable=True,
             exportable=True):
         """
@@ -49,16 +53,16 @@ class ClsFactory:
         )
 
     @classmethod
-    def create(cls, name, schema: T,
-               base:U=Serializable,
-               base_tuple=None) -> Union[T, U]:
+    def create(cls, name, schema: Type[T],
+               base: Type[U] = Serializable,
+               base_tuple=None) -> Type[T]:
 
         existing = BaseRegisteredModel.get_cls_from_name(name)
         if existing is None:
             new_cls = type(name,  # class name
                            base_tuple or (base, ),
                            dict(
-                               _schema_cls=schema
+                               _schema_cls=schema,
                            )
                            )
             return new_cls

@@ -6,7 +6,6 @@ from google.cloud.firestore import DocumentReference
 from marshmallow import fields
 
 from flask_boiler.helpers import RelationshipReference, EmbeddedElement
-from flask_boiler.serializable import Serializable, Importable, Exportable
 from datetime import datetime
 from math import inf
 
@@ -45,6 +44,9 @@ class Boolean(fields.Bool, Field):
         to a boolean.
     """
 
+    def __get__(self, instance, owner) -> bool:
+        return super().__get__(instance, owner)
+
     @property
     def default_value(self):
         return bool()
@@ -62,6 +64,13 @@ class Integer(fields.Integer, Field):
     @property
     def default_value(self):
         return int()
+
+    @typing.overload
+    def __get__(self, instance, owner) -> typing.Union[Field, int]:
+        """
+        Type hinting
+        """
+        pass
 
     def _serialize(self, value, *args, **kwargs):
         if value == inf:
@@ -90,12 +99,26 @@ class Raw(fields.Raw, Field):
 class List(fields.Raw, Field):
     # TODO: change
 
+    @typing.overload
+    def __get__(self, instance, owner) -> typing.Union[Field, typing.List]:
+        """
+        Type hinting
+        """
+        pass
+
     @property
     def default_value(self):
         return list()
 
 
 class Dict(fields.Raw, Field):
+
+    @typing.overload
+    def __get__(self, instance, owner) -> typing.Union[Field, typing.Dict]:
+        """
+        Type hinting
+        """
+        pass
 
     @property
     def default_value(self):
@@ -113,6 +136,13 @@ class Function(fields.Function, Field):
 
 
 class String(fields.String, Field):
+
+    @typing.overload
+    def __get__(self, instance, owner) -> typing.Union[Field, str]:
+        """
+        Type hinting
+        """
+        pass
 
     @property
     def default_value(self):
@@ -291,7 +321,7 @@ class Embedded(fields.Raw, Field):
             )
 
 
-def local_time_from_timestamp(timestamp) -> str:
+def local_time_from_timestamp(timestamp) -> datetime:
     """
 
     :param timestamp: for example: 1545062400
@@ -314,6 +344,13 @@ def timestamp_from_local_time(s) -> int:
 
 
 class Localtime(fields.NaiveDateTime, Field):
+
+    @typing.overload
+    def __get__(self, instance, owner) -> typing.Union[Field, int]:
+        """
+        Type hinting
+        """
+        pass
 
     def _serialize(
         self, value, *args, **kwargs
