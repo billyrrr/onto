@@ -124,7 +124,8 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
             :param timestamp:
             :return:
             """
-            for change, snapshot in zip(changes, snapshots):
+            for change in changes:
+                snapshot = change.document
                 assert isinstance(snapshot, DocumentSnapshot)
                 if change.type.name == 'ADDED':
                     self.Protocol.on_create(
