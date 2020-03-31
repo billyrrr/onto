@@ -36,12 +36,6 @@ class Context:
     def __init__(self, *args, **kwargs):
         raise NotImplementedError('Do not initialize this class, use the class methods and properties instead. ')
 
-    def __new__(cls):
-        if cls.__instance is None:
-            cls.__instance = super(Context, cls).__new__(cls)
-            cls.__instance.__initialized = False
-        return cls.__instance
-
     @staticmethod
     def _enable_logging():
         import sys
@@ -116,14 +110,16 @@ class Context:
 
         try:
             cls._cred = credentials.Certificate(certificate_path)
-        except ValueError as e:
+        except Exception as e:
             logging.exception('Error initializing credentials.Certificate')
+            raise e
         # TODO delete certificate path in function call
 
         try:
             cls.firebase_app = firebase_admin.initialize_app(credential=cls._cred, name=cls.config.APP_NAME)
-        except ValueError as e:
+        except Exception as e:
             logging.exception('Error initializing firebase_app')
+            raise e
 
     @classmethod
     def _reload_firestore_client(cls, cred_path):

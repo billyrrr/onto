@@ -31,3 +31,37 @@ def test_config_comparator():
     config = Config.load()
     other_config = Config.load()
     assert config == other_config
+
+
+def test_errors(monkeypatch):
+    from flask_boiler.context import Context
+
+    class CertFailError(Exception):
+        pass
+
+    def initialize_cert_fail(*args, **kwargs):
+        raise CertFailError
+
+    with monkeypatch.context() as m:
+        import firebase_admin
+        m.setattr(firebase_admin.credentials, "Certificate", initialize_cert_fail)
+        with pytest.raises(CertFailError):
+            Context._reload_firebase_app('./non-existent.json')
+
+    class AppFailError(Exception):
+        pass
+
+    def initialize_app_fail(*args, **kwargs):
+        raise AppFailError
+
+    with monkeypatch.context() as m:
+        import firebase_admin
+        m.setattr(firebase_admin, "initialize_app", initialize_app_fail)
+        _PartialConfig = type(
+            "_PartialConfig",
+            (object,),
+            {"APP_NAME": "AppNameFail"}
+        )
+        m.setattr(Context, "config", _PartialConfig())
+        with pytest.raises(AppFailError):
+            Context._reload_firebase_app('./config_jsons/flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json')
