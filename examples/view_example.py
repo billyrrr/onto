@@ -17,20 +17,20 @@ from google.cloud import firestore
 from functools import partial
 
 
-class Color(Schema):
+class ExampleColorSchema(Schema):
     name = fields.Str()
 
 
-class Palette(Schema):
+class ExamplePaletteSchema(Schema):
     case_conversion = False
 
     palette_name = fields.Str()
-    colors = fields.Nested(Color, many=True)
+    colors = fields.Nested(ExampleColorSchema, many=True)
 
 
-PaletteViewModelBase = ClsFactory.create(
-    name="PaletteViewModelBase",
-    schema=Palette,
+ExamplePaletteViewModelBase = ClsFactory.create(
+    name="ExamplePaletteViewModelBase",
+    schema=ExamplePaletteSchema,
     base=ViewModel
 )
 
@@ -46,7 +46,7 @@ repo = {
 }
 
 
-class PaletteViewModel(PaletteViewModelBase):
+class ExamplePaletteViewModel(ExamplePaletteViewModelBase):
     description = "A list of colors (may be filtered by palette)"
 
     @classmethod
@@ -63,13 +63,13 @@ class PaletteViewModel(PaletteViewModelBase):
         return obj
 
 
-obj = PaletteViewModel.new(doc_id="doc_id_1")
+obj = ExamplePaletteViewModel.new(doc_id="doc_id_1")
 
 app = Flask(__name__)
 swagger = Swagger(app)
 
 palette_mediator = view_mediator.ViewMediator(
-    view_model_cls=PaletteViewModel,
+    view_model_cls=ExamplePaletteViewModel,
     app=app,
 )
 
