@@ -46,9 +46,12 @@ class ConfigBase:
         :param other:
         :return:
         """
-        return self.APP_NAME == other.APP_NAME \
-            and self.DEBUG == other.DEBUG \
-            and self.TESTING == other.TESTING
+        if other is None:
+            return False
+        else:
+            return self.APP_NAME == other.APP_NAME \
+                and self.DEBUG == other.DEBUG \
+                and self.TESTING == other.TESTING
 
     def __new__(cls, certificate_filename=None, certificate_path=None,
                 testing=False, debug=False,

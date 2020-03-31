@@ -24,3 +24,10 @@ def test_context_load():
     CTX.load()
 
     assert CTX.firebase_app.project_id == "flask-boiler-testing"
+
+
+def test_config_comparator():
+    from flask_boiler.config import Config
+    config = Config.load()
+    other_config = Config.load()
+    assert config == other_config
