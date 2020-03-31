@@ -120,6 +120,7 @@ htmlview: html
 test:
 	pip install -r requirements.txt
 	pip install -r requirements-dev.txt
+	pip freeze
     # Note: watch out for env var not set for child process when threading
 	pytest --cov=flask_boiler -vv tests
 
