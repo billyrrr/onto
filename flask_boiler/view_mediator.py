@@ -82,6 +82,8 @@ class ViewMediator(ViewMediatorBase):
         :param list_post_view: Flask View
         :return:
         """
+        if list_post_view is None:
+            list_post_view = self._default_list_post_view()
         name = self.view_model_cls.__name__ + "ListPostView"
         assert rule is not None
         self.app.add_url_rule(

@@ -1,5 +1,6 @@
 from flask_boiler import fields
 from flask_boiler.business_property_store import BPSchema
+from flask_boiler.config import Config
 from flask_boiler.context import Context as CTX
 from flask_boiler.schema import Schema
 from flask_boiler.fields import Integer
@@ -8,6 +9,14 @@ from flask_boiler.struct import Struct
 from flask_boiler.view_mediator_dav import ViewMediatorDAV
 from flask_boiler.view_model import ViewModel
 
+config = Config(
+    app_name="flask-boiler-testing",
+    debug=True,
+    testing=True,
+    certificate_filename="flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
+)
+
+CTX.read(config)
 
 class ShardSchema(Schema):
 
@@ -81,3 +90,65 @@ class CounterMediator(ViewMediatorDAV):
             f_notify=self.notify,
             struct_d=struct,
             once=False)
+
+"""
+Reserved for testing 
+"""
+
+import pytest
+import time
+
+
+def test_counter():
+
+    mediator = CounterMediator(shard_size=10)
+    mediator.start()
+
+    time.sleep(5)
+
+    ref = CTX.db.collection("counters").document("counter_0")
+
+    assert ref.get().to_dict()["totalCount"] == 0
+
+
+def test_increment(CTX):
+    """
+    TODO: add teardown steps to delete documents generated in firestore
+
+    :param CTX:
+    :return:
+    """
+
+    mediator = CounterMediator(
+        mutation_cls=None,
+        shard_size=2
+    )
+
+    mediator.start()
+
+    time.sleep(3)
+
+    doc_ref = CTX.db.collection("counters").document("counter_0")
+
+    assert doc_ref.get().to_dict() == {
+        "doc_ref": "counters/counter_0",
+        "obj_type": "CounterView",
+        "totalCount": 0
+    }
+
+    from google.cloud.firestore import Increment
+
+    CTX.db.collection("Shard").document("0").set(
+        document_data={
+            "count": Increment(1),
+        },
+        merge=True
+    )
+
+    time.sleep(1)
+
+    assert doc_ref.get().to_dict() == {
+        "doc_ref": "counters/counter_0",
+        "obj_type": "CounterView",
+        "totalCount": 1
+    }
