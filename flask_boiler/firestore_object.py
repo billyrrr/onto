@@ -57,6 +57,11 @@ class FirestoreObjectMixin:
         obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
         return obj
 
+    @classmethod
+    def from_snapshot(cls, snapshot=None):
+        obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
+        return obj
+
     def save(self, transaction: Transaction = None, doc_ref=None, save_rel=True):
         if doc_ref is None:
             doc_ref = self.doc_ref

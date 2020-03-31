@@ -29,10 +29,16 @@ class MeetingSessionDAV(MeetingSessionMixin, DocumentAsView):
         return cls.get_from_meeting_id(*args, **kwargs)
 
     @classmethod
-    def get_from_meeting_id(cls, meeting_id, once=False, user=None, **kwargs):
-        doc_ref = user.doc_ref.collection(cls.__name__).document(meeting_id)
+    def get_from_meeting_id(cls, meeting_id, once=True, **kwargs):
         return super().get_from_meeting_id(
-            meeting_id, once=once, doc_ref=doc_ref, **kwargs)
+            meeting_id, once=once, **kwargs)
+
+    def save(self, *args, **kwargs):
+        for user_id, user in self.store.users.items():
+            doc_ref = user.doc_ref\
+                .collection(self.__class__.__name__)\
+                .document(self.store.meeting.doc_id)
+            super().save(*args, doc_ref=doc_ref, **kwargs)
 
 
 class MeetingSessionPatchProtocol(ProtocolBase):
@@ -66,29 +72,23 @@ class MeetingSessionPatch(ViewMediatorDeltaDAV):
     Protocol = MeetingSessionPatchProtocol
 
 
-class MeetingSessionGetProtocol(ProtocolBase):
+class MeetingSessionGet(ViewMediatorDeltaDAV):
 
-    @staticmethod
-    def on_create(snapshot, mediator):
-        meeting = utils.snapshot_to_obj(snapshot)
+    class Protocol(ProtocolBase):
 
-        assert isinstance(meeting, Meeting)
-        for user_ref in meeting.users:
+        @staticmethod
+        def on_create(snapshot, mediator):
+            meeting = utils.snapshot_to_obj(snapshot)
 
-            user = User.get(doc_ref=user_ref)
+            assert isinstance(meeting, Meeting)
+
             obj = MeetingSessionDAV.new(
                 meeting_id=meeting.doc_id,
                 once=True,
-                user=user
             )
             mediator.notify(obj=obj)
 
-    on_update = on_create
-
-
-class MeetingSessionGet(ViewMediatorDeltaDAV):
-
-    Protocol = MeetingSessionGetProtocol
+        on_update = on_create
 
 
 class MeetingSessionViewMediatorDAV(ViewMediatorDAV):
@@ -97,20 +97,18 @@ class MeetingSessionViewMediatorDAV(ViewMediatorDAV):
         super().__init__(*args, **kwargs)
         self.meeting_cls = meeting_cls
 
-    def generate_entries(self):
+    class Protocol(ProtocolBase):
 
-        meetings = self.meeting_cls.all()
-        for meeting in meetings:
-            assert isinstance(meeting, Meeting)
-            for user_ref in meeting.users:
-                user = User.get(doc_ref=user_ref)
-                obj = self.view_model_cls.new(
-                    meeting_id=meeting.doc_id,
-                    once=False,
-                    user=user,
-                    f_notify=self.notify
-                )
-                self.instances[obj.doc_ref._document_path] = obj
+        @staticmethod
+        def on_create(snapshot: DocumentSnapshot, mediator):
+            meeting = mediator.meeting_cls.from_snapshot(snapshot)
+            obj = MeetingSessionDAV.new(
+                meeting_id=meeting.doc_id,
+                once=True,
+            )
+            mediator.notify(obj=obj)
+
+        on_update = on_create
 
 
 def test_start(users, tickets, location, meeting):
@@ -138,7 +136,7 @@ def test_start(users, tickets, location, meeting):
                                         'hearing_aid_requested': True,
                                         'name': 'Tijuana Furlong'}],
                                    'longitude': -117.242929,
-                                   'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
+                                   # 'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
                                    'inSession': True,
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
 
