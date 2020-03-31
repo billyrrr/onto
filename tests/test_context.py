@@ -34,6 +34,8 @@ def test_config_comparator():
 
 
 def test_errors(monkeypatch):
+    # Note: Watch out for state sharing
+    # Note: Context may have invalid values when used in other test cases
     from flask_boiler.context import Context
 
     class CertFailError(Exception):
@@ -65,3 +67,6 @@ def test_errors(monkeypatch):
         m.setattr(Context, "config", _PartialConfig())
         with pytest.raises(AppFailError):
             Context._reload_firebase_app('./config_jsons/flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json')
+
+    with pytest.raises(Exception):
+        Context._reload_firestore_client(cred_path="non-existent")
