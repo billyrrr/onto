@@ -14,3 +14,8 @@ def test_quickstart_example():
 def test_relationship_example():
     from importlib import import_module
     _ = import_module("examples.relationship_example")
+
+
+def test_meeting_quickstart():
+    from importlib import import_module
+    _ = import_module("examples.meeting_room.quickstart")
