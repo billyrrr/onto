@@ -10,3 +10,7 @@ class PropertyEvalError(BoilerError):
             of a model.
     """
     pass
+
+
+class UnauthorizedError(BoilerError):
+    pass

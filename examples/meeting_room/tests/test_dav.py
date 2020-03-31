@@ -9,6 +9,7 @@ from examples.meeting_room.view_models import UserView
 from examples.meeting_room.view_models.meeting_session import \
     MeetingSessionMutation, MeetingSessionMixin
 from examples.meeting_room.view_models.user_view import UserViewMixin
+from flask_boiler.errors import UnauthorizedError
 from flask_boiler.mutation import Mutation, PatchMutation
 from flask_boiler.view import DocumentAsView
 from flask_boiler.view_mediator_dav import ViewMediatorDAV, ProtocolBase, \
@@ -40,36 +41,37 @@ class MeetingSessionDAV(MeetingSessionMixin, DocumentAsView):
                 .document(self.store.meeting.doc_id)
             super().save(*args, doc_ref=doc_ref, **kwargs)
 
-
-class MeetingSessionPatchProtocol(ProtocolBase):
-
-    @staticmethod
-    def on_create(snapshot, mediator):
-        d = snapshot.to_dict()
-        meeting_id = d["target_meeting_id"]
-
-        d = {
-            Meeting.get_schema_cls().g(key): val
-            for key, val in d.items() if key in {"inSession"}
-        }
-
-        ref = snapshot.reference
-        user_id = ref.parent.parent.id
-        user = User.get(doc_id=user_id)
-
-        obj = MeetingSessionDAV.new(
-            meeting_id=meeting_id,
-            once=True,
-            user=user
-        )
-        obj.update_vals(with_dict=d)
-        # TODO: switch to notify
-        obj.propagate_change()
+    def update_vals(self, *args, user_id, **kwargs):
+        if user_id in self.store.users:
+            super().update_vals(*args, **kwargs)
+        else:
+            raise UnauthorizedError
 
 
 class MeetingSessionPatch(ViewMediatorDeltaDAV):
 
-    Protocol = MeetingSessionPatchProtocol
+    class Protocol(ProtocolBase):
+
+        @staticmethod
+        def on_create(snapshot, mediator):
+            d = snapshot.to_dict()
+            meeting_id = d["target_meeting_id"]
+
+            d = {
+                Meeting.get_schema_cls().g(key): val
+                for key, val in d.items() if key in {"inSession"}
+            }
+
+            ref = snapshot.reference
+            user_id = ref.parent.parent.id
+
+            obj = MeetingSessionDAV.new(
+                meeting_id=meeting_id,
+                once=True,
+            )
+            obj.update_vals(user_id=user_id, with_dict=d)
+            # TODO: switch to notify
+            obj.propagate_change()
 
 
 class MeetingSessionGet(ViewMediatorDeltaDAV):
@@ -84,29 +86,10 @@ class MeetingSessionGet(ViewMediatorDeltaDAV):
 
             obj = MeetingSessionDAV.new(
                 meeting_id=meeting.doc_id,
-                once=True,
+                once=False,
+                f_notify=mediator.notify
             )
-            mediator.notify(obj=obj)
-
-        on_update = on_create
-
-
-class MeetingSessionViewMediatorDAV(ViewMediatorDAV):
-
-    def __init__(self, *args, meeting_cls=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.meeting_cls = meeting_cls
-
-    class Protocol(ProtocolBase):
-
-        @staticmethod
-        def on_create(snapshot: DocumentSnapshot, mediator):
-            meeting = mediator.meeting_cls.from_snapshot(snapshot)
-            obj = MeetingSessionDAV.new(
-                meeting_id=meeting.doc_id,
-                once=True,
-            )
-            mediator.notify(obj=obj)
+            # mediator.notify(obj=obj)
 
         on_update = on_create
 
@@ -180,7 +163,7 @@ def test_mutate(users, tickets, location, meeting):
                                         'hearing_aid_requested': True,
                                         'name': 'Tijuana Furlong'}],
                                    'longitude': -117.242929,
-                                   'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
+                                   # 'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
                                    'inSession': True,
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
 
@@ -223,7 +206,6 @@ def test_mutate(users, tickets, location, meeting):
                                         'hearing_aid_requested': True,
                                         'name': 'Tijuana Furlong'}],
                                    'longitude': -117.242929,
-                                   'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
                                    'inSession': False,
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
 
@@ -243,9 +225,8 @@ def test_domain_model_changes(users, tickets, location, meeting):
     :param meeting:
     :return:
     """
-    mediator = MeetingSessionViewMediatorDAV(
-        view_model_cls=MeetingSessionDAV,
-        meeting_cls=Meeting,
+    mediator = MeetingSessionGet(
+        query=Query(parent=Meeting._get_collection())
     )
 
     mediator.start()
@@ -269,7 +250,6 @@ def test_domain_model_changes(users, tickets, location, meeting):
                                         'hearing_aid_requested': True,
                                         'name': 'Tijuana Furlong'}],
                                    'longitude': -117.242929,
-                                   'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
                                    'inSession': True,
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
 
@@ -298,7 +278,6 @@ def test_domain_model_changes(users, tickets, location, meeting):
                                            'hearing_aid_requested': False}
                                    ],
                                    'longitude': -117.242929,
-                                   'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
                                    'inSession': True,
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
 
@@ -311,8 +290,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
 def test_view_model(users, tickets, location, meeting):
     meeting_session = MeetingSessionDAV \
         .get_from_meeting_id(meeting_id=meeting.doc_id,
-                             once=True,
-                             user=users[0])
+                             once=True)
 
     assert meeting_session._export_as_view_dict() == \
            {'inSession': True,
