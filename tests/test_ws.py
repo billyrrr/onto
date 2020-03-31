@@ -38,7 +38,7 @@ def test_connect(setup_app, rainbow_vm, color_refs):
            [{'args': 'connected', 'name': 'message', 'namespace': '/palette'},
             {'args': '{}', 'name': 'message', 'namespace': '/palette'},
             {'args': '{}', 'name': 'message', 'namespace': '/palette'},
-            {'args': [None], 'name': 'subscribed', 'namespace': '/palette'},
+            {'args': [], 'name': 'subscribed', 'namespace': '/palette'},
             {'args': [{'colors': ['cian', 'magenta', 'yellow'],
                        'rainbowName': 'cian-magenta-yellow'}],
              'name': 'updated',
