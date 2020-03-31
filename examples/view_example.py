@@ -23,14 +23,14 @@ if __name__ == "__main__":
         documentations. 
     """
 
-    config = Config(
-        app_name="flask-boiler-testing",
-        debug=True,
-        testing=True,
-        certificate_filename="flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
-    )
-
-    CTX.read(config)
+    if CTX.config is None:
+        config = Config(
+            app_name="flask-boiler-testing",
+            debug=True,
+            testing=True,
+            certificate_filename="flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
+        )
+        CTX.read(config)
 
 
     class Color(Schema):

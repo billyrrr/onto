@@ -21,4 +21,4 @@ python:
   version: 3.7
   install:
     - requirements: requirements.txt
-    - requirements: dev-requirements.txt
+    - requirements: requirements-dev.txt

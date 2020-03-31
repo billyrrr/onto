@@ -1,10 +1,12 @@
-from flask_boiler import config
-from flask_boiler import context
+import pytest
 
-
-Config = config.Config
 
 def test_firebase_app_context():
+    from flask_boiler import config
+    from flask_boiler import context
+
+    Config = config.Config
+
     config = Config(
         app_name="flask-boiler-testing",
         debug=True,
@@ -13,4 +15,12 @@ def test_firebase_app_context():
     )
     CTX = context.Context
     CTX.read(config)
+    assert CTX.firebase_app.project_id == "flask-boiler-testing"
+
+
+def test_context_load():
+    from flask_boiler.context import Context as CTX
+
+    CTX.load()
+
     assert CTX.firebase_app.project_id == "flask-boiler-testing"

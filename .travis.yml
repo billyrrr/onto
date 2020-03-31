@@ -5,12 +5,9 @@ before_install:
   - openssl aes-256-cbc -K $encrypted_099a44ce718c_key -iv $encrypted_099a44ce718c_iv -in credentials.tar.gz.enc -out credentials.tar.gz -d
   - mkdir config_jsons
   - tar xvf credentials.tar.gz -C config_jsons
-install:
-  - pip install -r requirements.txt
-  - pip install -r dev-requirements.txt
 # command to run tests
 script:
-  - pytest --cov=flask_boiler -vv tests
+  - make test
 after_success:
   - coveralls
 notifications:

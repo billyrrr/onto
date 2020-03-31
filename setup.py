@@ -44,6 +44,7 @@ setuptools.setup(
         "dictdiffer",
         "celery",
         "flask-socketio",
-        "iso8601"
+        "iso8601",
+        "pyyaml"
     ],
 )

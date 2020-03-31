@@ -26,6 +26,8 @@ class Context:
     config: Config = None
     celery_app: Celery = None
 
+    # Deleted on purpose to ensure that .<flag> is not evaluated as False
+    #   when .<flag> is neither set to True, nor set to False.
     # debug = None
     # testing = None
     _cred = None
@@ -56,6 +58,11 @@ class Context:
         root.addHandler(handler)
 
     @classmethod
+    def load(cls):
+        config = Config.load()
+        cls.read(config)
+
+    @classmethod
     def read(cls, config):
         """ Description
             Read config file andd reload firebase app and firestore client.
@@ -69,13 +76,22 @@ class Context:
 
         :rtype:
         """
+        if cls.config == config:
+            """
+            Skip reading config if the current config is the same as 
+                the config to read. 
+            """
+            return cls
         cls.config = config
-        cls._enable_logging()
         cls._reload_debug_flag(cls.config.DEBUG)
         cls._reload_testing_flag(cls.config.TESTING)
         cls._reload_firebase_app(cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
         cls._reload_firestore_client(cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
         cls._reload_celery_app()
+
+        if cls.debug:
+            cls._enable_logging()
+
         return cls
 
     @classmethod
