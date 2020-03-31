@@ -10,5 +10,6 @@ script:
   - make test
 after_success:
   - coveralls
+  - pip freeze
 notifications:
   email: false
