@@ -75,12 +75,12 @@ def test_create_obj():
 
 def test_import_iterable():
 
-    class ContainsIterchema(schema.Schema):
+    class ContainsIterSchema(schema.Schema):
         pass
 
     ContainsIter = ClsFactory.create(
         name="ContainsIter",
-        schema=ContainsIterchema,
+        schema=ContainsIterSchema,
         base=FirestoreObject
     )
     doc_ref_1, doc_ref_2 = \

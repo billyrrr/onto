@@ -1,4 +1,4 @@
-from typing import TypeVar, Type
+from typing import TypeVar, Type, Union
 
 from flask_boiler.model_registry import BaseRegisteredModel
 from flask_boiler.serializable import Schemed, NewMixin, \
@@ -55,7 +55,7 @@ class ClsFactory:
     @classmethod
     def create(cls, name, schema: Type[T],
                base: Type[U] = Serializable,
-               base_tuple=None) -> Type[T]:
+               base_tuple=None) -> Union[Type[U], Type[T]]:
 
         existing = BaseRegisteredModel.get_cls_from_name(name)
         if existing is None:
