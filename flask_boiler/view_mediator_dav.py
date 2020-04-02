@@ -1,14 +1,8 @@
-import abc
-import time
-
 from flask_boiler.context import Context as CTX
-from flasgger import SwaggerView
-from flask import request
 
 from google.cloud.firestore import Watch, DocumentSnapshot, \
     DocumentReference, Query
 
-from flask_boiler.domain_model import DomainModel
 from flask_boiler.view_mediator import ViewMediatorBase
 
 

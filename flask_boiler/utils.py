@@ -11,6 +11,7 @@ from functools import partial
 from google.cloud.firestore import DocumentSnapshot
 from inflection import camelize, underscore
 
+from flask_boiler.context import Context as CTX
 from flask_boiler.model_registry import ModelRegistry
 
 
@@ -99,3 +100,5 @@ def get_property(attr_name, inner_attr):
 
     return property(fget=fget)
 
+def doc_ref_from_str(doc_ref_str):
+    return CTX.db.document(doc_ref_str)

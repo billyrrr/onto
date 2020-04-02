@@ -1,10 +1,9 @@
 from google.cloud.firestore_v1 import Transaction
 
-from flask_boiler.context import Context as CTX
 from flask_boiler.firestore_object import FirestoreObject
 from flask_boiler.query_mixin import QueryMixin
 from flask_boiler.serializable import SerializableMeta
-from flask_boiler.utils import random_id
+from flask_boiler.utils import random_id, doc_ref_from_str
 
 from flask_boiler.schema import Schema
 
@@ -112,7 +111,7 @@ class PrimaryObject(FirestoreObject, QueryMixin, metaclass=PrimaryObjectMeta):
         """
 
         if doc_ref_str is not None:
-            doc_ref = CTX.db.document(doc_ref_str)
+            doc_ref = doc_ref_from_str(doc_ref_str)
 
         if doc_ref is None:
             doc_ref = cls._get_collection().document(doc_id)

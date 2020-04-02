@@ -1,13 +1,6 @@
-from typing import TypeVar, Type
-
 from marshmallow.utils import is_iterable_but_not_string
-
-from flask_boiler import fields
 from flask_boiler.helpers import EmbeddedElement
 from .model_registry import BaseRegisteredModel, ModelRegistry
-
-
-# from abc import ABC, abstractmethod
 
 
 class SchemedBase:

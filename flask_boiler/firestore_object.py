@@ -20,16 +20,6 @@ class FirestoreObjectMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    # @classmethod
-    # def new(cls, doc_ref=None, with_dict=None, **kwargs):
-    #     if doc_ref is None:
-    #         raise ValueError
-    #     if with_dict is not None:
-    #         obj = cls.from_dict(d=with_dict, doc_ref=doc_ref)
-    #     else:
-    #         obj = cls(doc_ref=doc_ref, **kwargs)
-    #     return obj
-
     def get_firestore_ref(self):
         warnings.warn("Please use .doc_ref instead. ", DeprecationWarning)
         return self.doc_ref
@@ -154,13 +144,6 @@ class FirestoreObjectValMixin:
             return val.doc_ref
         else:
             return super()._import_val(val)
-
-
-class SerializableFO(FirestoreObjectValMixin, Serializable):
-    """
-    Serializable with capacity of holding Firestore object as a field value.
-    """
-    pass
 
 
 class FirestoreObject(FirestoreObjectValMixin,

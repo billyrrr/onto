@@ -330,7 +330,13 @@ class ViewModelMixin:
 
 
     def _notify(self):
-        """ Notify that this object has been changed by underlying view models
+        """ Notify that this object has been changed by underlying view models.
+            Once this object has a different value for underlying domain models,
+                save the object to Firestore. Note that this method is
+                expected to be called only after the data is consistent.
+                (Ex. When all relevant changes made in a single transaction
+                    from another server has been loaded into the object.
+                )
         """
         if self.f_notify is not None:
             self.f_notify(obj=self)
@@ -364,7 +370,7 @@ class ViewModelMixin:
         return self.to_view_dict()
 
 
-class ViewModel(ViewModelMixin, PersistableMixin, ReferencedObject):
+class ViewModel(ViewModelMixin, ReferencedObject):
 
     def __init__(self, *args, doc_ref=None, **kwargs):
         super().__init__(*args, doc_ref=doc_ref, **kwargs)
