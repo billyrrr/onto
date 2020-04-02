@@ -11,10 +11,6 @@ from flask_boiler.factory import ClsFactory
 from flask_boiler.utils import snapshot_to_obj
 
 
-class FirestoreObjectClsFactory(ClsFactory):
-    pass
-
-
 class FirestoreObjectMixin:
 
     def __init__(self, *args, **kwargs):
@@ -119,7 +115,8 @@ class FirestoreObjectValMixin:
         else:
             return super()._export_val_view(val)
 
-    def _import_val(self, val, to_get=False):
+    @classmethod
+    def _import_val(cls, val, to_get=False, transaction=None):
 
         def is_nested_relationship(val):
             return isinstance(val, RelationshipReference) and val.nested
@@ -128,12 +125,12 @@ class FirestoreObjectValMixin:
             return isinstance(val, RelationshipReference) and not val.nested
 
         def nest_relationship(val: RelationshipReference):
-            if self.transaction is None:
+            if transaction is None:
                 snapshot = val.doc_ref.get()
                 return snapshot_to_obj(snapshot)
             else:
-                snapshot = val.doc_ref.get(transaction=self.transaction)
-                return snapshot_to_obj(snapshot)
+                snapshot = val.doc_ref.get(transaction=transaction)
+                return snapshot_to_obj(snapshot, transaction=transaction)
 
         if is_nested_relationship(val):
             if to_get:
@@ -143,7 +140,8 @@ class FirestoreObjectValMixin:
         elif is_ref_only_relationship(val):
             return val.doc_ref
         else:
-            return super()._import_val(val)
+            return super()._import_val(
+                val, to_get=to_get, transaction=transaction)
 
 
 class FirestoreObject(FirestoreObjectValMixin,
@@ -151,7 +149,7 @@ class FirestoreObject(FirestoreObjectValMixin,
                       Serializable,
                       CollectionMixin):
 
-    def __init__(self, *args, doc_ref=None, **kwargs):
+    def __init__(self, *args, doc_ref=None, transaction=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._doc_ref = doc_ref
-        self.transaction = None
+        self.transaction = transaction

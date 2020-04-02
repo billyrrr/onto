@@ -80,62 +80,45 @@ class Importable:
         be deserialized/loaded/set from a dictionary.
     """
 
-    def _import_val(self, val, to_get=False):
+    @classmethod
+    def _import_val(cls, val, to_get=False, **kwargs):
+        """ IMPORTANT! Note that the code may fail and result in
+                infinite call chain when there is a circular reference.
+                The code is not designed to fail this way, but
+                    accidental changes to code may make this behavior
+                    possible.
+
+        :param val:
+        :param to_get:
+        :param kwargs:
+        :return:
+        """
 
         def embed_element(val: EmbeddedElement):
             d = val.d
             obj_type = d["obj_type"]
             obj_cls = BaseRegisteredModel.get_cls_from_name(obj_type)
             data = {key: val for key, val in d.items() if key != "obj_type"}
-            obj = obj_cls()
-            obj._import_properties(data)
+            obj = obj_cls.from_dict(d=data)
             return obj
 
         if isinstance(val, EmbeddedElement):
             return embed_element(val)
-        elif isinstance(val, dict) and "obj_type" in val:
-            # Deserialize nested object
-            obj_type = val["obj_type"]
-            # TODO: check hierarchy
-            #   (_registry is a singleton dictionary and flat for now)
-            obj_cls = BaseRegisteredModel.get_cls_from_name(obj_type)
-
-            obj = obj_cls.new(
-                with_dict=val,
-                to_get=to_get,
-                doc_id=val.get("doc_id", None),
-                transaction=self.transaction
-            )
-            raise NotImplementedError
-
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):
-                val_list = [self._import_val(elem, to_get) for elem in val]
+                val_list = [cls._import_val(elem, to_get, **kwargs)
+                            for elem in val]
                 return val_list
             elif isinstance(val, dict):
                 val_d = dict()
                 for k, v in val.items():
-                    val_d[k] = self._import_val(v, to_get)
+                    val_d[k] = cls._import_val(v, to_get, **kwargs)
                 return val_d
             else:
                 raise NotImplementedError
 
         else:
             return val
-
-    def _import_properties(self, d: dict, to_get=False) -> None:
-        """ TODO: implement iterable support
-        TODO: test
-        TODO: note that this method is not well-tested and most likely
-                will fail for nested structures
-        :param d:
-        :return:
-        """
-        d = self.schema_obj.load(d)
-
-        for key, val in d.items():
-            # if key not in self.__get_dump_only_fields__():
-            setattr(self, key, self._import_val(val, to_get=to_get))
 
     def update_vals(self, with_dict=None):
         if with_dict is None:
@@ -165,8 +148,13 @@ class Importable:
                                  "Make sure that obj_type is a subclass of {}. "
                                  .format(obj_type, super_cls))
 
-        instance = obj_cls.new(**kwargs)  # TODO: fix unexpected arguments
-        instance._import_properties(d, to_get=to_get)
+        d = obj_cls.get_schema_obj().load(d)
+        d = {
+            key: obj_cls._import_val(val, to_get=to_get)
+            for key, val in d.items()
+        }
+
+        instance = obj_cls.new(**d, **kwargs)  # TODO: fix unexpected arguments
         return instance
 
 

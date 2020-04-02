@@ -12,7 +12,7 @@ from google.cloud.firestore import Query, DocumentReference, \
 from flask_boiler.config import Config
 from flask_boiler.context import Context as CTX
 
-from flask_boiler.firestore_object import FirestoreObjectClsFactory
+from flask_boiler.firestore_object import ClsFactory
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.schema import Schema
 from flask_boiler import fields, collection_mixin
@@ -130,7 +130,7 @@ def test_subclass_same_collection(CTX):
 
     for obj in City.where("country", "==", "USA"):
         d = obj.to_dict()
-        # print(d)
+        print(d)
         res_dict[d["cityName"]] = d
 
     assert res_dict['Washington D.C.'] == expected_dict['Washington D.C.']

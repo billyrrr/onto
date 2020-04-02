@@ -58,7 +58,7 @@ T = TypeVar('T', covariant=True)
 
 def snapshot_to_obj(
         snapshot: DocumentSnapshot,
-        super_cls: T = None) -> T:
+        super_cls: T = None, **kwargs) -> T:
     """ Converts a firestore document snapshot to FirestoreObject
 
     :param snapshot: firestore document snapshot
@@ -81,7 +81,7 @@ def snapshot_to_obj(
     if super_cls is not None:
         assert issubclass(obj_cls, super_cls)
 
-    obj = obj_cls.from_dict(d=d, doc_ref=snapshot.reference)
+    obj = obj_cls.from_dict(d=d, **kwargs, doc_ref=snapshot.reference)
     return obj
 
 

@@ -1,11 +1,15 @@
+from unittest.mock import patch
+
 import pytest
+from google.cloud.firestore_v1 import DocumentReference
 from testfixtures import compare
 
 from flask_boiler import schema, fields
 from flask_boiler.context import Context as CTX
 from flask_boiler.config import Config
 from flask_boiler.firestore_object import FirestoreObject, \
-    FirestoreObjectClsFactory
+    ClsFactory
+from flask_boiler.helpers import RelationshipReference
 from flask_boiler.primary_object import PrimaryObject
 
 config = Config(
@@ -36,7 +40,7 @@ class TestObjectSchema(schema.Schema):
 class TestObject(PrimaryObject):
     _schema_cls = TestObjectSchema
 
-# TestObject = FirestoreObjectClsFactory.new(
+# TestObject = ClsFactory.new(
 #     name="TestObject",
 #     schema=TestObjectSchema,
 #     base=PrimaryObject
@@ -69,6 +73,97 @@ def test_create_obj():
     retrieved_obj.delete()
 
 
+def test_import_iterable():
+
+    class ContainsIterchema(schema.Schema):
+        pass
+
+    ContainsIter = ClsFactory.create(
+        name="ContainsIter",
+        schema=ContainsIterchema,
+        base=FirestoreObject
+    )
+    doc_ref_1, doc_ref_2 = \
+        CTX.db.document("hello/1"), CTX.db.document("hello/2")
+    obj = ContainsIter()
+    res = obj._import_val(val=[doc_ref_1, doc_ref_2], to_get=False)
+    assert res == [doc_ref_1, doc_ref_2]
+
+    res = obj._import_val(val={1: doc_ref_1, 2: doc_ref_2}, to_get=False)
+    assert res == {1: doc_ref_1, 2: doc_ref_2}
+
+
+def test_import_nested():
+
+    inner = setup_object(doc_id="inner")
+
+    class ContainsNestedchema(schema.Schema):
+        pass
+
+    ContainsNested = ClsFactory.create(
+        name="ContainsNested",
+        schema=ContainsNestedchema,
+        base=FirestoreObject
+    )
+
+    transaction = CTX.db.transaction()
+    doc_ref = inner.doc_ref
+    snapshot = doc_ref.get()
+
+    """
+    Import document reference from database as object 
+    """
+    with patch.object(doc_ref, 'get', return_value=snapshot) as mock_method:
+        obj = ContainsNested()
+
+        field_deserialized = RelationshipReference(
+            nested=True,
+            doc_ref=doc_ref
+        )
+        res = obj._import_val(val=field_deserialized, to_get=True)
+        assert isinstance(res, TestObject)
+        mock_method.assert_called_once()
+
+    """ (Default behavior)
+        Import document reference from database as reference to 
+            avoid circular reference issues. 
+    """
+    with patch.object(doc_ref, 'get', return_value=snapshot) as mock_method:
+        obj = ContainsNested()
+
+        field_deserialized = RelationshipReference(
+            nested=True,
+            doc_ref=doc_ref
+        )
+        # to_get is set to False when importing a nested object in a
+        #     nested object to avoid circular reference.
+        res = obj._import_val(val=field_deserialized, to_get=False)
+        assert isinstance(res, DocumentReference)
+        mock_method.assert_not_called()
+
+    """
+    Import document reference from database as object that 
+        has transaction 
+    """
+    with patch.object(doc_ref, 'get', return_value=snapshot) as mock_method:
+        obj = ContainsNested(transaction=transaction)
+
+        field_deserialized = RelationshipReference(
+            nested=True,
+            doc_ref=doc_ref
+        )
+        res = obj._import_val(
+            val=field_deserialized, to_get=True, transaction=transaction)
+        assert isinstance(res, TestObject)
+        assert res.transaction == transaction
+        mock_method.assert_called_with(
+            transaction=transaction
+        )
+
+
+    delete_object(inner.doc_id)
+
+
 def test_relationship_not_nested():
     referenced_obj = TestObject.new(doc_id="testObjId1")
 
@@ -83,7 +178,7 @@ def test_relationship_not_nested():
         # Describes how obj.int_a is read from and stored to a document in firestore
         nested_ref = fields.Relationship(nested=False)
 
-    MasterObject = FirestoreObjectClsFactory.create(
+    MasterObject = ClsFactory.create(
         name="MasterObject",
         schema=MasterObjectSchema,
         base=PrimaryObject
@@ -113,7 +208,7 @@ def test_relationship_nested():
         # Describes how obj.int_a is read from and stored to a document in firestore
         nested_obj = fields.Relationship(nested=True)
 
-    MasterObjectNested = FirestoreObjectClsFactory.create(
+    MasterObjectNested = ClsFactory.create(
         name="MasterObjectNested",
         schema=MasterObjectSchemaNested,
         base=PrimaryObject
@@ -158,6 +253,8 @@ def setup_object(doc_id):
 
     # Saves to firestore "TestObject/testObjId1"
     obj.save()
+
+    return obj
 
 
 def delete_object(doc_id):

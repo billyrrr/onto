@@ -1,5 +1,5 @@
 from flask_boiler import serializable, schema, fields, domain_model, view_model
-from flask_boiler.firestore_object import FirestoreObjectClsFactory
+from flask_boiler.firestore_object import ClsFactory
 
 Schema = schema.Schema
 
@@ -24,7 +24,7 @@ class LuggageItemBase(domain_model.DomainModel):
     _collection_name = "LuggageItem"
 
 
-LuggageItem = FirestoreObjectClsFactory.create(
+LuggageItem = ClsFactory.create(
     name="LuggageItem",
     schema=LuggageItemSchema,
     base=LuggageItemBase
@@ -91,7 +91,7 @@ class LuggagesBase(view_model.ViewModel):
         return weight
 
 
-Luggages = FirestoreObjectClsFactory.create(
+Luggages = ClsFactory.create(
     name="Luggages",
     schema=LuggageCollectionSchema,
     base=LuggagesBase

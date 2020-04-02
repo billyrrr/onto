@@ -11,7 +11,7 @@ from flask_boiler.factory import ClsFactory
 from flask_boiler.view import FlaskAsView
 from flask_boiler import fields, view_mediator
 from flask_boiler.schema import Schema
-from flask_boiler.firestore_object import FirestoreObjectClsFactory
+from flask_boiler.firestore_object import ClsFactory
 from flask_boiler.view_model import ViewModel
 from google.cloud import firestore
 from functools import partial

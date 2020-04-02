@@ -4,7 +4,7 @@ from flask_boiler.config import Config
 from flask_boiler import schema, fields, utils
 
 from flask_boiler.firestore_object import FirestoreObject, \
-    FirestoreObjectClsFactory
+    ClsFactory
 from flask_boiler.primary_object import PrimaryObject
 
 
@@ -25,7 +25,7 @@ class TestObjectSchema(schema.Schema):
 
 
 # Declares the object
-TestObject = FirestoreObjectClsFactory.create(
+TestObject = ClsFactory.create(
     name="TestObject",
     schema=TestObjectSchema,
     base=PrimaryObject

@@ -172,9 +172,9 @@ def test__export_as_dict(ModelA):
 def test__import_properties(ModelA):
 
     a = ModelA.new()
-    a._import_properties({
-        "intA": 1,
-        "intB": 2,
+    a.update_vals(with_dict={
+        "int_a": 1,
+        "int_b": 2,
     })
 
     assert a.int_a == 1

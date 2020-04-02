@@ -8,7 +8,7 @@ from flask_boiler.schema import Schema
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.view_model import ViewModel
 from flask_boiler.collection_mixin import CollectionMixin
-from flask_boiler.firestore_object import FirestoreObjectClsFactory
+from flask_boiler.firestore_object import ClsFactory
 
 import pytest
 
@@ -27,7 +27,7 @@ def test_new(CTX):
     class DomainSchema1(Schema):
         property_a = fields.Raw(load_from="propertyA", dump_to="propertyA")
 
-    DomainObject1 = FirestoreObjectClsFactory.create(
+    DomainObject1 = ClsFactory.create(
         name="DomainObject1",
         schema=DomainSchema1,
         base=DomainObjectBase
@@ -36,7 +36,7 @@ def test_new(CTX):
     class DomainSchema2(Schema):
         property_b = fields.Raw(load_from="propertyB", dump_to="propertyB")
 
-    DomainObject2 = FirestoreObjectClsFactory.create(
+    DomainObject2 = ClsFactory.create(
         name="DomainObject2",
         schema=DomainSchema2,
         base=DomainObjectBase
@@ -52,7 +52,7 @@ def test_new(CTX):
 
     # TODO: implement
 
-    ViewObject = FirestoreObjectClsFactory.create(
+    ViewObject = ClsFactory.create(
         name="TestViewObject",
         schema=EmptySchema,
         base_tuple=(ViewModel, )

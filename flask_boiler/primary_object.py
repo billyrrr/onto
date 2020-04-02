@@ -85,18 +85,11 @@ class PrimaryObject(FirestoreObject, QueryMixin, metaclass=PrimaryObjectMeta):
         :return:
         """
         if doc_ref is None:
-
             if doc_id is None:
                 doc_id = cls.random_id()
             doc_ref = cls._get_collection().document(doc_id)
-            obj = super().new(doc_ref=doc_ref, **kwargs)
-            return obj
-
-        else:
-
-            assert doc_id is None
-            obj = super().new(doc_ref=doc_ref)
-            return obj
+        obj = super().new(doc_ref=doc_ref, **kwargs)
+        return obj
 
     @classmethod
     def get(cls, *, doc_ref_str=None, doc_ref=None, doc_id=None,
