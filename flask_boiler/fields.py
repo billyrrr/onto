@@ -17,6 +17,8 @@ from marshmallow import utils as mutils
 _POS_INF_APPROX = 2 ** 63 - 1
 _NEGATIVE_INF_APPROX = -2 ** 63
 
+allow_missing = fields.missing_
+
 
 class Field(fields.Field):
     """
