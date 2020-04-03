@@ -205,9 +205,9 @@ class ViewMediator(ViewMediatorBase):
                 _self.mutation_cls.mutate_patch(
                     doc_id=doc_id, data=d)
                 # time.sleep(1)  # TODO: delete after implementing sync
-                return {
+                return jsonify({
                     "operation_status": "success"
-                }
+                })
 
         return PatchView
 
@@ -282,6 +282,6 @@ class ViewMediator(ViewMediatorBase):
             def get(self, *args, **kwargs):
                 instance = _self.view_model_cls.new(*args, **kwargs)
                 # time.sleep(1)  # TODO: delete after implementing sync
-                return instance.to_view_dict()
+                return jsonify(instance.to_view_dict())
 
         return GetView

@@ -24,7 +24,8 @@ class Field(fields.Field):
         features such as auto-initialization.
     """
 
-    def __init__(self, *args, missing=None, default=fields.missing_, **kwargs):
+    def __init__(self,
+                 *args, missing=None, default=fields.missing_, **kwargs):
         super().__init__(*args, missing=missing, default=default, **kwargs)
 
     @property

@@ -2,6 +2,7 @@ import time
 
 from flasgger import SwaggerView
 from flask import request
+from flask.json import jsonify
 
 from examples.meeting_room.view_models import MeetingSession
 
@@ -26,6 +27,6 @@ class ListGet(SwaggerView):
         # time.sleep(1)  # TODO: delete after implementing sync
         results = {meeting_session.meeting_id: meeting_session.to_view_dict()
                    for meeting_session in meeting_sessions}
-        return {
+        return jsonify({
             "results": results
-        }
+        })
