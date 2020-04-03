@@ -124,6 +124,12 @@ test:
     # Note: watch out for env var not set for child process when threading
 	pytest --cov=flask_boiler -vv tests
 
+test-gravitate:
+	pip install -r gravitate-backend/requirements.txt
+	pip install -r gravitate-backend/requirements-dev.txt
+	pip freeze
+	(cd gravitate-backend; pytest test --cov=flask_boiler -vv)
+
 clean:
 	-rm -rf build/*
 	-rm -rf tools/sphinx
