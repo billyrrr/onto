@@ -1,3 +1,4 @@
 [submodule "gravitate-backend"]
 	path = gravitate-backend
-	url = https://github.com/billyrrr/gravitate-backend
+	url = https://github.com/billyrrr/gravitate-backend.git
+	branch = master
