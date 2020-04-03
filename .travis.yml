@@ -4,7 +4,7 @@ python:
 before_install:
   - openssl aes-256-cbc -K $encrypted_099a44ce718c_key -iv $encrypted_099a44ce718c_iv -in secrets.tar.enc -out secrets.tar -d
   - tar xvf secrets.tar
-  - pip insall -e .
+  - pip install -e .
 # command to run tests
 script:
   - make test
