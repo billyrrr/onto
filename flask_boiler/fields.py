@@ -11,12 +11,11 @@ from math import inf
 
 from marshmallow import utils as mutils
 
-
 # Firestore Integer supports up to 64-bit signed
 # Note that this may result in defect where business data reaches
 #   this maximum.
-_POS_INF_APPROX = 2**63 - 1
-_NEGATIVE_INF_APPROX = -2**63
+_POS_INF_APPROX = 2 ** 63 - 1
+_NEGATIVE_INF_APPROX = -2 ** 63
 
 
 class Field(fields.Field):
@@ -25,18 +24,15 @@ class Field(fields.Field):
         features such as auto-initialization.
     """
 
+    def __init__(self, *args, missing=None, default=fields.missing_, **kwargs):
+        super().__init__(*args, missing=missing, default=default, **kwargs)
+
     @property
     def default_value(self):
         """ The default value to assign to instance variable at
-                initialization to auto initialize the object.
-
-        :return:
+                         initialization to auto initialize the object.
         """
-        if self.default == mutils.missing:
-            return None
-        else:
-            value = self.default() if callable(self.default) else self.default
-            return value
+        return self.deserialize(fields.missing_)
 
 
 class Boolean(fields.Bool, Field):
@@ -44,12 +40,11 @@ class Boolean(fields.Bool, Field):
         to a boolean.
     """
 
+    def __init__(self, missing=bool, *args, **kwargs):
+        super().__init__(missing=missing, *args, **kwargs)
+
     def __get__(self, instance, owner) -> bool:
         return super().__get__(instance, owner)
-
-    @property
-    def default_value(self):
-        return bool()
 
 
 class NumberTimestamp(fields.Raw, Field):
@@ -61,9 +56,8 @@ class Integer(fields.Integer, Field):
             to an integer.
     """
 
-    @property
-    def default_value(self):
-        return int()
+    def __init__(self, missing=int, *args, **kwargs):
+        super().__init__(missing=missing, *args, **kwargs)
 
     @typing.overload
     def __get__(self, instance, owner) -> typing.Union[Field, int]:
@@ -72,28 +66,9 @@ class Integer(fields.Integer, Field):
         """
         pass
 
-    def _serialize(self, value, *args, **kwargs):
-        if value == inf:
-            return _POS_INF_APPROX
-        elif value == -inf:
-            return _NEGATIVE_INF_APPROX
-        else:
-            return value
-
-    def _deserialize(self, value, *args, **kwargs):
-        if value >= _POS_INF_APPROX:
-            return inf
-        elif value <= _NEGATIVE_INF_APPROX:
-            return -inf
-        else:
-            return value
-
 
 class Raw(fields.Raw, Field):
-
-    @property
-    def default_value(self):
-        return None
+    pass
 
 
 class List(fields.Raw, Field):
@@ -106,9 +81,8 @@ class List(fields.Raw, Field):
         """
         pass
 
-    @property
-    def default_value(self):
-        return list()
+    def __init__(self, missing=list, *args, **kwargs):
+        super().__init__(missing=missing, *args, **kwargs)
 
 
 class Dict(fields.Raw, Field):
@@ -120,19 +94,16 @@ class Dict(fields.Raw, Field):
         """
         pass
 
-    @property
-    def default_value(self):
-        return dict()
+    def __init__(self, missing=dict, *args, **kwargs):
+        super().__init__(missing=missing, *args, **kwargs)
 
 
 class Function(fields.Function, Field):
     """
     For use with property.
     """
-
-    @property
-    def default_value(self):
-        return None
+    def __init__(self, missing=fields.missing_, *args, **kwargs):
+        super().__init__(missing=missing, *args, **kwargs)
 
 
 class String(fields.String, Field):
@@ -144,19 +115,19 @@ class String(fields.String, Field):
         """
         pass
 
-    @property
-    def default_value(self):
-        return str()
+    def __init__(self, missing=str, *args, **kwargs):
+        super().__init__(missing=missing, *args, **kwargs)
 
 
 class Nested(fields.Nested, Field):
     """
     Field that describes a dictionary that conforms to a marshmallow schema.
     """
+    pass
 
-    @property
-    def default_value(self):
-        return None
+
+class _MissingNotSpecified:
+    pass
 
 
 class Relationship(fields.Str, Field):
@@ -165,17 +136,12 @@ class Relationship(fields.Str, Field):
         in the Firestore.
     """
 
-    @property
-    def default_value(self):
-        if self.many:
-            return list()
-        else:
-            return None
-
-    def __init__(self, *args, nested=False, many=False, **kwargs):
+    def __init__(self, *args, missing=_MissingNotSpecified, nested=False,
+                 many=False, **kwargs):
         """ Initializes a relationship. A field of the master object
                 to describe relationship to another object or document
-                being referenced.
+                being referenced. Set missing=dict if many=True and
+                data is stored in a dict.
 
         :param args: Positional arguments to pass to marshmallow.fields.Str
         :param nested: If set to True, the document being referenced
@@ -187,7 +153,9 @@ class Relationship(fields.Str, Field):
                     as a list. (TODO: add support for more iterables)
         :param kwargs: Keyword arguments to pass to marshmallow.fields.Str
         """
-        super().__init__(*args, **kwargs)
+        if missing == _MissingNotSpecified:
+            missing = list if many else None
+        super().__init__(*args, missing=missing, **kwargs)
         self.nested = nested
         self.many = many
 
@@ -232,14 +200,8 @@ class Relationship(fields.Str, Field):
 
 class StructuralRef(fields.Str, Field):
 
-    @property
-    def default_value(self):
-        if self.many:
-            return dict()
-        else:
-            return None
-
-    def __init__(self, *args, nested=False, many=False, dm_cls, **kwargs):
+    def __init__(self, *args, missing=_MissingNotSpecified,
+                 many=False, dm_cls, **kwargs):
         """ Initializes a relationship. A field of the master object
                 to describe relationship to another object or document
                 being referenced.
@@ -249,7 +211,9 @@ class StructuralRef(fields.Str, Field):
                     as a dict. (TODO: add support for more iterables)
         :param kwargs: Keyword arguments to pass to marshmallow.fields.Str
         """
-        super().__init__(*args, **kwargs)
+        if missing == _MissingNotSpecified:
+            missing = dict if many else None
+        super().__init__(*args, missing=missing, **kwargs)
         self.many = many
         self.dm_cls = dm_cls
 
@@ -260,14 +224,8 @@ class Embedded(fields.Raw, Field):
         is an empty list (even if a dict is expected).
     """
 
-    @property
-    def default_value(self):
-        if self.many:
-            return list()
-        else:
-            return None
-
-    def __init__(self, *args, many=False, **kwargs):
+    def __init__(self, *args, missing=_MissingNotSpecified, many=False,
+                 **kwargs):
         """
 
         :param args: Positional arguments to pass to marshmallow.fields.Str
@@ -275,7 +233,10 @@ class Embedded(fields.Raw, Field):
                     as a list. (TODO: add support for more iterables)
         :param kwargs: Keyword arguments to pass to marshmallow.fields.Str
         """
-        super().__init__(*args, **kwargs)
+
+        if missing == _MissingNotSpecified:
+            missing = list if many else None
+        super().__init__(*args, missing=missing, **kwargs)
         self.many = many
 
     def _serialize(self, value, *args, embed_many=None, **kwargs):
@@ -306,7 +267,7 @@ class Embedded(fields.Raw, Field):
             if isinstance(value, list):
                 return [self._deserialize(
                     val, *args, **kwargs, embed_many=False)
-                        for val in value]
+                    for val in value]
             elif isinstance(value, dict):
                 return {
                     key: self._deserialize(
@@ -327,10 +288,10 @@ def local_time_from_timestamp(timestamp) -> datetime:
     :param timestamp: for example: 1545062400
     :return: for example: "2018-12-17T08:00:00"
     """
-    tz = pytz.timezone('US/Pacific') #('America/Los_Angeles')
+    tz = pytz.timezone('US/Pacific')  # ('America/Los_Angeles')
 
     d: datetime = datetime.fromtimestamp(timestamp, tz=tz)
-    d = d.replace(tzinfo=None) # Convert to local time
+    d = d.replace(tzinfo=None)  # Convert to local time
     return d
 
 
@@ -353,7 +314,7 @@ class Localtime(fields.NaiveDateTime, Field):
         pass
 
     def _serialize(
-        self, value, *args, **kwargs
+            self, value, *args, **kwargs
     ):
         if value is None:
             return None
@@ -372,7 +333,8 @@ class Remainder(fields.Dict, Field):
     To match fields that are not declared.
     """
 
-    pass
+    def __init__(self, missing=fields.missing_, *args, **kwargs):
+        super().__init__(missing=missing, *args, **kwargs)
 
 
 # class BpStoreField(fields.Raw, Field):
