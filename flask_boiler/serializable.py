@@ -154,7 +154,10 @@ class Importable:
             for key, val in d.items()
         }
 
-        instance = obj_cls.new(**d, **kwargs)  # TODO: fix unexpected arguments
+        kwargs_new = d.copy()
+        kwargs_new.update(kwargs)
+
+        instance = obj_cls.new(**kwargs_new)  # TODO: fix unexpected arguments
         return instance
 
 
