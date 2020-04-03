@@ -120,16 +120,32 @@ class Importable:
         else:
             return val
 
-    def update_vals(self, with_dict=None):
+    def update_vals(self, with_dict=None, with_raw=None, **kwargs):
+        """
+
+        :param with_dict:
+        :param with_raw: Loads through the schema
+        :param kwargs:
+        :return:
+        """
         if with_dict is None:
             with_dict = dict()
-        for key, val in with_dict.items():
-            setattr(self, key, self._import_val(val, to_get=False))
+        if with_raw is not None:
+            d = self.get_schema_obj().load(with_raw)
+            with_dict = {
+                key: self._import_val(val, to_get=False)
+                for key, val in d.items()
+            }
+        kwargs_new = {**with_dict, **kwargs}
+        for key, val in kwargs_new.items():
+            setattr(self, key, val)
 
     @classmethod
     def from_dict(cls, d, to_get=True, **kwargs):
         """
         TODO: fix to_get not applying to new(**kwargs)
+
+        TODO: watch out for the order of input
 
         :param d:
         :param to_get:
@@ -154,10 +170,7 @@ class Importable:
             for key, val in d.items()
         }
 
-        kwargs_new = d.copy()
-        kwargs_new.update(kwargs)
-
-        instance = obj_cls.new(**kwargs_new)  # TODO: fix unexpected arguments
+        instance = obj_cls.new(**d, **kwargs)  # TODO: fix unexpected arguments
         return instance
 
 
