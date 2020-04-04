@@ -5,6 +5,8 @@ Tests Websocket integration
 
 import pytest
 from unittest.mock import MagicMock, patch
+
+from flask_boiler import testing_utils
 from flask_boiler.view_mediator_websocket import ViewMediatorWebsocket
 from .color_fixtures import Color, PaletteViewModel, rainbow_vm, color_refs
 from .fixtures import setup_app, CTX
@@ -46,7 +48,7 @@ def test_connect(setup_app, rainbow_vm, color_refs):
 
     color_refs[0].update({"name": "cyan"})
 
-    time.sleep(1)
+    testing_utils._wait(factor=.7)
 
     assert client.get_received(namespace="/palette") == [{'name': 'updated', 'args': [{'colors': ['cyan', 'magenta', 'yellow'], 'rainbowName': 'cyan-magenta-yellow'}], 'namespace': '/palette'}]
 

@@ -4,7 +4,7 @@ from examples.meeting_room.view_models import MeetingSession
 from examples.meeting_room.view_models.meeting_session import \
     MeetingSessionMutation
 from ..views import meeting_session_ops
-from flask_boiler import view_mediator
+from flask_boiler import view_mediator, testing_utils
 from .. import view_models
 # Import the fixtures used by fixtures
 from tests.fixtures import CTX, setup_app
@@ -50,7 +50,7 @@ def test_view(users, tickets, location, meeting, setup_app):
         list_get_view=meeting_session_ops.ListGet
     )
 
-    time.sleep(2)  # TODO: delete after implementing sync
+    testing_utils._wait(factor=.7)
 
     test_client = app.test_client()
 
@@ -110,7 +110,7 @@ def test_view(users, tickets, location, meeting, setup_app):
             "inSession": False
         })
 
-    time.sleep(3)
+    testing_utils._wait(factor=.7)
 
     res = test_client.get(
         path='meeting_sessions/meeting_1')
@@ -176,7 +176,7 @@ def test_view_model_update(users, tickets, location, meeting):
     tickets[0].attendance = False
     tickets[0].save()
 
-    time.sleep(5)
+    testing_utils._wait()
 
     assert meeting_session._export_as_view_dict() == {'inSession': True,
                                                       'longitude': -117.242929,

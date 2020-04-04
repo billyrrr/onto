@@ -16,7 +16,7 @@ from flask_boiler.view_mediator_dav import ViewMediatorDAV, ProtocolBase, \
     ViewMediatorDeltaDAV
 from flask_boiler.view_model import ViewModel
 from ..views import meeting_session_ops
-from flask_boiler import view_mediator, utils
+from flask_boiler import view_mediator, utils, testing_utils
 # Import the fixtures used by fixtures
 from tests.fixtures import CTX, setup_app
 from .fixtures import users, tickets, location, meeting
@@ -101,7 +101,7 @@ def test_start(users, tickets, location, meeting):
 
     mediator.start()
 
-    time.sleep(5)
+    testing_utils._wait(factor=.7)
 
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
@@ -145,7 +145,7 @@ def test_mutate(users, tickets, location, meeting):
 
     mediator.start()
 
-    time.sleep(5)
+    testing_utils._wait(factor=.7)
 
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
@@ -185,7 +185,7 @@ def test_mutate(users, tickets, location, meeting):
         )
     )
 
-    time.sleep(5)
+    testing_utils._wait(factor=.7)
 
     m = Meeting.get(doc_id="meeting_1")
     assert m.status == "closed"
@@ -231,7 +231,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
 
     mediator.start()
 
-    time.sleep(5)
+    testing_utils._wait(factor=.7)
     #
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
@@ -257,7 +257,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
     tickets[0].attendance = False
     tickets[0].save()
 
-    time.sleep(5)
+    testing_utils._wait(factor=.7)
     #
     """
     Expect the document to be updated to exclude Tijuana Furlong from a
@@ -443,7 +443,7 @@ def test_mutation(users, tickets, location, meeting):
         "lastName": "Manes-Kennedy"
     })
 
-    time.sleep(3)
+    testing_utils._wait(factor=.7)
 
     updated_user = User.get(doc_id=user_id)
 

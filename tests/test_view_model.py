@@ -3,7 +3,7 @@ import time
 from google.cloud.firestore import DocumentReference
 
 from examples.luggage_models import LuggageItem, Luggages
-from flask_boiler import fields
+from flask_boiler import fields, testing_utils
 from flask_boiler.schema import Schema
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.view_model import ViewModel
@@ -94,7 +94,7 @@ def test_binding(CTX):
     vm.register_listener()
 
     # Takes time to propagate changes
-    time.sleep(2)
+    testing_utils._wait(factor=.7)
 
     assert vm.to_dict() == {
         "luggages": [
@@ -120,7 +120,7 @@ def test_binding(CTX):
     #   and local copies of a ViewModel should not be used to read
     #   updated values
 
-    time.sleep(2)
+    testing_utils._wait(factor=.7)
 
     # # Test that the view model now has updated values
     assert vm.to_dict() == {

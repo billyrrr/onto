@@ -12,7 +12,7 @@ from flask_boiler.view import DocumentAsView
 from flask_boiler.view_mediator_dav import ViewMediatorDAV, \
     ViewMediatorDeltaDAV
 from flask_boiler.view_model import ViewModel
-from flask_boiler import view_mediator, utils, schema, fields
+from flask_boiler import view_mediator, utils, schema, fields, testing_utils
 # Import the fixtures used by fixtures
 from tests.fixtures import CTX, setup_app
 from .fixtures import users, posts
@@ -93,7 +93,7 @@ def test_start(users, posts):
 
     mediator.start()
 
-    time.sleep(10)
+    testing_utils._wait(factor=.2)
 
     ref = User._get_collection().document("thomasina").collection("feed") \
         .document(posts[0].doc_id)

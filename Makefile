@@ -17,6 +17,7 @@ ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees -D latex_paper_size=$(PAPER) \
 
 # Propagates to child process
 export FB_CONFIG_FILENAME = boiler-testing.yaml
+export WAIT_TIME = 2  # waits 2 seconds by default for firestore to refresh after change; testing only
 
 .PHONY: help checkout update build html htmlhelp latex text changes linkcheck \
 	suspicious coverage doctest pydoc-topics htmlview clean dist check serve \

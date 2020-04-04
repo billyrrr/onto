@@ -8,6 +8,7 @@ from flask_boiler.domain_model import DomainModel
 from flask_boiler.struct import Struct
 from flask_boiler.view_mediator_dav import ViewMediatorDAV
 from flask_boiler.view_model import ViewModel
+from flask_boiler import testing_utils
 
 config = Config(
     app_name="flask-boiler-testing",
@@ -104,7 +105,7 @@ def test_counter():
     mediator = CounterMediator(shard_size=10)
     mediator.start()
 
-    time.sleep(5)
+    testing_utils._wait()
 
     ref = CTX.db.collection("counters").document("counter_0")
 
@@ -126,7 +127,7 @@ def test_increment(CTX):
 
     mediator.start()
 
-    time.sleep(3)
+    testing_utils._wait(factor=.7)
 
     doc_ref = CTX.db.collection("counters").document("counter_0")
 
@@ -145,7 +146,7 @@ def test_increment(CTX):
         merge=True
     )
 
-    time.sleep(1)
+    testing_utils._wait(factor=.3)
 
     assert doc_ref.get().to_dict() == {
         "doc_ref": "counters/counter_0",

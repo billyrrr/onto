@@ -15,6 +15,7 @@ from flask_boiler.schema import Schema
 from flask_boiler.view_model import ViewModel
 from flask_boiler.domain_model import DomainModel
 from google.cloud import firestore
+from flask_boiler import testing_utils
 from functools import partial
 
 from examples.luggage_models import LuggageItem, Luggages
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     vm.register_listener()
 
     # Takes time to propagate changes
-    time.sleep(2)
+    testing_utils._wait(factor=.5)
 
     assert vm.to_dict() == {
         "luggages": [
@@ -87,7 +88,7 @@ if __name__ == "__main__":
     #   and local copies of a ViewModel should not be used to read
     #   updated values
 
-    time.sleep(2)
+    testing_utils._wait(factor=.3)
 
     # # Test that the view model now has updated values
     assert vm.to_dict() == {
