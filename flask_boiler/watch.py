@@ -57,7 +57,9 @@ class DataListener:
         # TODO: review and test
         # time.sleep(2)
         while not self.watch.current:
-            time.sleep(2)
+            # Note: the smallest interval that time.sleep can
+            #   be invoked with differs by OS
+            time.sleep(.020)  # Check back in 20ms
         # self.watch._consumer._thread.join()
 
     def __del__(self):
