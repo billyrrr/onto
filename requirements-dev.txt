@@ -3,6 +3,7 @@ testfixtures
 
 pytest
 pytest-cov
+coverage
 coveralls
 
 # Dependencies for flasgger + marshmallow use case
