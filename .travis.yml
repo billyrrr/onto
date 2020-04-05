@@ -10,7 +10,6 @@ script:
   - make test
   - make test-gravitate
 after_success:
-  - coverage combine --append gravitate-backend/.coverage
   - coveralls
 notifications:
   email: false
