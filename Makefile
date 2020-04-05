@@ -129,7 +129,7 @@ test-gravitate:
 	pip install -r gravitate-backend/requirements.txt
 	pip install -r gravitate-backend/requirements-dev.txt
 	pip freeze
-	(cd gravitate-backend; pytest test --cov=flask_boiler -vv)
+	pytest gravitate-backend/test --cov=flask_boiler -vv
 
 clean:
 	-rm -rf build/*
