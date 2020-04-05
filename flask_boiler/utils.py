@@ -85,20 +85,27 @@ def snapshot_to_obj(
     return obj
 
 
-def get_property(attr_name, inner_attr):
+def auto_property(attr_name, inner_attr):
+    """ Gets a property object that projects operations on
+            self.some_attr_name to self.inner_attr.attr_name
+
+    :param attr_name:
+    :param inner_attr:
+    :return:
+    """
     def fget(self):
         inner = getattr(self, inner_attr)
         return getattr(inner, attr_name)
 
-    # def fset(self, value):
-    #     inner = getattr(self, inner_attr)
-    #     setattr(inner, attr_name, value)
+    def fset(self, value):
+        inner = getattr(self, inner_attr)
+        setattr(inner, attr_name, value)
     #
     # def fdel(self):
     #     inner = getattr(self, inner_attr)
     #     delattr(inner, attr_name)
 
-    return property(fget=fget)
+    return property(fget=fget, fset=fset)
 
 def doc_ref_from_str(doc_ref_str):
     return CTX.db.document(doc_ref_str)
