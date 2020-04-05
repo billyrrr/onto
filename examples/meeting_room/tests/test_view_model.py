@@ -50,7 +50,7 @@ def test_view(users, tickets, location, meeting, setup_app):
         list_get_view=meeting_session_ops.ListGet
     )
 
-    testing_utils._wait(factor=.7)
+    testing_utils._wait(factor=2)
 
     test_client = app.test_client()
 

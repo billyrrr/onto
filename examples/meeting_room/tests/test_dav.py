@@ -231,7 +231,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
 
     mediator.start()
 
-    testing_utils._wait(factor=.7)
+    testing_utils._wait(factor=2)
     #
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
@@ -358,7 +358,7 @@ class UserViewMediatorDAV(ViewMediatorDAV):
 
 def test_user_view(users, tickets, location, meeting):
     user_view = UserViewDAV.new(user_id="thomasina", )
-
+    user_view.wait_for_first_success()
     # time.sleep(3)  # TODO: delete after implementing sync
 
     assert user_view._export_as_view_dict() == {'meetings': [
@@ -408,6 +408,7 @@ def test_propagate_change(users, tickets, location, meeting):
     user_id = users[1].doc_id
 
     user_view = UserViewDAV.new(user_id=user_id, )
+    user_view.wait_for_first_success()
 
     # time.sleep(3)
 

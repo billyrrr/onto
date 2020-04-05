@@ -1,3 +1,4 @@
+import threading
 from typing import Dict, Tuple, Callable
 
 from dictdiffer import diff, patch
@@ -74,7 +75,7 @@ class ViewModelMixin:
         if once:
             obj.listen_once()
         else:
-            obj.register_listener()
+            obj.listen()
         return obj
 
     def bind_all(self):
@@ -120,6 +121,10 @@ class ViewModelMixin:
         self._on_update_funcs: Dict[str, Tuple] = dict()
         self.listener = None
         self.f_notify = f_notify
+        self.lock = threading.Lock()
+
+        self.has_first_success = False
+        self.success_condition = threading.Condition()
 
     def _bind_to_domain_model(self, *, key, obj_type, doc_id):
         """
@@ -221,49 +226,67 @@ class ViewModelMixin:
     #                    )
     #     return result
 
+    def _snapshot_callback(self, docs, changes, read_time):
+        """
+        docs (List(DocumentSnapshot)): A callback that returns the
+                    ordered list of documents stored in this snapshot.
+        changes (List(str)): A callback that returns the list of
+                    changed documents since the last snapshot delivered for
+                    this watch.
+        read_time (string): The ISO 8601 time at which this
+                    snapshot was obtained.
+        :return:
+        """
+
+        with self.snapshot_container.lock:
+            n = len(docs)
+            for i in range(n):
+                doc = docs[i]
+
+                on_update = self._on_update_funcs[doc.reference._document_path]
+                # TODO: restore parameter "changes"
+                on_update([doc], None, read_time)
+
+        with self.snapshot_container.lock, self.lock:
+            self.store.refresh()
+
+        with self.lock:
+            self._invoke_vm_callbacks()
+
+        # Note: technically this can go wrong as it can read the value from
+        #   the next refresh
+        self._notify()
+
+        with self.success_condition:
+            if not self.has_first_success:
+                self.has_first_success = True
+                self.success_condition.notify_all()
+
+    def wait_for_first_success(self):
+        """
+        Blocks a thread until self.has_first_success is True.
+        :return:
+        """
+        with self.success_condition:
+            while not self.has_first_success:
+                self.success_condition.wait()
+
     def listen_once(self):
         """ Retrieves domain models binded to a view model in an async
                 operation and disconnects the listener once the data
                 is retrieved so that no future updates to the domain
                 models are processed.
         """
-
-        def snapshot_callback(docs, changes, read_time):
-            """
-            docs (List(DocumentSnapshot)): A callback that returns the
-                        ordered list of documents stored in this snapshot.
-            changes (List(str)): A callback that returns the list of
-                        changed documents since the last snapshot delivered for
-                        this watch.
-            read_time (string): The ISO 8601 time at which this
-                        snapshot was obtained.
-            :return:
-            """
-
-            with self.snapshot_container.lock:
-
-                n = len(docs)
-                for i in range(n):
-
-                    doc = docs[i]
-
-                    on_update = self._on_update_funcs[doc.reference._document_path]
-                    # TODO: restore parameter "changes"
-                    on_update([doc], None, read_time)
-
-            self.store.refresh()
-            self._invoke_vm_callbacks()
-
         self.listener = DataListener(
             [dm_ref for dm_ref in self._on_update_funcs],
-            snapshot_callback=snapshot_callback,
+            snapshot_callback=self._snapshot_callback,
             firestore=CTX.db,
             once=True
         )
 
-        self.listener.wait_for_once_done()
+        self.wait_for_first_success()
 
-    def register_listener(self):
+    def listen(self):
         """ Listens to domain models binded to a view model in an async
                 operation.
 
@@ -271,41 +294,14 @@ class ViewModelMixin:
                 after this function returns.
         """
 
-        def snapshot_callback(docs, changes, read_time):
-            """
-            docs (List(DocumentSnapshot)): A callback that returns the
-                        ordered list of documents stored in this snapshot.
-            changes (List(str)): A callback that returns the list of
-                        changed documents since the last snapshot delivered for
-                        this watch.
-            read_time (string): The ISO 8601 time at which this
-                        snapshot was obtained.
-            :return:
-            """
-            with self.snapshot_container.lock:
-
-                n = len(docs)
-                for i in range(n):
-
-                    doc = docs[i]
-
-                    on_update = self._on_update_funcs[doc.reference._document_path]
-                    # TODO: restore parameter "changes"
-                    on_update([doc], None, read_time)
-
-            self.store.refresh()
-            self._invoke_vm_callbacks()
-            with self.snapshot_container.lock:
-                self._notify()
-
         self.listener = DataListener(
             [dm_ref for dm_ref in self._on_update_funcs],
-            snapshot_callback=snapshot_callback,
+            snapshot_callback=self._snapshot_callback,
             firestore=CTX.db,
             once=False
         )
 
-        self.listener.wait_for_once_done()
+        self.wait_for_first_success()
 
     # def _refresh_business_property(self, ):
     #     with self.snapshot_container.lock:
@@ -327,7 +323,6 @@ class ViewModelMixin:
                 obj_type, doc_id = val
                 vm_update_callback = self.get_vm_update_callback(dm_cls=obj_type)
                 vm_update_callback(vm=self, dm=b)
-
 
     def _notify(self):
         """ Notify that this object has been changed by underlying view models.
@@ -364,7 +359,8 @@ class ViewModelMixin:
             doc_id=doc_id)
 
     def to_view_dict(self):
-        return self._export_as_view_dict()
+        with self.lock:
+            return self._export_as_view_dict()
 
     def to_dict(self):
         return self.to_view_dict()
