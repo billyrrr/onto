@@ -303,15 +303,19 @@ class NewMixin:
 
         # Keys to set value from keyword arguments
         keys_to_set = kwargs_keys & field_keys
-        # Keys to set to default value read from Field object from schema
-        keys_default = field_keys - keys_to_set
-        if not allow_default and len(keys_default) != 0:
-            raise ValueError("{} are not set".format(keys_default))
-        keys_super = kwargs_keys - keys_to_set - keys_default
 
-        d_val_default = {key: field.default_value
-                for key, field in fd.items() if key in keys_default}
+        _default_vals = cls.get_schema_obj().load({})
+
+        d_val_default = {key: default_value
+                         for key, default_value in _default_vals.items()
+                         if key not in keys_to_set}
+        # Keys to set to default value read from Field object from schema
+        if not allow_default and len(d_val_default) != 0:
+            raise ValueError("{} are not set".format(d_val_default))
         d_val_provided = {key: kwargs[key] for key in keys_to_set}
+
+        keys_super = kwargs_keys - set(d_val_default) - set(d_val_provided)
+
         d_super = {key: kwargs[key] for key in keys_super}
 
         return cls(_with_dict={**d_val_default, **d_val_provided}, **d_super)
@@ -325,10 +329,9 @@ class NewMixin:
         """
         if _with_dict is None:
             _with_dict = dict()
-
+        # TODO: note that obj_type and other irrelevant fields are set; fix
         for key, val in _with_dict.items():
-            if key not in dir(self):
-                setattr(self, key, val)
+            setattr(self, key, val)
             # elif isinstance(getattr(self.__class__, key), property):
             #     setattr(self, key, val)
 
