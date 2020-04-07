@@ -43,8 +43,8 @@ class QueryMixin:
 
         :return:
         """
-        docs_ref: CollectionReference = cls._get_collection()
-        docs = docs_ref.stream()
+        q = cls.get_query()
+        docs = q.stream()
         for doc in docs:
             assert isinstance(doc, DocumentSnapshot)
             if is_fb_snapshot(snapshot=doc):
@@ -129,6 +129,18 @@ class QueryMixin:
         return cur_where
 
     @classmethod
+    def get_query(cls):
+        """
+        Returns a query with parent=cls._get_collection(), and
+            limits to obj_type of subclass of cls.
+        :return:
+        """
+        cur_where = Query(parent=cls._get_collection(),
+                          # TODO: pass caught kwargs to Query constructor
+                          )
+        return cur_where.where("obj_type", "in", cls._get_subclasses_str())
+
+    @classmethod
     @convert_query_ref
     def where(cls, *args,
               acsending=None,
@@ -153,12 +165,8 @@ class QueryMixin:
         :return:
         """
 
-        cur_where = Query(parent=cls._get_collection(),
-                          # TODO: pass caught kwargs to Query constructor
-                          )
-
         cur_where = cls._where_query(*args, **kwargs,
-                                     cur_where=cur_where)
+                                     cur_where=cls.get_query())
 
         if limit is not None:
             cur_where = cur_where.limit(count=limit)

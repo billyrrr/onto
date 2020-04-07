@@ -22,7 +22,7 @@ CTX.read(config)
 #     pass
 
 class PostSchema(schema.Schema):
-    id = fields.Raw()
+    _id = fields.Raw(data_key="id", dump_only=True)
     title = fields.Raw()
     body = fields.Raw()
     pub_date = fields.Raw()
@@ -33,7 +33,7 @@ class PostSchema(schema.Schema):
 class PostBase(domain_model.DomainModel):
 
     @property
-    def id(self):
+    def _id(self):
         return self.doc_id
 
     _collection_name = "posts"
@@ -48,7 +48,7 @@ class Post(PostBase):
 
 
 class CategorySchema(schema.Schema):
-    id = fields.Raw()
+    _id = fields.Raw(data_key="id", dump_only=True)
     name = fields.Raw()
     # posts = fields.Relationship(nested=True, many=True)
 
@@ -56,7 +56,7 @@ class CategorySchema(schema.Schema):
 class CategoryBase(domain_model.DomainModel):
 
     @property
-    def id(self):
+    def _id(self):
         return self.doc_id
 
     _collection_name = "categories"

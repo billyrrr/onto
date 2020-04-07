@@ -69,6 +69,20 @@ class BaseRegisteredModel(metaclass=ModelRegistry):
                 for c_str in cls._get_children_str(cls.__name__)}
 
     @classmethod
+    def _get_subclasses(cls):
+        res = {cls, }
+        children = cls._get_children()
+        for child in children:
+            res |= child._get_subclasses()
+        return res
+
+    @classmethod
+    def _get_subclasses_str(cls):
+        return list(
+            sorted(_cls.__name__ for _cls in cls._get_subclasses())
+        )
+
+    @classmethod
     def _get_parents(cls):
         return {cls.get_cls_from_name(c_str)
                 for c_str in cls._get_parents_str(cls.__name__)}

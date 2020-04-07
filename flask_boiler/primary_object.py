@@ -1,4 +1,4 @@
-from google.cloud.firestore_v1 import Transaction
+from google.cloud.firestore_v1 import Transaction, Query
 
 from flask_boiler.firestore_object import FirestoreObject
 from flask_boiler.query_mixin import QueryMixin

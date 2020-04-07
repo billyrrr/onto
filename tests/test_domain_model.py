@@ -139,6 +139,13 @@ def test_subclass_same_collection(CTX):
 
 
 @pytest.mark.usefixtures("setup_cities")
+def test_subclass_query(CTX):
+    assert {city.doc_id for city in City.all()} == \
+           {'SF', 'LA', 'TOK', 'DC', 'BJ'}
+    assert {city.doc_id for city in Municipality.all()} == {'TOK', 'DC', 'BJ'}
+
+
+@pytest.mark.usefixtures("setup_cities")
 def test_where_with_kwargs(CTX):
     """
     Tests that subclasses of a class can be stored in the same collection.

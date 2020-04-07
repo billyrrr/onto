@@ -31,6 +31,14 @@ class BPSchema(Schema):
 
 class BusinessPropertyStore:
 
+    @classmethod
+    def from_snapshot_struct(cls, snapshot_struct):
+        struct, container = snapshot_struct.to_struct_and_container()
+        store = BusinessPropertyStore(struct=struct,
+                                      snapshot_container=container)
+        store.refresh()
+        return store
+
     def __init__(self, struct, snapshot_container):
         super().__init__()
         self._container = snapshot_container
