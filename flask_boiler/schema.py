@@ -130,6 +130,8 @@ class Schema(SchemaBase):
             A possible mistake can be setting doc_id after doc_id is
             read, since two doc_id for the same object can be observed.
     """
+    class Meta:
+        ordered = True
 
     obj_type = fields.Function(
         attribute="obj_type",
