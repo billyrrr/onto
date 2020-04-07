@@ -113,7 +113,7 @@ def test_default_value(ModelA):
 
 def test_property_fields():
     class ModelAPSchema(schema.Schema):
-        some_property = fields.Function(dump_only=True)
+        some_property = fields.Integer(dump_only=True)
 
     def fget(self):
         return 8

@@ -1,5 +1,6 @@
 from marshmallow.utils import is_iterable_but_not_string
 from flask_boiler.helpers import EmbeddedElement
+from . import errors
 from .model_registry import BaseRegisteredModel, ModelRegistry
 
 
@@ -286,6 +287,8 @@ class NewMixin:
                 This is similar to the use of "new" in Java.
                 It is recommended that you use "new" to initialize
                     an object, rather than the native initializer.
+            Values are initialized based on the order that they
+                are declared in the schema.
 
         :param allow_default: if set to False, an error will be
             raised if value is not provided for a field.
@@ -296,29 +299,26 @@ class NewMixin:
 
         fd = cls._get_fields()  # Calls classmethod
 
-        field_keys = {key for key, field in fd.items() if not field.dump_only}
+        # field_keys = {key for key, field in fd.items() }
+
+        _with_dict = dict()
+
+        for key, field in cls._get_fields().items():
+            if field.dump_only:
+                continue
+            if key in kwargs:
+                _with_dict[key] = kwargs[key]
+            else:
+                if field.required:
+                    raise errors.DefaultNotAllowedError
+                _with_dict[key] = field.default_value
+
         kwargs_keys = set(kwargs.keys())
-
-        required_keys = {val for key, val in fd.items() if val.required}
-
-        # Keys to set value from keyword arguments
-        keys_to_set = kwargs_keys & field_keys
-
-        _default_vals = cls.get_schema_obj().load({})
-
-        d_val_default = {key: default_value
-                         for key, default_value in _default_vals.items()
-                         if key not in keys_to_set}
-        # Keys to set to default value read from Field object from schema
-        if not allow_default and len(d_val_default) != 0:
-            raise ValueError("{} are not set".format(d_val_default))
-        d_val_provided = {key: kwargs[key] for key in keys_to_set}
-
-        keys_super = kwargs_keys - set(d_val_default) - set(d_val_provided)
+        keys_super = kwargs_keys - set(_with_dict.keys())
 
         d_super = {key: kwargs[key] for key in keys_super}
 
-        return cls(_with_dict={**d_val_default, **d_val_provided}, **d_super)
+        return cls(_with_dict=_with_dict, **d_super)
 
     def __init__(self, _with_dict=None, **kwargs):
         """ Private initializer; do not call directly.
