@@ -116,7 +116,7 @@ class FirestoreObjectValMixin:
             return super()._export_val_view(val)
 
     @classmethod
-    def _import_val(cls, val, to_get=False, transaction=None):
+    def _import_val(cls, val, to_get=False, must_get=False, transaction=None):
 
         def is_nested_relationship(val):
             return isinstance(val, RelationshipReference) and val.nested
@@ -138,7 +138,10 @@ class FirestoreObjectValMixin:
             else:
                 return val.doc_ref
         elif is_ref_only_relationship(val):
-            return val.doc_ref
+            if must_get:
+                return nest_relationship(val)
+            else:
+                return val.doc_ref
         else:
             return super()._import_val(
                 val, to_get=to_get, transaction=transaction)

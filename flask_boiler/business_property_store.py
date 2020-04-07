@@ -32,15 +32,27 @@ class BPSchema(Schema):
 class BusinessPropertyStore:
 
     @classmethod
-    def from_snapshot_struct(cls, snapshot_struct):
+    def from_snapshot_struct(cls, snapshot_struct, **kwargs):
         struct, container = snapshot_struct.to_struct_and_container()
         store = BusinessPropertyStore(struct=struct,
-                                      snapshot_container=container)
+                                      snapshot_container=container,
+                                      **kwargs
+                                      )
         store.refresh()
         return store
 
-    def __init__(self, struct, snapshot_container):
+    def __init__(self, struct, snapshot_container, obj_options=None):
+        """
+
+        :param struct:
+        :param snapshot_container:
+        :param obj_options: keyword arguments to pass to snapshot_to_obj
+            (eventually applied to obj_cls.from_dict)
+        """
         super().__init__()
+        if obj_options is None:
+            obj_options = dict()
+        self._obj_options = obj_options
         self._container = snapshot_container
         self.struct = struct
         self.schema_obj = struct.schema_obj
@@ -54,7 +66,11 @@ class BusinessPropertyStore:
 
     def refresh(self):
         for doc_ref in self._manifest:
-            self.objs[doc_ref] = snapshot_to_obj(self._container.get(doc_ref))
+            self.objs[doc_ref] = snapshot_to_obj(
+                self._container.get(doc_ref),
+                super_cls=None,
+                **self._obj_options
+            )
 
     def __getattr__(self, item):
 

@@ -152,8 +152,18 @@ Color = factory.ClsFactory.create(
     schema=ColorSchema,
     base=ColorDomainModelBase
 )
+
+
 PaletteViewModel = factory.ClsFactory.create(
     name="PaletteViewModel",
     schema=Palette,
     base=PaletteViewModelBase
 )
+
+
+PaletteDomainModel = factory.ClsFactory.create(
+    name="PaletteDomainModel",
+    schema=Palette,
+    base=domain_model.DomainModel
+)
+

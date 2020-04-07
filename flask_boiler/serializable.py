@@ -142,7 +142,7 @@ class Importable:
             setattr(self, key, val)
 
     @classmethod
-    def from_dict(cls, d, to_get=True, **kwargs):
+    def from_dict(cls, d, to_get=True, must_get=False, **kwargs):
         """
         TODO: fix to_get not applying to new(**kwargs)
 
@@ -166,8 +166,20 @@ class Importable:
                                  .format(obj_type, super_cls))
 
         d = obj_cls.get_schema_obj().load(d)
+
+        def apply(val):
+            if isinstance(val, dict):
+                return {k: obj_cls._import_val(v, to_get=to_get, must_get=must_get)
+                    for k, v in val.items()
+                }
+            elif isinstance(val, list):
+                return [obj_cls._import_val(v, to_get=to_get, must_get=must_get)
+                    for v in val]
+            else:
+                return obj_cls._import_val(val, to_get=to_get, must_get=must_get)
+
         d = {
-            key: obj_cls._import_val(val, to_get=to_get)
+            key: apply(val)
             for key, val in d.items()
         }
 
