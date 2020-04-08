@@ -126,6 +126,7 @@ test:
 	pytest --cov=flask_boiler -vv tests
 
 test-gravitate:
+	git clone https://github.com/billyrrr/gravitate-backend.git
 	pip install -r gravitate-backend/requirements.txt
 	pip install -r gravitate-backend/requirements-dev.txt
 	pip freeze
