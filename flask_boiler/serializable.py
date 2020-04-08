@@ -1,5 +1,6 @@
 from marshmallow.utils import is_iterable_but_not_string
 from flask_boiler.helpers import EmbeddedElement
+from . import fields
 from . import errors
 from .model_registry import BaseRegisteredModel, ModelRegistry
 
@@ -82,7 +83,7 @@ class Importable:
     """
 
     @classmethod
-    def _import_val(cls, val, to_get=False, **kwargs):
+    def _import_val(cls, val, **kwargs):
         """ IMPORTANT! Note that the code may fail and result in
                 infinite call chain when there is a circular reference.
                 The code is not designed to fail this way, but
@@ -107,13 +108,13 @@ class Importable:
             return embed_element(val)
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):
-                val_list = [cls._import_val(elem, to_get, **kwargs)
+                val_list = [cls._import_val(elem, **kwargs)
                             for elem in val]
                 return val_list
             elif isinstance(val, dict):
                 val_d = dict()
                 for k, v in val.items():
-                    val_d[k] = cls._import_val(v, to_get, **kwargs)
+                    val_d[k] = cls._import_val(v, **kwargs)
                 return val_d
             else:
                 raise NotImplementedError
@@ -142,7 +143,7 @@ class Importable:
             setattr(self, key, val)
 
     @classmethod
-    def from_dict(cls, d, to_get=True, must_get=False, **kwargs):
+    def from_dict(cls, d, to_get=True, must_get=False, transaction=None, **kwargs):
         """
         TODO: fix to_get not applying to new(**kwargs)
 
@@ -169,18 +170,21 @@ class Importable:
 
         def apply(val):
             if isinstance(val, dict):
-                return {k: obj_cls._import_val(v, to_get=to_get, must_get=must_get)
+                return {k: obj_cls._import_val(
+                    v)
                     for k, v in val.items()
                 }
             elif isinstance(val, list):
-                return [obj_cls._import_val(v, to_get=to_get, must_get=must_get)
+                return [obj_cls._import_val(
+                    v)
                     for v in val]
             else:
-                return obj_cls._import_val(val, to_get=to_get, must_get=must_get)
+                return obj_cls._import_val(
+                    val)
 
         d = {
             key: apply(val)
-            for key, val in d.items()
+            for key, val in d.items() if val != fields.allow_missing
         }
 
         instance = obj_cls.new(**d, **kwargs)  # TODO: fix unexpected arguments
@@ -229,7 +233,7 @@ class Exportable:
         else:
             return val
 
-    def _export_as_dict(self, to_save=False) -> dict:
+    def _export_as_dict(self, to_save=False, **kwargs) -> dict:
         """ Map/dict is only supported at root level for now
         TODO: implement iterable support
         :return:
@@ -241,7 +245,7 @@ class Exportable:
 
         res = dict()
         for key, val in d.items():
-            res[key] = self._export_val(val, to_save=to_save)
+            res[key] = self._export_val(val, to_save=to_save, **kwargs)
 
         return res
 

@@ -3,9 +3,11 @@ import warnings
 from google.cloud.firestore import DocumentReference
 from google.cloud.firestore import Transaction
 
+from flask_boiler import fields
 from flask_boiler.helpers import RelationshipReference, EmbeddedElement
 # from flask_boiler.view_model import ViewModel
 from flask_boiler.collection_mixin import CollectionMixin
+from flask_boiler.model_registry import ModelRegistry
 from flask_boiler.serializable import Serializable
 from flask_boiler.factory import ClsFactory
 from flask_boiler.utils import snapshot_to_obj
@@ -40,7 +42,10 @@ class FirestoreObjectMixin:
             snapshot = doc_ref.get()
         else:
             snapshot = doc_ref.get(transaction=transaction)
-        obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
+        obj = snapshot_to_obj(
+            snapshot=snapshot,
+            super_cls=cls,
+            transaction=transaction)
         return obj
 
     @classmethod
@@ -72,7 +77,7 @@ class FirestoreObjectValMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _export_val(self, val, to_save=False):
+    def _export_val(self, val, transaction=None, to_save=False):
 
         def is_nested_relationship(val):
             return isinstance(val, RelationshipReference) and val.nested
@@ -81,10 +86,10 @@ class FirestoreObjectValMixin:
             return isinstance(val, RelationshipReference) and not val.nested
 
         def nest_relationship(obj):
-            if self.transaction is None:
+            if transaction is None:
                 obj.save()
             else:
-                obj.save(transaction=self.transaction)
+                obj.save(transaction=transaction)
             return obj.doc_ref
 
         if is_nested_relationship(val):
@@ -97,6 +102,10 @@ class FirestoreObjectValMixin:
 
         else:
             return super()._export_val(val, to_save=to_save)
+
+    def _export_as_dict(self, **kwargs):
+        return super()._export_as_dict(**kwargs,
+                                       transaction=self.transaction)
 
     def _export_val_view(self, val):
 
@@ -127,7 +136,7 @@ class FirestoreObjectValMixin:
         def nest_relationship(val: RelationshipReference):
             if transaction is None:
                 snapshot = val.doc_ref.get()
-                return snapshot_to_obj(snapshot)
+                return snapshot_to_obj(snapshot, transaction=transaction)
             else:
                 snapshot = val.doc_ref.get(transaction=transaction)
                 return snapshot_to_obj(snapshot, transaction=transaction)
@@ -146,6 +155,63 @@ class FirestoreObjectValMixin:
             return super()._import_val(
                 val, to_get=to_get, transaction=transaction)
 
+    @classmethod
+    def from_dict(cls, d, to_get=True, must_get=False, transaction=None, **kwargs):
+        """
+        TODO: fix to_get not applying to new(**kwargs)
+
+        TODO: watch out for the order of input
+
+        :param d:
+        :param to_get:
+        :param kwargs:
+        :return:
+        """
+
+        super_cls, obj_cls = cls, cls
+
+        if "obj_type" in d:
+            obj_type = d["obj_type"]
+            obj_cls = ModelRegistry.get_cls_from_name(obj_type)
+
+            if obj_cls is None:
+                raise ValueError("Cannot read obj_type: {}. "
+                                 "Make sure that obj_type is a subclass of {}. "
+                                 .format(obj_type, super_cls))
+
+        d = obj_cls.get_schema_obj().load(d)
+
+        def apply(val):
+            if isinstance(val, dict):
+                return {k: obj_cls._import_val(
+                    v,
+                    to_get=to_get,
+                    must_get=must_get,
+                    transaction=transaction)
+                    for k, v in val.items()
+                }
+            elif isinstance(val, list):
+                return [obj_cls._import_val(
+                    v,
+                    to_get=to_get,
+                    must_get=must_get,
+                    transaction=transaction)
+                    for v in val]
+            else:
+                return obj_cls._import_val(
+                    val,
+                    to_get=to_get,
+                    must_get=must_get,
+                    transaction=transaction)
+
+        d = {
+            key: apply(val)
+            for key, val in d.items() if val != fields.allow_missing
+        }
+
+        instance = obj_cls.new(**d, transaction=transaction, **kwargs)  # TODO: fix unexpected arguments
+        return instance
+
 
 class FirestoreObject(FirestoreObjectValMixin,
                       FirestoreObjectMixin,
@@ -156,3 +222,4 @@ class FirestoreObject(FirestoreObjectValMixin,
         super().__init__(*args, **kwargs)
         self._doc_ref = doc_ref
         self.transaction = transaction
+#
