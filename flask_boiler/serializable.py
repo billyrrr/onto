@@ -317,6 +317,7 @@ class NewMixin:
 
         # field_keys = {key for key, field in fd.items() }
 
+        _init_dict = dict()
         _with_dict = dict()
 
         for key, field in cls._get_fields().items():
@@ -324,27 +325,28 @@ class NewMixin:
                 continue
             if key in kwargs:
                 _with_dict[key] = kwargs[key]
+                _init_dict[key] = field.default_value
             else:
                 if field.required:
                     raise errors.DefaultNotAllowedError
-                _with_dict[key] = field.default_value
+                _init_dict[key] = field.default_value
 
         kwargs_keys = set(kwargs.keys())
         keys_super = kwargs_keys - set(_with_dict.keys())
 
         d_super = {key: kwargs[key] for key in keys_super}
 
-        return cls(_with_dict=_with_dict, **d_super)
+        return cls(_init_dict=_init_dict, _with_dict=_with_dict, **d_super)
 
-    def __init__(self, _with_dict=None, **kwargs):
+    def __init__(self, _init_dict=None, _with_dict=None, **kwargs):
         """ Private initializer; do not call directly.
             Use "YourModelClass.new(...)" instead.
 
         :param _with_dict:
         :param kwargs:
         """
-        if _with_dict is None:
-            _with_dict = dict()
+        for key, val in _init_dict.items():
+            setattr(self, key, val)
         # TODO: note that obj_type and other irrelevant fields are set; fix
         for key, val in _with_dict.items():
             setattr(self, key, val)
