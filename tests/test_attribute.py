@@ -1,7 +1,5 @@
-from typing import Union, TypeVar, Generic, Callable, Any, List
-
 import pytest
-from flask_boiler import attribute
+from flask_boiler.attributes import attribute
 
 
 def test_binding():
@@ -50,6 +48,22 @@ class PropertyAttribute(attribute.AttributeBase):
     def deleter(self, fdel):
         self.fdel = fdel
         return self
+
+
+class Attribute(attribute.AttributeBase):
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        else:
+            return getattr(instance._attribute_store, self.name)
+
+    def __set__(self, instance, value):
+        setattr(instance._attribute_store, self.name, value)
+
+    def __delete__(self, instance):
+        delattr(instance._attribute_store, self.name)
+
 
 
 class ForwardInnerAttribute(PropertyAttribute):

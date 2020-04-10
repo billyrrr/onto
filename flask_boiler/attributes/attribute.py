@@ -17,6 +17,13 @@ class AttributeBase(Generic[T]):
 
     field_cls: Type[fields.Field] = None
 
+    def _make_field(self) -> fields.Field:
+        """
+        TODO: implement
+        :return:
+        """
+        return fields.Field()
+
     def __set_name__(self, owner, name):
         self.parent = owner
         self.name = name
@@ -82,8 +89,6 @@ class AttributeBase(Generic[T]):
         #   to a class
         self.parent = _NA
         self.name = _NA
-
-
 
 
 class Boolean(AttributeBase):
