@@ -345,8 +345,13 @@ class NewMixin:
         :param _with_dict:
         :param kwargs:
         """
+        if _init_dict is None:
+            _init_dict = dict()
+        if _with_dict is None:
+            _with_dict = dict()
         for key, val in _init_dict.items():
-            setattr(self, key, val)
+            if key not in dir(self):
+                setattr(self, key, val)
         # TODO: note that obj_type and other irrelevant fields are set; fix
         for key, val in _with_dict.items():
             setattr(self, key, val)

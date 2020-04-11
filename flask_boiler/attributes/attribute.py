@@ -1,5 +1,9 @@
+import typing
+
 from flask_boiler import fields
 from typing import Type, Generic, TypeVar, Optional
+
+from flask_boiler.model_registry import ModelRegistry, BaseRegisteredModel
 
 
 class ValueNotProvided:
@@ -10,10 +14,7 @@ class _NA:
     pass
 
 
-T = TypeVar("T")
-
-
-class AttributeBase(Generic[T]):
+class AttributeBase:
 
     field_cls: Type[fields.Field] = None
 
@@ -56,7 +57,7 @@ class AttributeBase(Generic[T]):
             # export_default,
             # export_required,
             #
-            # type_cls: Optional[Type[T]],
+            type_cls=None,
 
     ):
         """
@@ -135,3 +136,95 @@ class Boolean(AttributeBase):
     #     return super().__get__(instance, owner)
 
 
+class PropertyAttribute(AttributeBase):
+    """
+    Ref: https://blog.csdn.net/weixin_43265804/article/details/82863984
+        content under CC 4.0
+    """
+
+    def  __init__(self,
+                 *, fget=None, fset=None, fdel=None, doc=None, **kwargs):
+        super().__init__(**kwargs)
+        if fget is None:
+            def fget(_self):
+                inner = getattr(_self, "_attribute_store")
+                return getattr(inner, self.name)
+        self.fget = fget
+        if fset is None:
+            def fset(_self, value):
+                inner = getattr(_self, "_attribute_store")
+                return setattr(inner, self.name, value)
+        self.fset = fset
+
+        self.fdel = fdel
+        self.__doc__ = doc
+
+    # @typing.overload
+    # def __get__(self, instance: typing.Any, owner: typing.Any):
+    #     ...
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        else:
+            return self.fget(instance)
+
+    def __set__(self, instance, value):
+        self.fset(instance, value)
+
+    def __delete__(self, instance):
+        self.fdel(instance)
+
+    def getter(self, fget):
+        self.fget = fget
+        return self
+
+    def setter(self, fset):
+        self.fset = fset
+        return self
+
+    def deleter(self, fdel):
+        self.fdel = fdel
+        return self
+
+
+class Attribute(AttributeBase):
+
+    def __init__(
+            self,
+            *,
+            type_cls=None,
+            **kwargs,
+    ):
+        super().__init__(type_cls=type_cls, **kwargs)
+
+    @typing.overload
+    def __get__(self, instance, owner) -> int:
+        pass
+
+    def __get__(self, instance, owner) -> typing.Any:
+        if instance is None:
+            return self
+        else:
+            return getattr(instance._attribute_store, self.name)
+
+    def __set__(self, instance, value):
+        setattr(instance._attribute_store, self.name, value)
+
+    def __delete__(self, instance):
+        delattr(instance._attribute_store, self.name)
+
+
+class ForwardInnerAttribute(PropertyAttribute):
+
+    def __init__(self, *, inner_name, **kwargs):
+
+        def fget(_self):
+            inner = getattr(_self, inner_name)
+            return getattr(inner, self.name)
+
+        def fset(_self, value):
+            inner = getattr(_self, inner_name)
+            return setattr(inner, self.name, value)
+
+        super().__init__(fget=fget, fset=fset, **kwargs)

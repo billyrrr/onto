@@ -1,3 +1,4 @@
+from flask_boiler.business_property_store import SimpleStore
 from flask_boiler.schema import Schema
 from flask_boiler.serializable import Serializable
 from flask_boiler.attributes import AttributeBase
@@ -36,13 +37,11 @@ def _collect_attrs(cls) -> Iterable[Tuple[str, AttributeBase]]:
             yield (key, getattr(cls, key))
 
 
-def __init__(self, doc_id=None, doc_ref=None, **kwargs):
-    if doc_ref is None:
-        doc_ref = self._doc_ref_from_id(doc_id=doc_id)
-    super().__init__(doc_ref=doc_ref, **kwargs)
-
-
 class ModelBase(Serializable):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         cls._schema_cls = _schema_cls_from_attributed_class(cls=cls)
+
+    def __init__(self, *args, **kwargs):
+        self._attribute_store = SimpleStore()
+        super().__init__(*args, **kwargs)
