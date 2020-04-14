@@ -18,6 +18,7 @@ from google.cloud import firestore
 from celery import Celery
 
 from .config import Config
+import logging
 
 
 class Context:
@@ -25,6 +26,7 @@ class Context:
     db: firestore.Client = None
     config: Config = None
     celery_app: Celery = None
+    logger: logging.Logger = None
 
     # Deleted on purpose to ensure that .<flag> is not evaluated as False
     #   when .<flag> is neither set to True, nor set to False.
@@ -36,10 +38,13 @@ class Context:
     def __init__(self, *args, **kwargs):
         raise NotImplementedError('Do not initialize this class, use the class methods and properties instead. ')
 
+    @classmethod
+    def _reload_logger(cls):
+        cls.logger = logging.getLogger()
+
     @staticmethod
     def _enable_logging():
         import sys
-        import logging
 
         root = logging.getLogger()
         root.setLevel(logging.DEBUG)
@@ -77,6 +82,7 @@ class Context:
             """
             return cls
         cls.config = config
+        cls._reload_logger()
         cls._reload_debug_flag(cls.config.DEBUG)
         cls._reload_testing_flag(cls.config.TESTING)
         cls._reload_firebase_app(cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
