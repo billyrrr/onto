@@ -121,21 +121,31 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
             for change in changes:
                 snapshot = change.document
                 assert isinstance(snapshot, DocumentSnapshot)
-                if change.type.name == 'ADDED':
-                    self.Protocol.on_create(
-                        snapshot=snapshot,
-                        mediator=self
-                    )
-                elif change.type.name == 'MODIFIED':
-                    self.Protocol.on_update(
-                        snapshot=snapshot,
-                        mediator=self
-                    )
-                elif change.type.name == 'REMOVED':
-                    self.Protocol.on_delete(
-                        snapshot=snapshot,
-                        mediator=self
-                    )
+                try:
+                    if change.type.name == 'ADDED':
+                        self.Protocol.on_create(
+                            snapshot=snapshot,
+                            mediator=self
+                        )
+                    elif change.type.name == 'MODIFIED':
+                        self.Protocol.on_update(
+                            snapshot=snapshot,
+                            mediator=self
+                        )
+                    elif change.type.name == 'REMOVED':
+                        self.Protocol.on_delete(
+                            snapshot=snapshot,
+                            mediator=self
+                        )
+                except Exception as e:
+                    """
+                    Expects e to be printed to the logger 
+                    """
+                    CTX.logger.exception(f"DAV failed "
+                                         f"for {snapshot.reference.path}")
+                else:
+                    CTX.logger.info(f"DAV succeeded "
+                                    f"for {snapshot.reference.path}")
 
         return on_snapshot
 
