@@ -8,37 +8,9 @@ This page is adapted from [Quickstart using a server client library](https://clo
  but does not override some licensing conditions of
  the Google's quickstart guide. 
  Please refer to these license for more information.  
- 
-## Before you begin 
 
-- Select or create a GCP project:
-    [Project Selector Page](https://console.cloud.google.com/projectselector2/home/dashboard?_ga=2.78791382.-378732223.1566339304)
-   
-## Create a Cloud Firestore in Native mode database
+### Retrieve credentials 
 
-If this is a new project, you need to create a Cloud Firestore database instance.
-
-1. Go to [Cloud Firestore Viewer](https://console.cloud.google.com/firestore/data?_ga=2.250628420.-378732223.1566339304) .
-2. From the Select a database service screen, choose Cloud Firestore in Native mode.
-
-3. Select a [location](https://cloud.google.com/firestore/docs/locations#types) for your Cloud Firestore.
-
-    This location setting is your project's [default Google Cloud Platform (GCP) resource location](https://cloud.google.com/firestore/docs/locations#default-cloud-location). 
-
-    Note that this location will be used for GCP services in your project that require a location setting, 
-specifically, your default [Cloud Storage](https://cloud.google.com/storage/docs) bucket 
-and your [App Engine](https://cloud.google.com/appengine/docs/) app (which is required if you use Cloud Scheduler).
-    
-    > **Warning**: After you set your project's default GCP resource location, you cannot change it.
-
-4. Click Create Database.
-When you create a Cloud Firestore project, it also enables the API in the [Cloud API Manager](https://console.cloud.google.com/projectselector/apis/api/firestore.googleapis.com/overview?_ga=2.258762056.-378732223.1566339304).
-
-## Set up authentication
-
-To run the client library, you must first set up authentication by creating a service account and setting an environment variable.
-
-GCP CONSOLE
 1. In the GCP Console, go to the **Create service account** key page.
 
     Go to [Create Service Account Key Page](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.86663898.-378732223.1566339304)
@@ -67,7 +39,6 @@ In your project's requirements.txt,
 
 google-cloud-firestore
 flask-boiler  # Not released to pypi yet 
-
 ```
 
 Configure virtual environment 
@@ -84,8 +55,16 @@ In your project directory,
 ### Initialize
 
 Provide authentication credentials to flask-boiler by moving the json certificate file 
-to your project directory and pass in the path as argument to ```flask_boiler.config.Config``` in your 
-python code. 
+to your project directory and specify the path in ```boiler.yaml``` 
+in your current working directory. 
+
+```yaml
+app_name: "<Your Firebase App Name>"
+debug: True
+testing: True
+certificate_filename: "<File Name of Certificate JSON>"
+
+```
 
 
 In ```__init__``` of your project source root: 
@@ -93,67 +72,51 @@ In ```__init__``` of your project source root:
 import os
 
 from flask_boiler import context
-from flask_boiler import config
-
-Config = config.Config
-
-testing_config = Config(app_name="[YOUR_APP_NAME]",
-                        debug=True,
-                        testing=True,
-                        certificate_path="[PATH]")
 
 CTX = context.Context
-CTX.read(testing_config)
+CTX.load()
 ```
 
-Replace ```[PATH]``` with the file path of the JSON file that contains your service account key, 
-and ```[YOUR_APP_NAME]``` with the name of your firebase app.  
+## Declare a Domain Model
 
-## Add data
-
-First, declare a schema for your data. 
+In ```models.py```, create a model, 
 
 ```python
+from flask_boiler.domain_model import DomainModel
+from flask_boiler import attrs
 
-# Creates a schema for serializing and deserializing to firestore database
-class TestObjectSchema(schema.Schema):
-    
-    # Describes how obj.int_a is read from and stored to a document in firestore 
-    int_a = fields.Raw()
-    int_b = fields.Raw()
+class City(DomainModel):
+
+    city_name = attrs.bproperty()
+    country = attrs.bproperty()
+    capital = attrs.bproperty()
+
+    class Meta:
+        collection_name = "City"
 ```
 
-Next, declare the domain model and initialize all fields to the 
-default value. 
-
-```python
-
-# Declares the object 
-# Declares the object
-TestObject = ClsFactory.create(
-    name="TestObject",
-    schema=TestObjectSchema,
-    # Either MyDomainModelBase (specify cls._collection_id)
-    #  or SubclassOfViewModel 
-    # TODO: ADD MORE DOCS 
-    base=PrimaryObject  
-)
-
-```
+Create Attribute objects for your domain model. 
+These will be converted to a Marshmallow Schema 
+for serialization and deserialization. 
 
 Now, you can create the object and assign values to it 
 
 ```python
-# Creates an object with default values with reference: "TestObject/testObjId1" 
+# Creates an object with reference: "City/SF" 
 #   (but not saved to database)
-obj = TestObject.create(doc_id="testObjId1")
+sf = City.new(
+    doc_id="SF", 
+    city_name='San Francisco', 
+    city_state ='CA', 
+    country='USA', 
+    regions=['west_coast', 'norcal']
+)        
 
 # Assigns value to the newly created object 
-obj.int_a = 1
-obj.int_b = 2
+sf.capital = False
 
-# Saves to firestore "TestObject/testObjId1" 
-obj.save()
+# Saves to firestore "City/SF" 
+sf.save()
 ```
 
 ### Read data
@@ -161,12 +124,8 @@ obj.save()
 To quickly verify that you've added data to Cloud Firestore, 
 use the data viewer in the [Firebase console](https://console.firebase.google.com/project/_/database/firestore/data).
 
-To retrieve every object in the collection, 
-
+You can get all documents that is a subclass of City where country equals USA: 
 ```python
-
-for obj in TestObject.all():
-    print( "doc_id: {} int_a: {}".format(obj.doc_id, obj.int_a) )
-
+for city in City.where(country="USA"):
 ```
 
