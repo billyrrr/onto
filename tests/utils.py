@@ -3,7 +3,7 @@ import warnings
 from google.cloud.firestore import CollectionReference
 
 
-def _delete_all(CTX, collection_name):
+def _delete_all(CTX, collection_name=None, subcollection_name=None):
     """ For testing purposes only. Use with caution. Never use in production.
             Protection against such use case may fail.
 
@@ -16,7 +16,11 @@ def _delete_all(CTX, collection_name):
         raise Exception("Firebase App Name is {}. "
                         "Only app name containing testing is supported"
                         .format(app_name))
-    event_collection: CollectionReference = CTX.db.collection(collection_name)
+    if collection_name is not None:
+        collection: CollectionReference = CTX.db.collection(collection_name)
+    elif subcollection_name is not None:
+        collection: CollectionReference = CTX.db.collection_group(
+            subcollection_name)
 
     warnings.warn("Deleting collection: {}, App Name: {}.".format(collection_name, app_name))
 
@@ -41,4 +45,4 @@ def _delete_all(CTX, collection_name):
         if deleted < batch_size and docs_count >= doc_limit:
             return delete_collection(coll_ref, batch_size)
 
-    delete_collection(event_collection, 100)
+    delete_collection(collection, 100)

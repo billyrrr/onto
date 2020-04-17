@@ -25,7 +25,6 @@ def CTX():
 
     return TST_CTX
 
-
 @pytest.fixture
 def setup_app(CTX):
 
