@@ -2,7 +2,9 @@ from marshmallow.utils import is_iterable_but_not_string
 from flask_boiler.helpers import EmbeddedElement
 from . import fields
 from . import errors
+from .business_property_store import SimpleStore
 from .model_registry import BaseRegisteredModel, ModelRegistry
+from .models.utils import _schema_cls_from_attributed_class, _collect_attrs
 
 
 class SchemedBase:
@@ -25,8 +27,8 @@ class Schemed(SchemedBase):
     _schema_obj = None
     _schema_cls = None
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
         # self._schema_obj = self._schema_cls()
 
     @classmethod
@@ -40,8 +42,9 @@ class Schemed(SchemedBase):
         """ Returns an instantiated object for Schema associated
                 with the model class
         """
-        if cls._schema_obj is None:
-            cls._schema_obj = cls._schema_cls()
+        # Use __dict__ to avoid reading from super class
+        if "_schema_obj" not in cls.__dict__:
+            cls._schema_obj = cls.get_schema_cls()()
         return cls._schema_obj
 
     @property
@@ -317,7 +320,6 @@ class NewMixin:
 
         # field_keys = {key for key, field in fd.items() }
 
-        _init_dict = dict()
         _with_dict = dict()
 
         for key, field in cls._get_fields().items():
@@ -325,33 +327,29 @@ class NewMixin:
                 continue
             if key in kwargs:
                 _with_dict[key] = kwargs[key]
-                _init_dict[key] = field.default_value
             else:
                 if field.required:
                     raise errors.DefaultNotAllowedError
-                _init_dict[key] = field.default_value
+                v = field.default_value
+                if v != fields.allow_missing:
+                    _with_dict[key] = v
 
         kwargs_keys = set(kwargs.keys())
         keys_super = kwargs_keys - set(_with_dict.keys())
 
         d_super = {key: kwargs[key] for key in keys_super}
 
-        return cls(_init_dict=_init_dict, _with_dict=_with_dict, **d_super)
+        return cls(_with_dict=_with_dict, **d_super)
 
-    def __init__(self, _init_dict=None, _with_dict=None, **kwargs):
+    def __init__(self, _with_dict=None, **kwargs):
         """ Private initializer; do not call directly.
             Use "YourModelClass.new(...)" instead.
 
         :param _with_dict:
         :param kwargs:
         """
-        if _init_dict is None:
-            _init_dict = dict()
         if _with_dict is None:
             _with_dict = dict()
-        for key, val in _init_dict.items():
-            if key not in dir(self):
-                setattr(self, key, val)
         # TODO: note that obj_type and other irrelevant fields are set; fix
         for key, val in _with_dict.items():
             setattr(self, key, val)
@@ -360,7 +358,6 @@ class NewMixin:
 
         super().__init__(**kwargs)
 
-
 class SerializableMeta(ModelRegistry):
     """
     Metaclass for serializable models.
@@ -368,6 +365,9 @@ class SerializableMeta(ModelRegistry):
 
     def __new__(mcs, name, bases, attrs):
         klass = super().__new__(mcs, name, bases, attrs)
+        attributed = _schema_cls_from_attributed_class(cls=klass)
+        if attributed is not None:
+            klass._schema_cls = attributed
         if hasattr(klass, "Meta"):
             # Moves Model.Meta.schema_cls to Model._schema_cls
             meta = klass.Meta
@@ -393,5 +393,12 @@ class Serializable(Mutable, metaclass=SerializableMeta):
     #     """
     #     schema_cls = None
 
-    pass
+    def _init__attrs(self):
+        self._attrs = SimpleStore()
+        for key, attr in _collect_attrs(cls=self.__class__):
+            if attr.initialize:
+                attr.initializer(self)
 
+    def __init__(self, *args, **kwargs):
+        self._init__attrs()
+        super().__init__(*args, **kwargs)

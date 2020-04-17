@@ -1,5 +1,6 @@
 from google.cloud.firestore_v1 import Transaction, Query
 
+from flask_boiler.collection_mixin import CollectionMixin
 from flask_boiler.firestore_object import FirestoreObject
 from flask_boiler.query_mixin import QueryMixin
 from flask_boiler.serializable import SerializableMeta
@@ -19,7 +20,8 @@ class PrimaryObjectMeta(SerializableMeta):
         return klass
 
 
-class PrimaryObject(FirestoreObject, QueryMixin, metaclass=PrimaryObjectMeta):
+class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
+                    metaclass=PrimaryObjectMeta):
     """
     Primary Object is placed in a collection in root directory only.
     the document will be stored in and accessed from
@@ -46,7 +48,7 @@ class PrimaryObject(FirestoreObject, QueryMixin, metaclass=PrimaryObjectMeta):
         :return:
         """
         d = dict()
-        if cls._schema_cls is None:
+        if super().get_schema_cls() is None:
             for child in cls._get_children():
                 for key, val in child.get_schema_obj().fields.items():
                     field_cls = val.__class__
@@ -58,7 +60,7 @@ class PrimaryObject(FirestoreObject, QueryMixin, metaclass=PrimaryObjectMeta):
             tmp_schema = Schema.from_dict(d)
             return tmp_schema
         else:
-            return cls._schema_cls
+            return super().get_schema_cls()
 
     def __init__(self, doc_id=None, doc_ref=None, **kwargs):
         if doc_ref is None:

@@ -5,7 +5,6 @@ from google.cloud.firestore import DocumentReference
 
 from flask_boiler.fields import StructuralRef
 from flask_boiler.schema import Schema
-from flask_boiler.serializable import Schemed
 from flask_boiler.snapshot_container import SnapshotContainer
 from flask_boiler.utils import snapshot_to_obj
 

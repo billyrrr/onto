@@ -1,11 +1,13 @@
-import pytest
-from flask_boiler.attributes import attribute
-from flask_boiler.attributes.attribute import PropertyAttribute, \
-    ForwardInnerAttribute, Attribute, AttributeBase
-from flask_boiler import models
-from flask_boiler.model_registry import ModelRegistry, BaseRegisteredModel
+from unittest import mock
 
-import typing
+import pytest
+from flask_boiler.attrs import attribute
+from flask_boiler.attrs.attribute import PropertyAttribute, \
+    ForwardInnerAttribute, Attribute, AttributeBase
+
+
+from flask_boiler.serializable import Serializable
+
 
 def test_binding():
     class A(object):
@@ -52,7 +54,10 @@ def test_forward_inner():
     assert b.i == a.i == 1
 
 
-class C(models.ModelBase):
+class C(Serializable):
+
+    class Meta:
+        pass
 
     i = PropertyAttribute()
 
@@ -62,3 +67,38 @@ def test_property_attribute():
     c = C()
     c.i = 2
     assert c.i == 2
+
+
+class D(Serializable):
+
+    class Meta:
+        pass
+
+    i = PropertyAttribute(initialize=True)
+
+    i.init(mock.Mock(return_value=None))
+
+
+def test_initializer():
+    d = D()
+    d.i = 2
+    assert d.i == 2
+    D.i.finit.assert_called_once()
+
+
+class E(Serializable):
+
+    class Meta:
+        pass
+
+    i = PropertyAttribute(initialize=False)
+
+    i.init(mock.Mock(return_value=None))
+
+
+def test_initializer_not_called():
+
+    e = E()
+    e.i = 2
+    assert e.i == 2
+    E.i.finit.assert_not_called()

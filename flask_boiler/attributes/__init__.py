@@ -1,1 +1,0 @@
-from .attribute import AttributeBase

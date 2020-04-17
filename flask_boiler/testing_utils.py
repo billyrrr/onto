@@ -1,5 +1,5 @@
 import time
-DEFAULT_WAIT_TIME = 1
+DEFAULT_WAIT_TIME = 2
 
 import logging
 root_log = logging.getLogger()

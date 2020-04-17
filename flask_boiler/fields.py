@@ -27,15 +27,19 @@ class Field(fields.Field):
     """
 
     def __init__(self,
-                 *args, missing=None, default=fields.missing_, **kwargs):
+                 *args, missing=None, default=fields.missing_,
+                 initialize=True, initialize_value=None,
+                 **kwargs):
         super().__init__(*args, missing=missing, default=default, **kwargs)
+        self.initialize_value = initialize_value
+        self.initialize = initialize
 
     @property
     def default_value(self):
-        """ The default value to assign to instance variable at
-                         initialization to auto initialize the object.
-        """
         return self.deserialize(fields.missing_)
+        # return self.initialize_value() \
+        #     if callable(self.initialize_value) \
+        #     else self.initialize_value
 
 
 class Boolean(fields.Bool, Field):
