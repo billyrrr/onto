@@ -31,9 +31,8 @@ class FirestoreObjectMixin:
         raise NotImplementedError
 
     @property
-    def doc_ref_str(self):
-        """
-        Used for serializing the object
+    def doc_ref_str(self) -> str:
+        """ Serializes to doc_ref field.
         """
         return self.doc_ref.path
 
@@ -43,8 +42,7 @@ class FirestoreObjectMixin:
 
         :param doc_ref:
         :param transaction:
-        :param kwargs:
-        :return:
+        :param kwargs: Keyword arguments to be forwarded to from_dict
         """
         if transaction is None:
             snapshot = doc_ref.get()
@@ -61,7 +59,6 @@ class FirestoreObjectMixin:
         """ Deserializes an object from a Document Snapshot.
 
         :param snapshot: Firestore Snapshot
-        :return:
         """
         obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
         return obj
@@ -73,7 +70,6 @@ class FirestoreObjectMixin:
         :param doc_ref: override save with this doc_ref
         :param save_rel: If true, objects nested in this
             object will be saved to the Firestore.
-        :return:
         """
         if doc_ref is None:
             doc_ref = self.doc_ref
@@ -86,11 +82,10 @@ class FirestoreObjectMixin:
             transaction.set(reference=doc_ref,
                             document_data=d)
 
-    def delete(self, transaction: Transaction = None):
+    def delete(self, transaction: Transaction = None) -> None:
         """ Deletes and object from Firestore.
 
-        :param transaction:
-        :return:
+        :param transaction: Firestore Transaction
         """
         if transaction is None:
             self.doc_ref.delete()
@@ -182,15 +177,20 @@ class FirestoreObjectValMixin:
                 val, to_get=to_get, transaction=transaction)
 
     @classmethod
-    def from_dict(cls, d, to_get=True, must_get=False, transaction=None, **kwargs):
+    def from_dict(
+            cls,
+            d,
+            to_get=True,
+            must_get=False,
+            transaction=None,
+            **kwargs):
         """ Deserializes an object from a dictionary.
 
         :param d: a dictionary representation of an object generated
             by `to_dict` method.
         :param transaction: Firestore transaction for retrieving
             related documents, and for saving this object.
-        :param kwargs:
-        :return:
+        :param kwargs: Keyword arguments to be forwarded to new
         """
 
         super_cls, obj_cls = cls, cls

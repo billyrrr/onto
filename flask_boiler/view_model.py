@@ -336,7 +336,7 @@ class ViewModelMixin:
 
     def bind_to(self, key, obj_type, doc_id):
         """ Binds to a domain model so that this view model changes
-                when such domain model changes.
+        when such domain model changes.
 
         :param key:
         :param obj_type:
@@ -357,12 +357,11 @@ class ViewModelMixin:
 
 
 class ViewModel(ViewModelMixin, ReferencedObject):
-    """
-    View model are generated and refreshed automatically
-            as domain model changes. Note that states stored in ViewModel
+    """ View model are generated and refreshed automatically as domain
+            model changes. Note that states stored in ViewModel
             are unreliable and should not be used to evaluate other states.
-    Note that since ViewModel is designed to store in a database that is not
-        strongly consistent, fields may be inconsistent.
+            Note that since ViewModel is designed to store in a database
+            that is not strongly consistent, fields may be inconsistent.
 
     """
 

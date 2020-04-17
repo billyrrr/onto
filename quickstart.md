@@ -63,17 +63,13 @@ app_name: "<Your Firebase App Name>"
 debug: True
 testing: True
 certificate_filename: "<File Name of Certificate JSON>"
-
 ```
 
 
 In ```__init__``` of your project source root: 
 ```python
-import os
+from flask_boiler.context import Context as CTX
 
-from flask_boiler import context
-
-CTX = context.Context
 CTX.load()
 ```
 
@@ -127,5 +123,6 @@ use the data viewer in the [Firebase console](https://console.firebase.google.co
 You can get all documents that is a subclass of City where country equals USA: 
 ```python
 for city in City.where(country="USA"):
+    ...
 ```
 

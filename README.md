@@ -102,11 +102,17 @@ by front end without aggregation.
 
 ```python
 
-def CityBase(DomainModel):
-    _collection_name = "cities"
-    
-class City(CityBase):
-    _schema_cls = CitySchema 
+from flask_boiler.domain_model import DomainModel
+from flask_boiler import attrs
+
+class City(DomainModel):
+
+    city_name = attrs.bproperty()
+    country = attrs.bproperty()
+    capital = attrs.bproperty()
+
+    class Meta:
+        collection_name = "City"
     
 City.new(
         doc_id='SF',
@@ -143,46 +149,6 @@ p.save()
 ```
 
 See ```examples/relationship_example.py```
-
-
-### Context Management
-In `__init__` of your project source root:
-```python
-import os
-
-from flask_boiler import context
-from flask_boiler import config
-
-Config = config.Config
-
-testing_config = Config(app_name="your_app_name",
-                        debug=True,
-                        testing=True,
-                        certificate_path=os.path.curdir + "/../your_project/config_jsons/your_certificate.json")
-
-CTX = context.Context
-CTX.read(testing_config)
-```
-
-Note that initializing `Config` with `certificate_path` is unstable and
-may be changed later.
-
-In your project code,
-
-```python
-from flask_boiler import context
-
-CTX = context.Context
-
-# Retrieves firestore database instance 
-CTX.db
-
-# Retrieves firebase app instance 
-CTX.firebase_app
-
-```
-
-
 
 ### Automatically Generated Swagger Docs
 You can enable auto-generated swagger docs. See: `examples/view_example.py`

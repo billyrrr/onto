@@ -33,11 +33,10 @@ class ViewMediatorDAV(ViewMediatorBase):
 
     @classmethod
     def notify(cls, obj):
-        """
-        Specifies what to do with the view model newly generated from an update.
+        """ Specifies what to do with the view model newly generated from
+                an update.
 
-        :param obj:
-        :return:
+        :param obj: view model newly generated
         """
         obj.save()
 
@@ -78,6 +77,7 @@ class ViewMediatorDAV(ViewMediatorBase):
     def start(self):
         """ Generates view models and listen to changes proposed to
                 the view model.
+
         """
         self.instances = self.generate_entries()
         # time.sleep(3)  # TODO: delete after implementing sync
@@ -117,7 +117,6 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
     def _get_on_snapshot(self):
         """
         Implement in subclass
-        :return:
         """
         def on_snapshot(snapshots, changes, timestamp):
             """
@@ -127,7 +126,6 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
             :param snapshots:
             :param changes:
             :param timestamp:
-            :return:
             """
             for change in changes:
                 snapshot = change.document
@@ -163,7 +161,6 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
     def start(self):
         """ Starts a listener to the query.
 
-        :return:
         """
 
         query, on_snapshot = self.query, self._get_on_snapshot()
@@ -179,37 +176,34 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
 class ProtocolBase:
     """ Protocol to specify actions when a document is 'ADDED', 'MODIFIED', and
             'REMOVED'.
+
     """
 
     @staticmethod
     def on_create(snapshot: DocumentSnapshot, mediator: ViewMediatorBase):
         """
-        Called when a document is 'ADDED' to the result of a query
+        Called when a document is 'ADDED' to the result of a query.
 
-        :param snapshot:
-        :param mediator:
-        :return:
+        :param snapshot: Firestore Snapshot added
+        :param mediator: ViewMediator object
         """
         pass
 
     @staticmethod
     def on_update(snapshot: DocumentSnapshot, mediator: ViewMediatorBase):
-        """
-        Called when a document is 'MODIFIED' in the result of a query
+        """ Called when a document is 'MODIFIED' in the result of a query.
 
-        :param snapshot:
-        :param mediator:
-        :return:
+        :param snapshot: Firestore Snapshot modified
+        :param mediator: ViewMediator object
         """
         pass
 
     @staticmethod
     def on_delete(snapshot: DocumentSnapshot, mediator: ViewMediatorBase):
-        """
-        Called when a document is 'REMOVED' in the result of a query
+        """ Called when a document is 'REMOVED' in the result of a query.
 
-        :param snapshot:
-        :param mediator:
+        :param snapshot: Firestore Snapshot deleted
+        :param mediator: ViewMediator object
         :return:
         """
         pass

@@ -14,9 +14,8 @@ class CollectionMixin:
     def collection_name(self):
         """ Returns the root collection name of the class of objects.
                 If cls._collection_name is not specified, then the collection
-                name will be inferred from the class name.
-
-        :return:
+                name will be inferred from the class name. Note that different
+                types of objects may share one collection.
         """
         # if type(self) == FirestoreObject:
         #     raise ValueError("collection_name is read from class name, "
@@ -32,8 +31,6 @@ class CollectionMixin:
     @property
     def collection(self):
         """ Returns the firestore collection of the current object
-
-        :return:
         """
         return self._get_collection()
 
@@ -46,6 +43,5 @@ class CollectionMixin:
         """ Returns a Document Reference from doc_id supplied.
 
         :param doc_id: Document ID
-        :return:
         """
         return cls._get_collection().document(document_id=doc_id)

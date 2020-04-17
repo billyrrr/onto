@@ -22,6 +22,13 @@ import logging
 
 
 class Context:
+    """ Context Singleton for Firestore, Firebase and Celery app.
+
+        Example:
+
+
+    """
+
     firebase_app: firebase_admin.App = None
     db: firestore.Client = None
     config: Config = None

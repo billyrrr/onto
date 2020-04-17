@@ -54,3 +54,19 @@ Query Delta View Mediator
    :inherited-members:
    :undoc-members:
    :show-inheritance:
+
+Context
+----------------------------
+
+.. autoclass:: flask_boiler.context.Context
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Auth
+-------------------------
+
+.. automodule:: flask_boiler.auth
+   :members:
+   :undoc-members:
+   :show-inheritance:

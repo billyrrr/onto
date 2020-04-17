@@ -130,7 +130,7 @@ class Importable:
     def update_vals(self,
                     with_dict: Optional[Dict] = None,
                     with_raw: Optional[Dict] = None,
-                    **kwargs):
+                    **kwargs) -> None:
         """ Update values of the object in batch.
 
         :param with_dict:  Update object with keys and values in the
@@ -138,7 +138,6 @@ class Importable:
         :param with_raw: Do field deserialization before setting
             value of attributes.
         :param kwargs:
-        :return:
         """
 
         if with_dict is None:
@@ -209,7 +208,6 @@ class Exportable:
                     a relationship field will be saved. Otherwise,
                     changes are not saved, and the
                     TODO: Add support for atomicity
-        :return:
         """
 
         def embed_element(val: EmbeddedElement):
@@ -236,8 +234,7 @@ class Exportable:
 
     def _export_as_dict(self, to_save=False, **kwargs) -> dict:
         """ Map/dict is only supported at root level for now
-        TODO: implement iterable support
-        :return:
+
         """
         d = self.schema_obj.dump(self)
 
@@ -275,11 +272,9 @@ class Exportable:
             return val
 
     def _export_as_view_dict(self) -> dict:
-        """
-        TODO: implement iterable support
-        :return:
-        """
+        """ Export as dictionary representable to front end.
 
+        """
         d = self.schema_obj.dump(self)
 
         res = dict()

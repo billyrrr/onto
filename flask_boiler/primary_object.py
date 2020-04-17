@@ -27,25 +27,16 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
     the document will be stored in and accessed from
             self.collection.document(doc_id)
 
-    Attributes
-    ----------
-    _collection_name : str
-        the name of the collection for the object. Note that different
-            types of objects may share one collection.
-
     """
 
-    # Abstract property: MUST OVERRIDE
-    # TODO: add abstract property decorator
     _collection_name = None
 
     @classmethod
     def get_schema_cls(cls):
-        """ Returns schema_cls or the union of all schemas
-                of subclasses. Should only be used on the root
-                DomainModel. Does not cache the result.
+        """ Returns schema_cls or the union of all schemas of subclasses.
+                Should only be used on the root DomainModel. Does not
+                cache the result.
 
-        :return:
         """
         d = dict()
         if super().get_schema_cls() is None:
@@ -69,17 +60,13 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
 
     @property
     def doc_id(self):
-        """
-
-        :return: Document ID
+        """ Returns Document ID
         """
         return self.doc_ref.id
 
     @property
     def doc_ref(self):
-        """
-
-        :return: Document Reference
+        """ Returns Document Reference
         """
         if self._doc_ref is None:
             self._doc_ref = self.collection.document(random_id())
@@ -89,10 +76,20 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
 
     @classmethod
     def new(cls, doc_id=None, doc_ref=None, **kwargs):
-        """
-        Creates an instance of object and assign a firestore
-            reference with random id to the instance.
-        :return:
+        """ Creates an instance of object and assign a firestore reference
+        with random id to the instance. This is similar to the use
+        of "new" in Java. It is recommended that you use "new" to
+        initialize an object, rather than the native initializer.
+        Values are initialized based on the order that they are
+        declared in the schema.
+
+        :param: doc_id: Document ID
+        :param: doc_ref: Document Reference
+        :param allow_default: if set to False, an error will be
+            raised if value is not provided for a field.
+        :param kwargs: keyword arguments to pass to the class
+            initializer.
+        :return: the instance created
         """
         if doc_ref is None:
             if doc_id is None:
@@ -110,7 +107,6 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
         :param doc_ref: DocumentReference
         :param doc_id: gets the instance from self.collection.document(doc_id)
         :param transaction: firestore transaction
-        :return:
         """
 
         if doc_ref_str is not None:
