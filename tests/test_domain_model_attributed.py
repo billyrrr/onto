@@ -52,6 +52,7 @@ def setup_cities(request, CTX):
     request.addfinalizer(fin)
 
     sf = StandardCityAt.new(doc_id="SF")
+
     sf.city_name, sf.city_state, sf.country, sf.capital, sf.regions = \
         'San Francisco', 'CA', 'USA', False, ['west_coast', 'norcal']
     sf.save()

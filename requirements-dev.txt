@@ -14,3 +14,4 @@ sphinx
 # See docs/conf.py
 m2r
 
+sphinx-rtd-theme

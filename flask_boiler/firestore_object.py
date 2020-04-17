@@ -26,8 +26,7 @@ class FirestoreObjectMixin:
 
     @property
     def doc_ref(self) -> DocumentReference:
-        """
-        Must be implemented in subclass
+        """ Returns the Document Reference of this object.
         """
         raise NotImplementedError
 
@@ -40,6 +39,13 @@ class FirestoreObjectMixin:
 
     @classmethod
     def get(cls, *, doc_ref=None, transaction=None, **kwargs):
+        """ Retrieves an object from Firestore
+
+        :param doc_ref:
+        :param transaction:
+        :param kwargs:
+        :return:
+        """
         if transaction is None:
             snapshot = doc_ref.get()
         else:
@@ -52,10 +58,23 @@ class FirestoreObjectMixin:
 
     @classmethod
     def from_snapshot(cls, snapshot=None):
+        """ Deserializes an object from a Document Snapshot.
+
+        :param snapshot: Firestore Snapshot
+        :return:
+        """
         obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
         return obj
 
     def save(self, transaction: Transaction = None, doc_ref=None, save_rel=True):
+        """ Save an object to Firestore
+
+        :param transaction: Firestore Transaction
+        :param doc_ref: override save with this doc_ref
+        :param save_rel: If true, objects nested in this
+            object will be saved to the Firestore.
+        :return:
+        """
         if doc_ref is None:
             doc_ref = self.doc_ref
 
@@ -68,6 +87,11 @@ class FirestoreObjectMixin:
                             document_data=d)
 
     def delete(self, transaction: Transaction = None):
+        """ Deletes and object from Firestore.
+
+        :param transaction:
+        :return:
+        """
         if transaction is None:
             self.doc_ref.delete()
         else:
@@ -159,13 +183,12 @@ class FirestoreObjectValMixin:
 
     @classmethod
     def from_dict(cls, d, to_get=True, must_get=False, transaction=None, **kwargs):
-        """
-        TODO: fix to_get not applying to new(**kwargs)
+        """ Deserializes an object from a dictionary.
 
-        TODO: watch out for the order of input
-
-        :param d:
-        :param to_get:
+        :param d: a dictionary representation of an object generated
+            by `to_dict` method.
+        :param transaction: Firestore transaction for retrieving
+            related documents, and for saving this object.
         :param kwargs:
         :return:
         """

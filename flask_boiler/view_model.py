@@ -17,7 +17,6 @@ from .utils import random_id, snapshot_to_obj
 
 
 class PersistableMixin:
-
     _struct_collection_id = "Persistable"
 
     def __init__(self, *args, struct_id=None, struct_d=None, **kwargs):
@@ -45,16 +44,7 @@ class PersistableMixin:
 
 
 class ViewModelMixin:
-    """ View model are generated and refreshed automatically
-            as domain model changes.
-
-    Note that states stored in ViewModel are unreliable and should
-        not be used to evaluate other states.
-
-    Note that since ViewModel is designed to store in a database that is not
-        strongly consistent, fields may be inconsistent.
-
-
+    """
     TODO: check if unsubscribe needs to be called on all on_update functions
             when deleting an instance.
     TODO: consider redundancy when ViewModel object becomes invalid in runtime
@@ -152,7 +142,7 @@ class ViewModelMixin:
         )
 
     def get_on_update(self,
-                  dm_cls=None, dm_doc_id=None, dm_doc_ref_str=None):
+                      dm_cls=None, dm_doc_id=None, dm_doc_ref_str=None):
         # do something with this ViewModel
 
         def _on_update(docs, changes, readtime):
@@ -163,18 +153,18 @@ class ViewModelMixin:
                 raise NotImplementedError
             doc = docs[0]
 
-            self.snapshot_container.set(to_ref(dm_cls, dm_doc_id), doc )
+            self.snapshot_container.set(to_ref(dm_cls, dm_doc_id), doc)
 
         return _on_update
 
     def propagate_change(self):
-        """
-        Save all objects mutated in a mutation
+        """ Save all objects mutated in a mutation
+
         :return:
         """
         raise NotImplementedError
 
-    def __subscribe_to(self, *, dm_cls,dm_doc_id):
+    def __subscribe_to(self, *, dm_cls, dm_doc_id):
         """
 
         :param dm_cls:
@@ -193,11 +183,12 @@ class ViewModelMixin:
             # doc_watch.unsubscribe()
         """
 
-        dm_ref: DocumentReference = dm_cls._get_collection().document(dm_doc_id)
+        dm_ref: DocumentReference = dm_cls._get_collection().document(
+            dm_doc_id)
         on_update = self.get_on_update(
             dm_cls=dm_cls, dm_doc_id=dm_doc_id,
             dm_doc_ref_str=dm_ref._document_path,
-            )
+        )
         # doc_watch = dm_ref.on_snapshot(on_update)
         self._on_update_funcs[dm_ref._document_path] = on_update
 
@@ -263,8 +254,7 @@ class ViewModelMixin:
                 self.success_condition.notify_all()
 
     def wait_for_first_success(self):
-        """
-        Blocks a thread until self.has_first_success is True.
+        """ Blocks a thread until self.has_first_success is True.
         :return:
         """
         with self.success_condition:
@@ -288,9 +278,7 @@ class ViewModelMixin:
 
     def listen(self):
         """ Listens to domain models binded to a view model in an async
-                operation.
-
-            Note that the domain models may not yet be retrieved
+                operation. Note that the domain models may not yet be retrieved
                 after this function returns.
         """
 
@@ -321,7 +309,8 @@ class ViewModelMixin:
                     vm_update_callback(vm=self, dm=b[k])
             else:
                 obj_type, doc_id = val
-                vm_update_callback = self.get_vm_update_callback(dm_cls=obj_type)
+                vm_update_callback = self.get_vm_update_callback(
+                    dm_cls=obj_type)
                 vm_update_callback(vm=self, dm=b)
 
     def _notify(self):
@@ -339,6 +328,7 @@ class ViewModelMixin:
     def get_vm_update_callback(self, dm_cls, *args, **kwargs) -> Callable:
         """ Returns a function for updating a view
         """
+
         def default_to_do_nothing(vm: ViewModel, dm: DomainModel):
             pass
 
@@ -367,6 +357,14 @@ class ViewModelMixin:
 
 
 class ViewModel(ViewModelMixin, ReferencedObject):
+    """
+    View model are generated and refreshed automatically
+            as domain model changes. Note that states stored in ViewModel
+            are unreliable and should not be used to evaluate other states.
+    Note that since ViewModel is designed to store in a database that is not
+        strongly consistent, fields may be inconsistent.
+
+    """
 
     def __init__(self, *args, doc_ref=None, **kwargs):
         super().__init__(*args, doc_ref=doc_ref, **kwargs)

@@ -43,4 +43,9 @@ class CollectionMixin:
 
     @classmethod
     def ref_from_id(cls, doc_id):
+        """ Returns a Document Reference from doc_id supplied.
+
+        :param doc_id: Document ID
+        :return:
+        """
         return cls._get_collection().document(document_id=doc_id)

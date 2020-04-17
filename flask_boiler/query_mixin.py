@@ -20,8 +20,9 @@ def is_fb_snapshot(snapshot: DocumentSnapshot):
 
 
 def convert_query_ref(func):
-    """ Converts a generator of firestore DocumentSnapshot's to a generator
-        of objects
+    """
+    Converts a generator of firestore DocumentSnapshot's to a generator
+            of objects.
 
     :param super_cls:
     :return:
@@ -39,7 +40,8 @@ def convert_query_ref(func):
 class QueryMixin:
     @classmethod
     def all(cls):
-        """ Generator for all objects in the collection
+        """ Gets object that is a subclass of the current cls in the
+                collection.
 
         :return:
         """
@@ -132,7 +134,8 @@ class QueryMixin:
     def get_query(cls):
         """
         Returns a query with parent=cls._get_collection(), and
-            limits to obj_type of subclass of cls.
+                limits to obj_type of subclass of cls.
+
         :return:
         """
         cur_where = Query(parent=cls._get_collection(),
@@ -154,8 +157,9 @@ class QueryMixin:
               start_after=None,
               start_at=None,
               **kwargs,):
-        """ Note that indexes may need to be added from the link provided
-                by firestore in the error messages
+        """
+        Queries the datastore. Note that indexes may need to be added
+                from the link provided by firestore in the error messages.
 
         TODO: add error handling and argument checking
         TODO: implement limit, orderby, etc.

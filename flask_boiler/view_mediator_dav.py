@@ -14,13 +14,11 @@ class ViewMediatorDAV(ViewMediatorBase):
     def __init__(self,
                  view_model_cls=None,
                  mutation_cls=None):
-        """
+        """ Initializes a Document View Mediator.
 
-        :param view_model_cls: the view model to be exposed in REST API
-        :param app: Flask App
+        :param view_model_cls: the view model to be exposed with Document.
         :param mutation_cls: a subclass of Mutation to handle the changes
-                POST, PATCH, UPDATE, PUT, DELETE made to the list of view
-                models or a single view model.
+                made to the list of view models or a single view model.
         """
         super().__init__()
         self.view_model_cls = view_model_cls
@@ -35,8 +33,8 @@ class ViewMediatorDAV(ViewMediatorBase):
 
     @classmethod
     def notify(cls, obj):
-        """ Specifies what to do with the view model newly generated
-                from an update.
+        """
+        Specifies what to do with the view model newly generated from an update.
 
         :param obj:
         :return:
@@ -92,6 +90,11 @@ class ViewMediatorDAV(ViewMediatorBase):
 class ViewMediatorDeltaDAV(ViewMediatorBase):
 
     def notify(self, obj):
+        """ Called when the object has state changes to be notified.
+
+        :param obj: the object with state change
+        :return:
+        """
         obj.save()
 
     def __init_subclass__(cls, **kwargs):
@@ -100,6 +103,14 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
             raise NotImplementedError
 
     def __init__(self, *args, query, **kwargs):
+        """ Initializes a ViewMediator to declare protocols that
+                are called when the results of a query change. Note that
+                mediator.start must be called later.
+
+        :param args:
+        :param query: a listener will be attached to this query
+        :param kwargs:
+        """
         super().__init__(*args, **kwargs)
         self.query = query
 
@@ -150,6 +161,10 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
         return on_snapshot
 
     def start(self):
+        """ Starts a listener to the query.
+
+        :return:
+        """
 
         query, on_snapshot = self.query, self._get_on_snapshot()
 
@@ -162,9 +177,8 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
 
 
 class ProtocolBase:
-    """
-    Protocol to specify actions when a document is 'ADDED', 'MODIFIED', and
-        'REMOVED'.
+    """ Protocol to specify actions when a document is 'ADDED', 'MODIFIED', and
+            'REMOVED'.
     """
 
     @staticmethod

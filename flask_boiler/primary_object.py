@@ -43,8 +43,8 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
     def get_schema_cls(cls):
         """ Returns schema_cls or the union of all schemas
                 of subclasses. Should only be used on the root
-                DomainModel.
-            Does not cache the result.
+                DomainModel. Does not cache the result.
+
         :return:
         """
         d = dict()
@@ -69,10 +69,18 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
 
     @property
     def doc_id(self):
+        """
+
+        :return: Document ID
+        """
         return self.doc_ref.id
 
     @property
     def doc_ref(self):
+        """
+
+        :return: Document Reference
+        """
         if self._doc_ref is None:
             self._doc_ref = self.collection.document(random_id())
         return self._doc_ref

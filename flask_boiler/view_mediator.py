@@ -37,9 +37,10 @@ class ViewMediator(ViewMediatorBase):
         self.default_tag = self.view_model_cls.__name__
 
     def add_instance_get(self, rule=None, instance_get_view=None):
-        """ Add GET operation for resource/instance_id
+        """
+        Add GET operation for resource/instance_id
 
-        :param rule:
+        :param rule: flask url rule
         :param instance_get_view: Flask View
         :return:
         """
@@ -58,9 +59,10 @@ class ViewMediator(ViewMediatorBase):
         self.rule_view_cls_mapping[(rule, 'GET')] = instance_get_view
 
     def add_list_get(self, rule=None, list_get_view=None):
-        """ Add GET operation for resource to get a list of instances
+        """
+        Add GET operation for resource to get a list of instances
 
-        :param rule:
+        :param rule: flask url rule
         :param list_get_view: Flask View
         :return:
         """
@@ -75,10 +77,11 @@ class ViewMediator(ViewMediatorBase):
         self.rule_view_cls_mapping[(rule, 'GET')] = list_get_view
 
     def add_list_post(self, rule=None, list_post_view=None):
-        """ Add POST operation for resource to add an instance to a list
+        """
+        Add POST operation for resource to add an instance to a list
                 of instances
 
-        :param rule:
+        :param rule: flask url rule
         :param list_post_view: Flask View
         :return:
         """
@@ -94,9 +97,10 @@ class ViewMediator(ViewMediatorBase):
         self.rule_view_cls_mapping[(rule, 'POST')] = list_post_view
 
     def add_instance_patch(self, rule=None, instance_patch_view=None):
-        """ Add PATCH operation for making changes to an instance
+        """
+        Add PATCH operation for making changes to an instance
 
-        :param rule:
+        :param rule: flask url rule
         :param instance_patch_view: Flask View
         :return:
         """

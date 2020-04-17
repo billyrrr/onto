@@ -1,3 +1,5 @@
+from typing import Optional, Dict, TypeVar, Type
+
 from marshmallow.utils import is_iterable_but_not_string
 from flask_boiler.helpers import EmbeddedElement
 from . import fields
@@ -29,7 +31,7 @@ class Schemed(SchemedBase):
 
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)
-        # self._schema_obj = self._schema_cls()
+    # self._schema_obj = self._schema_cls()
 
     @classmethod
     def get_schema_cls(cls):
@@ -125,14 +127,20 @@ class Importable:
         else:
             return val
 
-    def update_vals(self, with_dict=None, with_raw=None, **kwargs):
-        """
+    def update_vals(self,
+                    with_dict: Optional[Dict] = None,
+                    with_raw: Optional[Dict] = None,
+                    **kwargs):
+        """ Update values of the object in batch.
 
-        :param with_dict:
-        :param with_raw: Loads through the schema
+        :param with_dict:  Update object with keys and values in the
+            with_dict.
+        :param with_raw: Do field deserialization before setting
+            value of attributes.
         :param kwargs:
         :return:
         """
+
         if with_dict is None:
             with_dict = dict()
         if with_raw is not None:
@@ -146,18 +154,8 @@ class Importable:
             setattr(self, key, val)
 
     @classmethod
-    def from_dict(cls, d, to_get=True, must_get=False, transaction=None, **kwargs):
-        """
-        TODO: fix to_get not applying to new(**kwargs)
-
-        TODO: watch out for the order of input
-
-        :param d:
-        :param to_get:
-        :param kwargs:
-        :return:
-        """
-
+    def from_dict(cls, d, to_get=True, must_get=False, transaction=None,
+                  **kwargs):
         super_cls, obj_cls = cls, cls
 
         if "obj_type" in d:
@@ -303,17 +301,17 @@ class NewMixin:
     @classmethod
     def new(cls, allow_default=True, **kwargs):
         """ Instantiates a new instance to the model.
-                This is similar to the use of "new" in Java.
-                It is recommended that you use "new" to initialize
-                    an object, rather than the native initializer.
-            Values are initialized based on the order that they
-                are declared in the schema.
+
+        This is similar to the use of "new" in Java. It is recommended that
+        you use "new" to initialize an object, rather than the native
+        initializer. Values are initialized based on the order that they are
+        declared in the schema.
 
         :param allow_default: if set to False, an error will be
             raised if value is not provided for a field.
         :param kwargs: keyword arguments to pass to the class
             initializer.
-        :return:
+        :return: the instance created
         """
 
         fd = cls._get_fields()  # Calls classmethod
@@ -357,6 +355,7 @@ class NewMixin:
             #     setattr(self, key, val)
 
         super().__init__(**kwargs)
+
 
 class SerializableMeta(ModelRegistry):
     """
