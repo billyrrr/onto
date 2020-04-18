@@ -30,6 +30,10 @@ def pytest_sessionstart(session):
     _delete_all(CTX, "counters")
     _delete_all(CTX, "hellos")
 
+    _delete_all(CTX, subcollection_name="MeetingSessionDAV_PATCH")
+    _delete_all(CTX, subcollection_name="_PATCH_UserViewDAV")
+    _delete_all(CTX, subcollection_name="MeetingSessionDAV")
+
 
 def pytest_sessionfinish(session, exitstatus):
     from flask_boiler.context import Context as CTX
@@ -49,3 +53,7 @@ def pytest_sessionfinish(session, exitstatus):
         _delete_all(CTX, "categories")
         _delete_all(CTX, "counters")
         _delete_all(CTX, "hellos")
+
+        _delete_all(CTX, subcollection_name="MeetingSessionDAV_PATCH")
+        _delete_all(CTX, subcollection_name="_PATCH_UserViewDAV")
+        _delete_all(CTX, subcollection_name="MeetingSessionDAV")
