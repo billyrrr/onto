@@ -7,6 +7,7 @@ from . import errors
 from .business_property_store import SimpleStore
 from .model_registry import BaseRegisteredModel, ModelRegistry
 from .models.utils import _schema_cls_from_attributed_class, _collect_attrs
+from .schema import Schema
 
 
 class SchemedBase:
@@ -386,6 +387,8 @@ class Serializable(Mutable, metaclass=SerializableMeta):
     #     Options object for a Serializable model.
     #     """
     #     schema_cls = None
+
+    _schema_base = Schema
 
     def _init__attrs(self):
         self._attrs = SimpleStore()

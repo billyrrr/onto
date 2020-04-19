@@ -1,54 +1,40 @@
-from collections import defaultdict
-
-from flask_boiler.attrs.attribute import RelationshipAttribute, _NA
+from collections import defaultdict, UserDict
 from typing import Tuple
 
-from google.cloud.firestore import DocumentReference
+from google.cloud.firestore_v1 import DocumentSnapshot
 
-from flask_boiler.fields import StructuralRef
-from flask_boiler.schema import SchemaBase
+from flask_boiler.business_property_store import BPSchema, to_ref
+from flask_boiler.attrs.attribute import ReferenceAttribute
+from flask_boiler.serializable import Serializable
+from flask_boiler.snapshot_container import SnapshotContainer
+from flask_boiler.struct import Struct
 from flask_boiler.utils import snapshot_to_obj
 
 
-def to_ref(dm_cls, dm_doc_id):
-    """
-    TODO: check doc_ref._document_path alternatives that are compatible
-        with firestore listeners
-
-    :param val:
-    :return:
-    """
-    doc_ref: DocumentReference = dm_cls._get_collection().document(dm_doc_id)
-    return doc_ref._document_path
+reference = ReferenceAttribute
 
 
-class BPSchema(SchemaBase):
+class Store(Serializable):
 
-    @classmethod
-    def from_dict(cls, fields, name):
-        for _, val in fields.items():
-            if not issubclass(val.__class__, StructuralRef):
-                raise TypeError
-        return super().from_dict(fields=fields, name=name)
-
-    @property
-    def structural_ref_fields(self):
-        return [fd for _, fd in self.fields.items() if isinstance(fd, StructuralRef)]
-
-
-class BusinessPropertyStore:
+    _schema_base = BPSchema
 
     @classmethod
     def from_snapshot_struct(cls, snapshot_struct, **kwargs):
         struct, container = snapshot_struct.to_struct_and_container()
-        store = BusinessPropertyStore(struct=struct,
-                                      snapshot_container=container,
-                                      **kwargs
-                                      )
-        store.refresh()
+        store = cls(**kwargs)
+        store.struct = struct
+        store._container = container
         return store
 
-    def __init__(self, struct, snapshot_container, obj_options=None):
+    def add_snapshot(self, key, dm_cls, snapshot: DocumentSnapshot):
+        struct_sub, container = self.struct, self._container
+        if "." in "key":
+            parent_name, key = key.split(".")
+            struct_sub = struct_sub[parent_name]
+        struct_sub[key] = (dm_cls, snapshot.reference.id)
+        container.set(snapshot.reference._document_path, snapshot)
+
+    def __init__(self, obj_options=None):
         """
 
         :param struct:
@@ -60,12 +46,25 @@ class BusinessPropertyStore:
         if obj_options is None:
             obj_options = dict()
         self._obj_options = obj_options
-        self._container = snapshot_container
-        self.struct = struct
-        self.schema_obj = struct.schema_obj
-        self._g, self._gr, self._manifest = \
-            self._get_manifests(self.struct, self.schema_obj)
+        self._container = SnapshotContainer()
+        self.struct = Struct(schema_obj=self.schema_obj)
+        # self._info = self._get_manifests(self.struct, self.schema_obj)
         self.objs = dict()
+
+    @property
+    def _g(self):
+        self._info = self._get_manifests(self.struct, self.schema_obj)
+        return self._info[0]
+
+    @property
+    def _gr(self):
+        self._info = self._get_manifests(self.struct, self.schema_obj)
+        return self._info[1]
+
+    @property
+    def _manifest(self):
+        self._info = self._get_manifests(self.struct, self.schema_obj)
+        return self._info[2]
 
     @property
     def bprefs(self):
@@ -122,9 +121,3 @@ class BusinessPropertyStore:
 
         return dict(g), dict(gr), manifest
 
-
-class SimpleStore:
-    """
-    To store simple business properties
-    """
-    pass

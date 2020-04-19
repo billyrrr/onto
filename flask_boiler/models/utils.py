@@ -19,7 +19,8 @@ def _schema_cls_from_attributed_class(cls):
         d[key] = field
     if len(d) == 0:
         return None
-    tmp_schema = Schema.from_dict(d, name=_make_schema_name(cls))
+    schema_base = cls._schema_base
+    tmp_schema = schema_base.from_dict(d, name=_make_schema_name(cls))
     return tmp_schema
 
 

@@ -22,37 +22,7 @@ from .fixtures import *
 
 from .utils import _delete_all
 
-
-class CitySchema(Schema):
-    city_name = fields.Raw()
-
-    country = fields.Raw()
-    capital = fields.Raw()
-
-
-class MunicipalitySchema(CitySchema):
-    pass
-
-
-class StandardCitySchema(CitySchema):
-    city_state = fields.Raw()
-    regions = fields.Raw(many=True)
-
-
-class City(DomainModel):
-    class Meta:
-        schema_cls = CitySchema
-        collection_name = "City"
-
-
-class Municipality(City):
-    class Meta:
-        schema_cls = MunicipalitySchema
-
-
-class StandardCity(City):
-    class Meta:
-        schema_cls = StandardCitySchema
+from examples.city.models import City, Municipality, StandardCity
 
 
 @pytest.fixture

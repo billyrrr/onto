@@ -361,6 +361,26 @@ class RelationshipAttribute(PropertyAttribute):
         self._field_kwargs["many"] = self.many
 
 
+class ReferenceAttribute(PropertyAttribute):
+
+    field_cls = fields.StructuralRef
+
+    def __init__(self, many=_NA, dm_cls=_NA, **kwargs):
+        super().__init__(
+            **kwargs
+        )
+
+        if many == _NA:
+            many = False
+        self.many = many
+        self._field_kwargs["many"] = self.many
+
+        if dm_cls == _NA:
+            dm_cls = None
+        self.dm_cls = dm_cls
+        self._field_kwargs["dm_cls"] = self.dm_cls
+
+
 class Attribute(AttributeBase):
 
     def __init__(

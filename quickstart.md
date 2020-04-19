@@ -52,7 +52,18 @@ In your project directory,
 
 ```pip install -r requirements.txt```
 
-### Initialize
+## Create a Document As View
+
+In this example, we will build a mediator that forwards domain 
+models (eg. ```City/TOK```) to view models (eg. ```cityView/TOK```). 
+Both data models are stored in a NoSQL datastore, but only the 
+view model is intended to be shown to the user. This example 
+is similar to a stream converter, but you may build something 
+more advanced by leveraging ViewModel.store to query multiple 
+domain models across the datastore. The example is located in 
+```examples/city```
+
+### Configure Project
 
 Provide authentication credentials to flask-boiler by moving the json certificate file 
 to your project directory and specify the path in ```boiler.yaml``` 
@@ -73,7 +84,7 @@ from flask_boiler.context import Context as CTX
 CTX.load()
 ```
 
-## Declare a Domain Model
+### Declare a Domain Model
 
 In ```models.py```, create a model, 
 
@@ -95,34 +106,132 @@ Create Attribute objects for your domain model.
 These will be converted to a Marshmallow Schema 
 for serialization and deserialization. 
 
-Now, you can create the object and assign values to it 
-
 ```python
-# Creates an object with reference: "City/SF" 
-#   (but not saved to database)
-sf = City.new(
-    doc_id="SF", 
-    city_name='San Francisco', 
-    city_state ='CA', 
-    country='USA', 
-    regions=['west_coast', 'norcal']
-)        
+class Municipality(City):
+    pass
 
-# Assigns value to the newly created object 
-sf.capital = False
 
-# Saves to firestore "City/SF" 
-sf.save()
+class StandardCity(City):
+    city_state = attrs.bproperty()
+    regions = attrs.bproperty()
 ```
 
-### Read data
+You can create subclasses of ```City```. By default, 
+they will be stored in the same collection as ```City```. 
+Running a query on ```City.where``` will 
+query all objects that are of subclass of ```City```: 
+```City, Municipality, StandardCity```. A query on 
+```Municipality.where``` will query all objects of 
+subclass of ```Municipality```: ```Municipality```. 
 
-To quickly verify that you've added data to Cloud Firestore, 
-use the data viewer in the [Firebase console](https://console.firebase.google.com/project/_/database/firestore/data).
+### Declare View Model
 
-You can get all documents that is a subclass of City where country equals USA: 
+Declare a subclass of `Store` first. This object helps you reference 
+domain models by calling `self.store.<domain_model_name>`. In this example, 
+you should initialize the store with a snapshot you may receive from 
+the View Mediator. 
+
 ```python
-for city in City.where(country="USA"):
-    ...
+from flask_boiler.context import Context as CTX
+from flask_boiler.view_model import ViewModel
+from flask_boiler.store import Store, reference
+from flask_boiler import attrs
+
+
+class CityStore(Store):
+    city = reference(many=False)
 ```
 
+Next, declare a View Model. A View Model has attributes that converts 
+inner data models to presentable data models for front end. The 
+`doc_ref` attribute chooses where the view model will save to. 
+
+```python
+class CityView(ViewModel):
+
+    name = attrs.bproperty()
+    country = attrs.bproperty()
+
+    @classmethod
+    def new(cls, snapshot):
+        store = CityStore()
+        store.add_snapshot("city", dm_cls=City, snapshot=snapshot)
+        store.refresh()
+        return cls(store=store)
+
+    @name.getter
+    def name(self):
+        return self.store.city.city_name
+
+    @country.getter
+    def country(self):
+        return self.store.city.country
+
+    @property
+    def doc_ref(self):
+        return CTX.db.document(f"cityView/{self.store.city.doc_id}")
+```
+
+### Declare Mediator Class
+
+```Protocol.on_create``` will be called every time a new document (domain
+model) is created in the ```City/``` collection. When you start the server,
+ ```on_create``` will be invoked once for all existing documents. 
+
+```python
+from google.cloud.firestore import DocumentSnapshot
+
+from examples.city.views import CityView
+from flask_boiler.view_mediator import ViewMediatorBase
+from flask_boiler.view_mediator_dav import ViewMediatorDeltaDAV, ProtocolBase
+
+
+class CityViewMediator(ViewMediatorDeltaDAV):
+
+    def notify(self, obj):
+        obj.save()
+
+    class Protocol(ProtocolBase):
+
+        @staticmethod
+        def on_create(snapshot: DocumentSnapshot, mediator: ViewMediatorBase):
+            view = CityView.new(snapshot=snapshot)
+            mediator.notify(obj=view)
+```
+
+### Add Entrypoint 
+
+In ```main.py```, 
+
+```python
+
+from .mediators import CityViewMediator
+from .models import City
+
+city_view_mediator = CityViewMediator(
+    query=City.get_query()
+)
+
+if __name__ == "__main__":
+    city_view_mediator.start()
+
+```
+
+Now, when you create a domain model in ```City/TOK```, 
+
+```python
+obj = Municipality.new(
+        doc_id="TOK", city_name='Tokyo', country='Japan', capital=True)
+obj.save()
+```
+
+The framework will generate a view document in ```cityView/TOK```, 
+
+```python
+{
+    'doc_ref': 'cityView/TOK',
+    'obj_type': 'CityView',
+    'country': 'Japan',
+    'name': 'Tokyo'
+}
+```

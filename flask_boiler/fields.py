@@ -208,7 +208,7 @@ class Relationship(fields.Str, Field):
 class StructuralRef(fields.Str, Field):
 
     def __init__(self, *args, missing=_MissingNotSpecified,
-                 many=False, dm_cls, **kwargs):
+                 many=False, dm_cls=None, **kwargs):
         """ Initializes a relationship. A field of the master object
                 to describe relationship to another object or document
                 being referenced.
