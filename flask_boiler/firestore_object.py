@@ -16,9 +16,9 @@ from flask_boiler.utils import snapshot_to_obj
 class FirestoreObjectMixin:
 
     def __init__(self, *args, doc_ref=None, transaction=None, **kwargs):
-        super().__init__(*args, **kwargs)
         self._doc_ref = doc_ref
         self.transaction = transaction
+        super().__init__(*args, **kwargs)
 
     def get_firestore_ref(self):
         warnings.warn("Please use .doc_ref instead. ", DeprecationWarning)

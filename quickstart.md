@@ -132,12 +132,6 @@ you should initialize the store with a snapshot you may receive from
 the View Mediator. 
 
 ```python
-from flask_boiler.context import Context as CTX
-from flask_boiler.view_model import ViewModel
-from flask_boiler.store import Store, reference
-from flask_boiler import attrs
-
-
 class CityStore(Store):
     city = reference(many=False)
 ```
@@ -179,13 +173,6 @@ model) is created in the ```City/``` collection. When you start the server,
  ```on_create``` will be invoked once for all existing documents. 
 
 ```python
-from google.cloud.firestore import DocumentSnapshot
-
-from examples.city.views import CityView
-from flask_boiler.view_mediator import ViewMediatorBase
-from flask_boiler.view_mediator_dav import ViewMediatorDeltaDAV, ProtocolBase
-
-
 class CityViewMediator(ViewMediatorDeltaDAV):
 
     def notify(self, obj):
@@ -204,20 +191,15 @@ class CityViewMediator(ViewMediatorDeltaDAV):
 In ```main.py```, 
 
 ```python
-
-from .mediators import CityViewMediator
-from .models import City
-
 city_view_mediator = CityViewMediator(
     query=City.get_query()
 )
 
 if __name__ == "__main__":
     city_view_mediator.start()
-
 ```
 
-Now, when you create a domain model in ```City/TOK```, 
+When you create a domain model in ```City/TOK```, 
 
 ```python
 obj = Municipality.new(
@@ -235,3 +217,130 @@ The framework will generate a view document in ```cityView/TOK```,
     'name': 'Tokyo'
 }
 ```
+
+Now, you have the basic app set up. 
+
+## Create a form service 
+
+In this example, the user can post a form to 
+```/users/<user_id>/cityForms/<city_id>``` and create a new city. 
+
+### Create Form Class
+
+Declare a ```CityForm``` used for user to create a new city. 
+
+The function decorated with ```city.init``` will be called to 
+initialize ```city``` attribute to a blank ```City``` Domain Model 
+in the default location for property reads: ```obj._attrs```. 
+The fields of the blank Domain Model are set through the property 
+setters. ```propagate_change``` will be called by the mediator 
+to save the newly created city Domain Model to datastore. 
+
+```python
+class CityForm(ViewModel):
+
+    name = attrs.bproperty()
+    country = attrs.bproperty()
+    city_id = attrs.bproperty()
+
+    city = attrs.bproperty(initialize=True)
+
+    @city.init
+    def city(self):
+        self._attrs.city = City.new(doc_id=self.doc_ref.id)
+
+    @name.setter
+    def name(self, val):
+        self.city.city_name = val
+
+    @country.setter
+    def country(self, val):
+        self.city.country = val
+
+    def propagate_change(self):
+        self.city.save()
+```
+
+### Declare Form Mediator 
+
+```python
+class CityFormMediator(ViewMediatorDeltaDAV):
+
+    def notify(self, obj):
+        obj.propagate_change()
+
+    class Protocol(ProtocolBase):
+
+        @staticmethod
+        def on_create(snapshot: DocumentSnapshot, mediator: ViewMediatorBase):
+            obj = CityForm.new(doc_ref=snapshot.reference)
+            obj.update_vals(with_raw=snapshot.to_dict())
+            mediator.notify(obj=obj)
+```
+
+### Add Security Rule
+
+In your Firestore console, add the following security rule:  
+
+```
+    match /users/{userId}/{documents=**} {
+      allow read, write: if request.auth.uid == userId
+    }
+```
+
+This restricts the ability to post a city to only registered users. 
+
+### Add Service
+
+Now, your ```main.py``` should be, 
+
+```python
+city_view_mediator = CityViewMediator(
+    query=City.get_query()
+)
+
+city_form_mediator = CityFormMediator(
+    query=CTX.db.collection_group("cityForms")
+)
+
+if __name__ == "__main__":
+    city_view_mediator.start()
+    city_form_mediator.start()
+```
+
+When the user creates a document in ```users/uid1/cityForms/LA```, 
+
+```python
+{
+    'country': 'USA',
+    'name': 'Los Angeles'
+}
+```
+
+you should be able to receive the domain model in ```City/LA```, 
+
+```python
+{
+    'cityName': 'Los Angeles',
+    'country': 'USA',
+    'doc_id': 'LA',
+    'doc_ref': 'City/LA',
+    'obj_type': 'City'
+}
+```
+
+and the view model in ```cityView/LA```, 
+
+```python
+
+{
+    'name': 'Los Angeles',
+    'country': 'USA',
+    'doc_ref': 'cityView/LA',
+    'obj_type': 'CityView',
+}
+```
+
+This completes the setup for a simple CQRS read model / form set up for 
+flask-boiler. The user may create new cities by posting a collection 
+they own, and view cities by reading ```cityView```. 

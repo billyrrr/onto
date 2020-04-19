@@ -41,6 +41,51 @@ def test_view_mediator(tok_snapshot):
     }
 
 
+@pytest.fixture
+def user_form(request):
+    doc_ref = CTX.db.document("users/uid1/cityForms/LA")
+
+    def fin():
+        _delete_all(subcollection_name="cityForms", CTX=CTX)
+        _delete_all(collection_name="City", CTX=CTX)
+
+    request.addfinalizer(fin)
+
+    doc_ref.create(
+        dict(
+            name='Los Angeles',
+            country='USA'
+        )
+    )
+
+
+def test_form_mediator(user_form):
+
+    from .main import city_form_mediator
+    city_form_mediator.start()
+    _wait()
+    res = CTX.db.document("City/LA").get().to_dict()
+
+    assert res == {
+        'cityName': 'Los Angeles',
+        'country': 'USA',
+        'doc_id': 'LA',
+        'doc_ref': 'City/LA',
+        'obj_type': 'City'
+    }
+
+    from .main import city_view_mediator
+    city_view_mediator.start()
+    _wait()
+    res = CTX.db.document("cityView/LA").get().to_dict()
+    assert res == {
+        'name': 'Los Angeles',
+        'country': 'USA',
+        'doc_ref': 'cityView/LA',
+        'obj_type': 'CityView',
+    }
+
+
 """
 Recipe for metaclass __prepare__ 
 Plan to use this recipe to pull Attribute objects declared in superclass 
