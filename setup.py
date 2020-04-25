@@ -31,7 +31,7 @@ setuptools.setup(
     ],
     install_requires=[
         'Flask>=0.10',
-        'google-auth==1.5.1',
+        'google-auth',
         'google-cloud-datastore>=1.4.0',
         'google-api-python-client',
         'firebase-admin',
