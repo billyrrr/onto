@@ -9,6 +9,7 @@ import pytest as pytest
 from functools import lru_cache
 
 import flask_boiler.factory
+import flask_boiler.models.base
 from flask_boiler import serializable
 from flask_boiler import view_model, schema, fields
 
@@ -25,7 +26,7 @@ def ModelASchema():
 @lru_cache(maxsize=1)
 def ModelA(ModelASchema):
 
-    class ModelA(serializable.Serializable):
+    class ModelA(flask_boiler.models.base.Serializable):
         _schema_cls = ModelASchema
 
     return ModelA
@@ -37,7 +38,7 @@ def test_create_model():
         int_a = fields.Integer(load_from="intA", dump_to="intA")
         int_b = fields.Integer(load_from="intB", dump_to="intB")
 
-    class ModelK(serializable.Serializable):
+    class ModelK(flask_boiler.models.base.Serializable):
         class Meta:
             schema_cls = ModelKSchema
 
@@ -120,7 +121,7 @@ def test_property_fields():
 
     sp = property(fget=fget)
 
-    class ModelAP(serializable.Serializable):
+    class ModelAP(flask_boiler.models.base.Serializable):
         _schema_cls = ModelAPSchema
 
     ModelAP.some_property = sp
@@ -192,7 +193,7 @@ def test_separate_class():
         int_a = schema.fields.Integer(load_from="intA", dump_to="intA")
         int_b = schema.fields.Integer(load_from="intB", dump_to="intB")
 
-    class SModelASerializable(serializable.Serializable):
+    class SModelASerializable(flask_boiler.models.base.Serializable):
         _schema_cls = SModelASchema
 
         def __init__(self, **kwargs):
@@ -226,7 +227,7 @@ def test_embedded():
         earliest = fields.Raw()
         latest = fields.Raw()
 
-    class Target(serializable.Serializable):
+    class Target(flask_boiler.models.base.Serializable):
         _schema_cls = TargetSchema
 
     t = Target()
@@ -237,7 +238,7 @@ def test_embedded():
         target = fields.Embedded()
         name = fields.Str()
 
-    class Plan(serializable.Serializable):
+    class Plan(flask_boiler.models.base.Serializable):
         _schema_cls = PlanSchema
 
     k = Plan.from_dict({
@@ -268,19 +269,19 @@ def test_embedded_many_with_dict():
         habitats = fields.Embedded(many=True)
         related_species = fields.Embedded(many=True)
 
-    class Species(serializable.Serializable):
+    class Species(flask_boiler.models.base.Serializable):
         _schema_cls = SpeciesSchema
 
     class EndangeredSpeciesSchema(SpeciesSchema):
         pass
 
-    class EndangeredSpecies(serializable.Serializable):
+    class EndangeredSpecies(flask_boiler.models.base.Serializable):
         _schema_cls = EndangeredSpeciesSchema
 
     class HabitatSchema(schema.Schema):
         habitat_name = fields.Str()
 
-    class Habitat(serializable.Serializable):
+    class Habitat(flask_boiler.models.base.Serializable):
         _schema_cls = HabitatSchema
 
     forests = Habitat.new(habitat_name="Forests")

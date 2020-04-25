@@ -1,7 +1,6 @@
 from typing import Iterable, Tuple
 
 from flask_boiler.attrs import AttributeBase
-from flask_boiler.schema import Schema
 
 
 def _make_schema_name(cls):

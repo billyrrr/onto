@@ -3,7 +3,7 @@ from google.cloud.firestore_v1 import Transaction
 from flask_boiler.collection_mixin import CollectionMixin
 from flask_boiler.firestore_object import FirestoreObject
 from flask_boiler.query.query_mixin import QueryMixin
-from flask_boiler.serializable import SerializableMeta
+from flask_boiler.models.meta import SerializableMeta
 from flask_boiler.utils import random_id, doc_ref_from_str
 
 from flask_boiler.schema import Schema

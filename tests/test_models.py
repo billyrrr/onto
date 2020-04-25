@@ -5,7 +5,7 @@ import pytest
 import flask_boiler.models.utils
 from flask_boiler import schema
 from flask_boiler.attrs import attribute
-from flask_boiler.serializable import Serializable
+from flask_boiler.models.base import Serializable
 
 
 class G(Serializable):

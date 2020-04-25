@@ -1,7 +1,6 @@
-"""
-Ref: https://github.com/faif/python-patterns/blob/master/patterns/behavioral/registry__py3.py
-"""
 from collections import defaultdict
+
+from flask_boiler.models.utils import _schema_cls_from_attributed_class
 
 
 class ModelRegistry(type):
@@ -61,28 +60,19 @@ class ModelRegistry(type):
             return None
 
 
-class BaseRegisteredModel(metaclass=ModelRegistry):
+class SerializableMeta(ModelRegistry):
+    """
+    Metaclass for serializable models.
+    """
 
-    @classmethod
-    def _get_children(cls):
-        return {cls.get_cls_from_name(c_str)
-                for c_str in cls._get_children_str(cls.__name__)}
-
-    @classmethod
-    def _get_subclasses(cls):
-        res = {cls, }
-        children = cls._get_children()
-        for child in children:
-            res |= child._get_subclasses()
-        return res
-
-    @classmethod
-    def _get_subclasses_str(cls):
-        return list(
-            sorted(_cls.__name__ for _cls in cls._get_subclasses())
-        )
-
-    @classmethod
-    def _get_parents(cls):
-        return {cls.get_cls_from_name(c_str)
-                for c_str in cls._get_parents_str(cls.__name__)}
+    def __new__(mcs, name, bases, attrs):
+        klass = super().__new__(mcs, name, bases, attrs)
+        attributed = _schema_cls_from_attributed_class(cls=klass)
+        if attributed is not None:
+            klass._schema_cls = attributed
+        if hasattr(klass, "Meta"):
+            # Moves Model.Meta.schema_cls to Model._schema_cls
+            meta = klass.Meta
+            if hasattr(meta, "schema_cls"):
+                klass._schema_cls = meta.schema_cls
+        return klass

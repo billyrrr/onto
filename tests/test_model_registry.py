@@ -1,7 +1,7 @@
-from flask_boiler import model_registry
+import flask_boiler.models.base
 
 
-class RModelSup(model_registry.BaseRegisteredModel):
+class RModelSup(flask_boiler.models.base.BaseRegisteredModel):
     pass
 
 
@@ -42,7 +42,7 @@ def test_get_subclasses_str():
 
 def test_register_subclass():
 
-    class CModelParent(model_registry.BaseRegisteredModel):
+    class CModelParent(flask_boiler.models.base.BaseRegisteredModel):
         pass
 
     class CModelChild(CModelParent):

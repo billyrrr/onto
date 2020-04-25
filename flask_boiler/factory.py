@@ -1,9 +1,7 @@
 from typing import TypeVar, Type, Union
 
-from flask_boiler.model_registry import BaseRegisteredModel
-from flask_boiler.serializable import Schemed, NewMixin, \
-    Importable, Exportable, Serializable
-
+from flask_boiler.models.base import BaseRegisteredModel, Serializable, Schemed
+from flask_boiler.models.mixin import Importable, Exportable, NewMixin
 
 T = TypeVar('T')
 U = TypeVar('U')

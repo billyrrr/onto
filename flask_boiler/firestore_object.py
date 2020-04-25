@@ -7,8 +7,8 @@ from flask_boiler import fields
 from flask_boiler.helpers import RelationshipReference, EmbeddedElement
 # from flask_boiler.view_model import ViewModel
 from flask_boiler.collection_mixin import CollectionMixin
-from flask_boiler.model_registry import ModelRegistry
-from flask_boiler.serializable import Serializable
+from flask_boiler.models.meta import ModelRegistry
+from flask_boiler.models.base import Serializable
 from flask_boiler.factory import ClsFactory
 from flask_boiler.utils import snapshot_to_obj
 

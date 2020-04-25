@@ -1,5 +1,5 @@
-from flask_boiler.serializable import BaseRegisteredModel, Schemed, \
-    Importable, NewMixin, Exportable
+from flask_boiler.models.mixin import Importable, Exportable, NewMixin
+from flask_boiler.models.base import BaseRegisteredModel, Schemed
 from flask_boiler.view_model import ViewModel, ViewModelMixin
 
 

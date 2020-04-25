@@ -7,7 +7,7 @@ import flask_boiler.utils
 from flask_boiler import schema, fields
 from flask_boiler.errors import PropertyEvalError
 from flask_boiler.schema import Schema, BoilerProperty
-from flask_boiler.serializable import Serializable
+from flask_boiler.models.base import Serializable
 
 
 def test__get_instance_vars():

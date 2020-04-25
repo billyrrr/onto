@@ -1,10 +1,8 @@
 import typing
-from functools import partial
 
 from flask_boiler import fields
-from typing import Type, Generic, TypeVar, Optional, Callable
+from typing import Type, Callable
 
-from flask_boiler.model_registry import ModelRegistry, BaseRegisteredModel
 
 _ATTRIBUTE_STORE_NAME = "_attrs"
 

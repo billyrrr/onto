@@ -5,7 +5,7 @@ from google.cloud.firestore_v1 import DocumentSnapshot
 
 from flask_boiler.business_property_store import BPSchema, to_ref
 from flask_boiler.attrs.attribute import ReferenceAttribute
-from flask_boiler.serializable import Serializable
+from flask_boiler.models.base import Serializable
 from flask_boiler.snapshot_container import SnapshotContainer
 from flask_boiler.struct import Struct
 from flask_boiler.utils import snapshot_to_obj
