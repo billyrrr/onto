@@ -22,7 +22,7 @@ def v_cls(CTX):
         rainbow_name = fields.Raw(dump_only=True)
         colors = fields.Raw(dump_only=True)
 
-    class RainbowView(view.FlaskAsView):
+    class RainbowView(view_model.ViewModel):
 
         _schema_cls = RainbowSchema
 

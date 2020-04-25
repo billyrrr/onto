@@ -7,7 +7,6 @@ from flask_boiler import fields, schema, view_model, view
 from flask_boiler.business_property_store import BPSchema
 from flask_boiler.mutation import Mutation, PatchMutation
 from flask_boiler.struct import Struct
-from flask_boiler.view import DocumentAsView
 from flask_boiler.view_model import ViewModelMixin
 
 
@@ -149,7 +148,7 @@ class MeetingSessionMixin:
         self.store.propagate_back()
 
 
-class MeetingSession(MeetingSessionMixin, view.FlaskAsView):
+class MeetingSession(MeetingSessionMixin, view_model.ViewModel):
     pass
 
 

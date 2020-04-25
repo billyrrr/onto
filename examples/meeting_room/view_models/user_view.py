@@ -66,5 +66,5 @@ class UserViewMixin:
         return super().get(struct_d=struct, once=once, **kwargs)
 
 
-class UserView(UserViewMixin, view.FlaskAsView):
+class UserView(UserViewMixin, view_model.ViewModel):
     pass

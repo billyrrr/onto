@@ -8,7 +8,6 @@ from flask import Flask, jsonify
 from flasgger import Swagger, SwaggerView
 
 from flask_boiler.factory import ClsFactory
-from flask_boiler.view import FlaskAsView
 from flask_boiler import fields, view_mediator
 from flask_boiler.schema import Schema
 from flask_boiler.firestore_object import ClsFactory

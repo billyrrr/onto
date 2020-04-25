@@ -11,7 +11,6 @@ from examples.meeting_room.view_models.meeting_session import \
 from examples.meeting_room.view_models.user_view import UserViewMixin
 from flask_boiler.errors import UnauthorizedError
 from flask_boiler.mutation import Mutation, PatchMutation
-from flask_boiler.view import DocumentAsView
 from flask_boiler.view_mediator_dav import ViewMediatorDAV, ProtocolBase, \
     ViewMediatorDeltaDAV
 from flask_boiler.view_model import ViewModel
@@ -23,7 +22,7 @@ from .fixtures import users, tickets, location, meeting
 from flask_boiler.context import Context
 
 
-class MeetingSessionDAV(MeetingSessionMixin, DocumentAsView):
+class MeetingSessionDAV(MeetingSessionMixin, ViewModel):
 
     @classmethod
     def new(cls, *args, **kwargs):
