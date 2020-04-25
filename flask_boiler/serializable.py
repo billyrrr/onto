@@ -8,6 +8,7 @@ from .business_property_store import SimpleStore
 from .model_registry import BaseRegisteredModel, ModelRegistry
 from .models.utils import _schema_cls_from_attributed_class, _collect_attrs
 from .schema import Schema
+from .context import Context as CTX
 
 
 class SchemedBase:
@@ -346,7 +347,14 @@ class NewMixin:
             _with_dict = dict()
         # TODO: note that obj_type and other irrelevant fields are set; fix
         for key, val in _with_dict.items():
-            setattr(self, key, val)
+            try:
+                setattr(self, key, val)
+            except AttributeError as ae:
+                CTX.logger.error(f"Error encounntered while setting key: {key}"
+                                 f" and value: {val}."
+                                 f" with_dict: {_with_dict}. "
+                                 f"Error: {ae.args}")
+                raise ae
             # elif isinstance(getattr(self.__class__, key), property):
             #     setattr(self, key, val)
 

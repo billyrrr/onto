@@ -50,14 +50,14 @@ class Context:
         cls.logger = logging.getLogger()
 
     @staticmethod
-    def _enable_logging():
+    def _enable_logging(level=logging.DEBUG):
         import sys
 
         root = logging.getLogger()
         root.setLevel(logging.DEBUG)
 
         handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
+        handler.setLevel(level)
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
@@ -97,8 +97,11 @@ class Context:
         cls._reload_celery_app()
 
         if cls.debug:
-            cls._enable_logging()
-
+            cls._enable_logging(logging.DEBUG)
+        else:
+            cls._enable_logging(logging.ERROR)
+        cls.logger.info(f"flask_boiler.Context has finished "
+                        f"loading config: {vars(config)}")
         return cls
 
     @classmethod
