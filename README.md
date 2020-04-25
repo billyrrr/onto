@@ -20,8 +20,6 @@ of the list of people attending the meeting.
 
 ![Untitled_2](https://user-images.githubusercontent.com/24789156/71137341-be0e1000-2242-11ea-98cb-53ad237cac43.gif)
 
-
-
 Some reasons that you may want to use this framework:
 - The automatically documented API accelerates your development
 - You want to use Firestore to build your front end, but
@@ -46,12 +44,7 @@ Example of a Project using flask-boiler: [gravitate-backend](https://github.com/
 In your project's requirements.txt, 
 
 ```
-
-# Append to requirements, unless repeating existing requirements
-
-google-cloud-firestore
-flask-boiler  # Not released to pypi yet 
-
+flask-boiler
 ```
 
 Configure virtual environment 
@@ -126,44 +119,57 @@ City.new(
 # ...
 ```
 
-### Relationship
-
-Flask-boiler adds an option to retrieve a relation with 
-minimal steps. Take an example given from SQLAlchemy, 
+### Declare View Model
 
 ```python
-category_id = utils.random_id()
-py = Category.new(doc_id=category_id)
-py.name = "Python"
+class CityView(ViewModel):
 
-post_id = utils.random_id()
-p = Post.new(doc_id=post_id)
-p.title = "snakes"
-p.body = "Ssssssss"
+    name = attrs.bproperty()
+    country = attrs.bproperty()
 
-# py.posts.append(p)
-p.category = py
+    @classmethod
+    def new(cls, snapshot):
+        store = CityStore()
+        store.add_snapshot("city", dm_cls=City, snapshot=snapshot)
+        store.refresh()
+        return cls(store=store)
 
-p.save()
+    @name.getter
+    def name(self):
+        return self.store.city.city_name
 
+    @country.getter
+    def country(self):
+        return self.store.city.country
+
+    @property
+    def doc_ref(self):
+        return CTX.db.document(f"cityView/{self.store.city.doc_id}")
 ```
 
-See ```examples/relationship_example.py```
-
-### Automatically Generated Swagger Docs
-You can enable auto-generated swagger docs. See: `examples/view_example.py`
-
-
-
-### Create Flask View
-You can create a flask view to specify how a view model is read and changed.
+### WebSocket View 
 
 ```python
+class Demo(WsMediator):
+    pass
 
+mediator = Demo(view_model_cls=rainbow_vm,
+                mutation_cls=None,
+                namespace="/palette")
 
+io = flask_socketio.SocketIO(app=app)
+
+io.on_namespace(mediator)
+```
+
+### Create Flask View
+You can use a RestMediator to create a REST API. OpenAPI3 docs will be 
+automatically generated in ```<site_url>/apidocs``` when you run ```_ = Swagger(app)```. 
+
+```python
 app = Flask(__name__)
 
-meeting_session_mediator = view_mediator.ViewMediator(
+meeting_session_mediator = view.RestMediator(
     view_model_cls=MeetingSession,
     app=app,
     mutation_cls=MeetingSessionMutation
@@ -178,7 +184,7 @@ meeting_session_mediator.add_instance_get(
 meeting_session_mediator.add_instance_patch(
     rule="/meeting_sessions/<string:doc_id>")
 
-user_mediator = view_mediator.ViewMediator(
+user_mediator = view.RestMediator(
     view_model_cls=UserView,
     app=app,
 )
@@ -189,8 +195,6 @@ user_mediator.add_instance_get(
 swagger = Swagger(app)
 
 app.run(debug=True)
-
-
 ```
 
 ## Object Lifecycle
