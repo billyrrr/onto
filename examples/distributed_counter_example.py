@@ -6,7 +6,7 @@ from flask_boiler.schema import Schema
 from flask_boiler.fields import Integer
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.struct import Struct
-from flask_boiler.view_mediator_dav import ViewMediatorDAV
+from flask_boiler.view.document import ViewMediatorDAV
 from flask_boiler.view_model import ViewModel
 from flask_boiler import testing_utils
 

@@ -1,14 +1,6 @@
-import time
-
-from flask_boiler.context import Context as CTX
-from flasgger import SwaggerView
 from flask import request
 
-from google.cloud.firestore import Watch, DocumentSnapshot, \
-    DocumentReference, Query
-
-from flask_boiler.domain_model import DomainModel
-from flask_boiler.view_mediator import ViewMediatorBase
+from flask_boiler.view.base import ViewMediatorBase
 
 from flask_socketio import Namespace, emit, send
 

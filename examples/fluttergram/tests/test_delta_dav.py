@@ -1,22 +1,13 @@
-import time
-
-import pytest
-from google.cloud.firestore_v1 import Watch, DocumentSnapshot, \
-    DocumentReference, Query
+from google.cloud.firestore_v1 import Query
 
 from examples.fluttergram.domain_models import Post, User
 from flask_boiler.business_property_store import BPSchema
 from flask_boiler.struct import Struct
 
-from flask_boiler.view_mediator_dav import ViewMediatorDAV, \
-    ViewMediatorDeltaDAV
-from flask_boiler.view_model import ViewModel
-from flask_boiler import view_mediator, utils, schema, fields, testing_utils
+from flask_boiler.view_mediator_dav import ViewMediatorDeltaDAV
+from flask_boiler import utils, schema, fields, testing_utils
 from flask_boiler import view_model
 # Import the fixtures used by fixtures
-from tests.fixtures import CTX, setup_app
-from .fixtures import users, posts
-from flask_boiler.context import Context
 
 
 class PostDAVSchema(schema.Schema):

@@ -3,17 +3,14 @@
 Contains test cases inspired by flasgger (MIT licence)
 See: https://github.com/flasgger/flasgger/blob/master/LICENSE
 """
-import pytest
-from flask import Flask, jsonify
-from flasgger import Swagger, SwaggerView
+from flask import Flask
+from flasgger import Swagger
 
-from flask_boiler.factory import ClsFactory
-from flask_boiler import fields, view_mediator
+from flask_boiler import fields
+from flask_boiler.view import rest_api
 from flask_boiler.schema import Schema
 from flask_boiler.firestore_object import ClsFactory
 from flask_boiler.view_model import ViewModel
-from google.cloud import firestore
-from functools import partial
 
 
 class ExampleColorSchema(Schema):
@@ -67,7 +64,7 @@ obj = ExamplePaletteViewModel.new(doc_id="doc_id_1")
 app = Flask(__name__)
 swagger = Swagger(app)
 
-palette_mediator = view_mediator.ViewMediator(
+palette_mediator = rest_api.ViewMediator(
     view_model_cls=ExamplePaletteViewModel,
     app=app,
 )
@@ -99,7 +96,6 @@ if __name__ == "__main__":
 """
 Reserved for testing; Not part of the example 
 """
-import pytest
 
 
 def test_view_example():

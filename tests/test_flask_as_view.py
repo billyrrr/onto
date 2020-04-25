@@ -1,16 +1,8 @@
-import time
-
-import pytest
-from flasgger import SwaggerView, Swagger
 from flask import Flask
 
-from flask_boiler import schema, fields, view, domain_model, factory, \
-    view_model, view_mediator
-
-from .fixtures import CTX
-from .color_fixtures import color_refs, ColorSchema, ColorDomainModelBase, \
-    Color, rainbow_vm
-from tests.fixtures import setup_app
+from .fixtures import CTX, setup_app
+from .color_fixtures import color_refs, rainbow_vm
+from flask_boiler.view import rest_api
 
 
 def test_rainbow_stuffs(CTX, setup_app, color_refs, rainbow_vm):
@@ -23,7 +15,7 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs, rainbow_vm):
     class RainbowViewModel(rainbow_vm):
        pass
 
-    mediator = view_mediator.ViewMediator(
+    mediator = rest_api.ViewMediator(
         view_model_cls=RainbowViewModel,
         app=app
     )

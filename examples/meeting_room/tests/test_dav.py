@@ -1,24 +1,18 @@
-import time
-
 import pytest
-from google.cloud.firestore_v1 import Watch, DocumentSnapshot, \
-    DocumentReference, Query, CollectionReference
+from google.cloud.firestore_v1 import Query, CollectionReference
 
 from examples.meeting_room.domain_models import Meeting, User
-from examples.meeting_room.view_models import UserView
 from examples.meeting_room.view_models.meeting_session import \
-    MeetingSessionMutation, MeetingSessionMixin
+    MeetingSessionMixin
 from examples.meeting_room.view_models.user_view import UserViewMixin
 from flask_boiler.errors import UnauthorizedError
-from flask_boiler.mutation import Mutation, PatchMutation
-from flask_boiler.view_mediator_dav import ViewMediatorDAV, ProtocolBase, \
-    ViewMediatorDeltaDAV
+from flask_boiler.mutation import PatchMutation
+from flask_boiler.view.document import \
+    ViewMediatorDAV
+from flask_boiler.view.query_delta import ViewMediatorDeltaDAV, ProtocolBase
 from flask_boiler.view_model import ViewModel
-from ..views import meeting_session_ops
-from flask_boiler import view_mediator, utils, testing_utils
+from flask_boiler import utils, testing_utils
 # Import the fixtures used by fixtures
-from tests.fixtures import CTX, setup_app
-from .fixtures import users, tickets, location, meeting
 from flask_boiler.context import Context
 
 

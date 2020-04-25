@@ -7,7 +7,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from flask_boiler import testing_utils
-from flask_boiler.view_mediator_websocket import ViewMediatorWebsocket
+from flask_boiler.view import WsMediator
 from .color_fixtures import Color, PaletteViewModel, rainbow_vm, color_refs
 from .fixtures import setup_app, CTX
 import flask_socketio
@@ -17,7 +17,7 @@ import time
 def test_connect(setup_app, rainbow_vm, color_refs):
     app = setup_app
 
-    class Demo(ViewMediatorWebsocket):
+    class Demo(WsMediator):
         pass
 
     mediator = Demo(view_model_cls=rainbow_vm,

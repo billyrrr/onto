@@ -5,11 +5,11 @@ from examples.meeting_room.view_models import MeetingSession, UserView
 from examples.meeting_room.view_models.meeting_session import \
     MeetingSessionMutation
 from examples.meeting_room.views import meeting_session_ops
-from flask_boiler import view_mediator
+from flask_boiler.view import rest_api
 
 app = Flask(__name__)
 
-meeting_session_mediator = view_mediator.ViewMediator(
+meeting_session_mediator = rest_api.ViewMediator(
     view_model_cls=MeetingSession,
     app=app,
     mutation_cls=MeetingSessionMutation
@@ -24,7 +24,7 @@ meeting_session_mediator.add_instance_get(
 meeting_session_mediator.add_instance_patch(
     rule="/meeting_sessions/<string:doc_id>")
 
-user_mediator = view_mediator.ViewMediator(
+user_mediator = rest_api.ViewMediator(
     view_model_cls=UserView,
     app=app,
 )

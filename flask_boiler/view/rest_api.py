@@ -1,11 +1,7 @@
-import time
-
 from flasgger import SwaggerView
 from flask import request, jsonify
 
-
-class ViewMediatorBase:
-    pass
+from flask_boiler.view.base import ViewMediatorBase
 
 
 class ViewMediator(ViewMediatorBase):

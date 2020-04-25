@@ -4,7 +4,8 @@ from examples.meeting_room.view_models import MeetingSession
 from examples.meeting_room.view_models.meeting_session import \
     MeetingSessionMutation
 from ..views import meeting_session_ops
-from flask_boiler import view_mediator, testing_utils
+from flask_boiler import testing_utils
+from flask_boiler.view import rest_api
 from .. import view_models
 # Import the fixtures used by fixtures
 from tests.fixtures import CTX, setup_app
@@ -40,7 +41,7 @@ def test_view_model(users, tickets, location, meeting):
 def test_view(users, tickets, location, meeting, setup_app):
     app = setup_app
 
-    mediator = view_mediator.ViewMediator(
+    mediator = rest_api.ViewMediator(
         view_model_cls=MeetingSession,
         app=app,
         mutation_cls=MeetingSessionMutation
