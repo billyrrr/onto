@@ -74,7 +74,7 @@ class FirestoreObjectMixin:
         if doc_ref is None:
             doc_ref = self.doc_ref
 
-        d = self._export_as_dict(to_save=save_rel)
+        d = self._export_as_dict(to_save=save_rel, transaction=transaction)
 
         if transaction is None:
             doc_ref.set(document_data=d)
