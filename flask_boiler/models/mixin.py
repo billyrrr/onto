@@ -143,9 +143,9 @@ class Exportable:
             return self._export_val(obj)
 
         from .base import Serializable
-        if isinstance(val, Serializable):
-            return val._export_as_dict(to_save=to_save)
-        elif isinstance(val, EmbeddedElement):
+        # if isinstance(val, Serializable):
+        #     return val._export_as_dict(to_save=to_save)
+        if isinstance(val, EmbeddedElement):
             return embed_element(val)
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):
