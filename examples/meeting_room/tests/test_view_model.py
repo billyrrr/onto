@@ -14,7 +14,7 @@ from .fixtures import users, tickets, location, meeting
 
 def test_view_model(users, tickets, location, meeting):
     meeting_session = view_models.MeetingSession \
-        .get_from_meeting_id(meeting_id=meeting.doc_id, once=True)
+        .new(doc_id=meeting.doc_id, once=True)
 
     assert meeting_session._export_as_view_dict() == \
            {'inSession': True,
@@ -152,16 +152,25 @@ def test_user_view(users, meeting):
              'hearingAidRequested': True, 'organization': 'SDSU'}],
          'location': {'latitude': 32.880361,
                       'address': '9500 Gilman Drive, La Jolla, CA',
-                      'longitude': -117.242929}, 'tickets': [
-            {'attendance': True, 'role': 'Participant',
-             'user': {'lastName': 'Furlong', 'firstName': 'Tijuana',
-                      'hearingAidRequested': True, 'organization': 'UCSD'}},
-            {'attendance': True, 'role': 'Organizer',
-             'user': {'lastName': 'Manes', 'firstName': 'Thomasina',
-                      'hearingAidRequested': False, 'organization': 'UCSD'}},
-            {'attendance': True, 'role': 'Participant',
-             'user': {'lastName': 'Pendergrast', 'firstName': 'Joshua',
-                      'hearingAidRequested': True, 'organization': 'SDSU'}}]}],
+                      'longitude': -117.242929},
+         'tickets': {'joshua': {'attendance': True,
+                                      'role': 'Participant',
+                                      'user': {'firstName': 'Joshua',
+                                               'hearingAidRequested': True,
+                                               'lastName': 'Pendergrast',
+                                               'organization': 'SDSU'}},
+                           'thomasina': {'attendance': True,
+                                         'role': 'Organizer',
+                                         'user': {'firstName': 'Thomasina',
+                                                  'hearingAidRequested': False,
+                                                  'lastName': 'Manes',
+                                                  'organization': 'UCSD'}},
+                           'tijuana': {'attendance': True,
+                                       'role': 'Participant',
+                                       'user': {'firstName': 'Tijuana',
+                                                'hearingAidRequested': True,
+                                                'lastName': 'Furlong',
+                                                'organization': 'UCSD'}}}}],
         'lastName': 'Manes',
         'firstName': 'Thomasina',
         'hearingAidRequested': False,
@@ -170,7 +179,7 @@ def test_user_view(users, meeting):
 
 def test_view_model_update(users, tickets, location, meeting):
     meeting_session = view_models.MeetingSession \
-        .get_from_meeting_id(meeting_id=meeting.doc_id, once=False)
+        .new(doc_id=meeting.doc_id, once=False)
 
     # time.sleep(2)  # TODO: delete after implementing sync
 

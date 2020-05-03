@@ -87,7 +87,7 @@ def location(request, CTX):
 def meeting(users, tickets, location, request, CTX):
     m = domain_models.Meeting.new(doc_id="meeting_1")
     m.users = [user.doc_ref for user in users]
-    m.tickets = [ticket.doc_ref for ticket in tickets]
+    m.tickets = {ticket.user.id: ticket.doc_ref for ticket in tickets}
     m.location = location.doc_ref
     m.status = "in-session"
     m.save()

@@ -2,8 +2,7 @@ import pytest
 from google.cloud.firestore_v1 import Query, CollectionReference
 
 from examples.meeting_room.domain_models import Meeting, User
-from examples.meeting_room.view_models.meeting_session import \
-    MeetingSessionMixin
+from examples.meeting_room.view_models.meeting_session import MeetingSession
 from examples.meeting_room.view_models.user_view import UserViewMixin
 from flask_boiler.errors import UnauthorizedError
 from flask_boiler.mutation import PatchMutation
@@ -14,35 +13,11 @@ from flask_boiler.view_model import ViewModel
 from flask_boiler import utils, testing_utils
 # Import the fixtures used by fixtures
 from flask_boiler.context import Context
-
-
-class MeetingSessionDAV(MeetingSessionMixin, ViewModel):
-
-    @classmethod
-    def new(cls, *args, **kwargs):
-        return cls.get_from_meeting_id(*args, **kwargs)
-
-    @classmethod
-    def get_from_meeting_id(cls, meeting_id, once=True, **kwargs):
-        return super().get_from_meeting_id(
-            meeting_id, once=once, **kwargs)
-
-    def save(self, *args, **kwargs):
-        for user_id, user in self.store.users.items():
-            doc_ref = user.doc_ref\
-                .collection(self.__class__.__name__)\
-                .document(self.store.meeting.doc_id)
-            super().save(*args, doc_ref=doc_ref, **kwargs)
-
-    def update_vals(self, *args, user_id, **kwargs):
-        if user_id in self.store.users:
-            super().update_vals(*args, **kwargs)
-        else:
-            raise UnauthorizedError
+from tests.fixtures import CTX, setup_app
+from .fixtures import users, tickets, location, meeting
 
 
 class MeetingSessionPatch(ViewMediatorDeltaDAV):
-
     class Protocol(ProtocolBase):
 
         @staticmethod
@@ -58,8 +33,8 @@ class MeetingSessionPatch(ViewMediatorDeltaDAV):
             ref = snapshot.reference
             user_id = ref.parent.parent.id
 
-            obj = MeetingSessionDAV.new(
-                meeting_id=meeting_id,
+            obj = MeetingSession.new(
+                doc_id=meeting_id,
                 once=True,
             )
             obj.update_vals(user_id=user_id, with_dict=d)
@@ -68,7 +43,6 @@ class MeetingSessionPatch(ViewMediatorDeltaDAV):
 
 
 class MeetingSessionGet(ViewMediatorDeltaDAV):
-
     class Protocol(ProtocolBase):
 
         @staticmethod
@@ -77,8 +51,8 @@ class MeetingSessionGet(ViewMediatorDeltaDAV):
 
             assert isinstance(meeting, Meeting)
 
-            obj = MeetingSessionDAV.new(
-                meeting_id=meeting.doc_id,
+            obj = MeetingSession.new(
+                doc_id=meeting.doc_id,
                 once=False,
                 f_notify=mediator.notify
             )
@@ -97,9 +71,9 @@ def test_start(users, tickets, location, meeting):
     testing_utils._wait(factor=.7)
 
     ref = Context.db.collection("users").document(users[0].doc_id) \
-        .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
+        .collection(MeetingSession.__name__).document(meeting.doc_id)
     assert ref.get().to_dict() == {'latitude': 32.880361,
-                                   'obj_type': 'MeetingSessionDAV',
+                                   'obj_type': 'MeetingSession',
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -118,11 +92,22 @@ def test_start(users, tickets, location, meeting):
 
     for user in users:
         Context.db.collection("users").document(user.doc_id) \
-            .collection(MeetingSessionDAV.__name__).document(meeting.doc_id) \
+            .collection(MeetingSession.__name__).document(meeting.doc_id) \
             .delete()
 
 
-def test_mutate(users, tickets, location, meeting):
+@pytest.fixture
+def delete_after(request):
+    def fin():
+        patch_collection_name = "{}_PATCH".format(MeetingSession.__name__)
+        for doc in Context.db.collection(
+            f'users/tijuana/{patch_collection_name}'
+        ).stream():
+            doc.reference.delete()
+    request.addfinalizer(finalizer=fin)
+
+
+def test_mutate(users, tickets, location, meeting, delete_after):
     """
     Tests that mutate actions affect domain model and view model.
 
@@ -141,9 +126,9 @@ def test_mutate(users, tickets, location, meeting):
     testing_utils._wait(factor=.7)
 
     ref = Context.db.collection("users").document(users[0].doc_id) \
-        .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
+        .collection(MeetingSession.__name__).document(meeting.doc_id)
     assert ref.get().to_dict() == {'latitude': 32.880361,
-                                   'obj_type': 'MeetingSessionDAV',
+                                   'obj_type': 'MeetingSession',
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -160,7 +145,7 @@ def test_mutate(users, tickets, location, meeting):
                                    'inSession': True,
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
 
-    patch_collection_name = "{}_PATCH".format(MeetingSessionDAV.__name__)
+    patch_collection_name = "{}_PATCH".format(MeetingSession.__name__)
 
     patch_mediator = MeetingSessionPatch(
         query=Context.db.collection_group(patch_collection_name)
@@ -169,7 +154,7 @@ def test_mutate(users, tickets, location, meeting):
     patch_mediator.start()
 
     ref: CollectionReference = Context.db.collection(
-        'users/tijuana/MeetingSessionDAV_PATCH'
+        f'users/tijuana/{patch_collection_name}'
     )
     ref.add(
         dict(
@@ -184,9 +169,9 @@ def test_mutate(users, tickets, location, meeting):
     assert m.status == "closed"
 
     ref = Context.db.collection("users").document(users[0].doc_id) \
-        .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
+        .collection(MeetingSession.__name__).document(meeting.doc_id)
     assert ref.get().to_dict() == {'latitude': 32.880361,
-                                   'obj_type': 'MeetingSessionDAV',
+                                   'obj_type': 'MeetingSession',
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -202,10 +187,9 @@ def test_mutate(users, tickets, location, meeting):
                                    'inSession': False,
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
 
-
     for user in users:
         Context.db.collection("users").document(user.doc_id) \
-            .collection(MeetingSessionDAV.__name__).document(meeting.doc_id) \
+            .collection(MeetingSession.__name__).document(meeting.doc_id) \
             .delete()
 
 
@@ -227,10 +211,10 @@ def test_domain_model_changes(users, tickets, location, meeting):
     testing_utils._wait(factor=2)
     #
     ref = Context.db.collection("users").document(users[0].doc_id) \
-        .collection(MeetingSessionDAV.__name__).document(meeting.doc_id)
+        .collection(MeetingSession.__name__).document(meeting.doc_id)
 
     assert ref.get().to_dict() == {'latitude': 32.880361,
-                                   'obj_type': 'MeetingSessionDAV',
+                                   'obj_type': 'MeetingSession',
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -258,7 +242,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
       counter.
     """
     assert ref.get().to_dict() == {'latitude': 32.880361,
-                                   'obj_type': 'MeetingSessionDAV',
+                                   'obj_type': 'MeetingSession',
                                    'numHearingAidRequested': 1,
                                    'attending': [
                                        {
@@ -276,14 +260,13 @@ def test_domain_model_changes(users, tickets, location, meeting):
 
     for user in users:
         Context.db.collection("users").document(user.doc_id) \
-            .collection(MeetingSessionDAV.__name__).document(meeting.doc_id) \
+            .collection(MeetingSession.__name__).document(meeting.doc_id) \
             .delete()
 
 
 def test_view_model(users, tickets, location, meeting):
-    meeting_session = MeetingSessionDAV \
-        .get_from_meeting_id(meeting_id=meeting.doc_id,
-                             once=True)
+    meeting_session = MeetingSession.new(doc_id=meeting.doc_id,
+                                         once=True)
 
     assert meeting_session._export_as_view_dict() == \
            {'inSession': True,
@@ -335,7 +318,6 @@ class UserViewMediatorDAV(ViewMediatorDAV):
         obj.save()
 
     def generate_entries(self):
-
         d = dict()
         users = self.user_cls.all()
         for user in users:
@@ -365,17 +347,24 @@ def test_user_view(users, tickets, location, meeting):
          'location': {'latitude': 32.880361,
                       'address': '9500 Gilman Drive, La Jolla, CA',
                       'longitude': -117.242929},
-         'tickets': [
-             {'attendance': True, 'role': 'Participant',
-              'user': {'lastName': 'Furlong', 'firstName': 'Tijuana',
-                       'hearingAidRequested': True, 'organization': 'UCSD'}},
-             {'attendance': True, 'role': 'Organizer',
-              'user': {'lastName': 'Manes', 'firstName': 'Thomasina',
-                       'hearingAidRequested': False, 'organization': 'UCSD'}},
-             {'attendance': True, 'role': 'Participant',
-              'user': {'lastName': 'Pendergrast', 'firstName': 'Joshua',
-                       'hearingAidRequested': True,
-                       'organization': 'SDSU'}}]}],
+         'tickets': {'joshua': {'attendance': True,
+                                'role': 'Participant',
+                                'user': {'firstName': 'Joshua',
+                                         'hearingAidRequested': True,
+                                         'lastName': 'Pendergrast',
+                                         'organization': 'SDSU'}},
+                     'thomasina': {'attendance': True,
+                                   'role': 'Organizer',
+                                   'user': {'firstName': 'Thomasina',
+                                            'hearingAidRequested': False,
+                                            'lastName': 'Manes',
+                                            'organization': 'UCSD'}},
+                     'tijuana': {'attendance': True,
+                                 'role': 'Participant',
+                                 'user': {'firstName': 'Tijuana',
+                                          'hearingAidRequested': True,
+                                          'lastName': 'Furlong',
+                                          'organization': 'UCSD'}}}}],
         'lastName': 'Manes',
         'firstName': 'Thomasina',
         'hearingAidRequested': False,
