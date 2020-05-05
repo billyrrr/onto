@@ -167,9 +167,6 @@ class Exportable:
         """
         d = self.schema_obj.dump(self)
 
-        # print("----")
-        # print(d)
-
         res = dict()
         for key, val in d.items():
             res[key] = self._export_val(val, to_save=to_save, **kwargs)
@@ -183,9 +180,9 @@ class Exportable:
             return obj._export_as_view_dict()
 
         from .base import Serializable
-        if isinstance(val, Serializable):
+        if issubclass(val.__class__, Serializable):
             return val._export_as_view_dict()
-        if isinstance(val, EmbeddedElement):
+        elif isinstance(val, EmbeddedElement):
             return embed_element(val)
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):
@@ -216,6 +213,9 @@ class Exportable:
 
     def to_dict(self):
         return self._export_as_dict()
+
+    # def to_view_dict(self):
+    #     return self._export_as_view_dict()
 
 
 class NewMixin:
