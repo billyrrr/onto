@@ -146,14 +146,19 @@ class ViewModelMixin:
         # do something with this ViewModel
 
         def _on_update(docs, changes, readtime):
-            if len(docs) == 0:
-                # NO CHANGE
-                return
-            elif len(docs) != 1:
-                raise NotImplementedError
-            doc = docs[0]
+            try:
+                if len(docs) == 0:
+                    # NO CHANGE
+                    return
+                elif len(docs) != 1:
+                    raise NotImplementedError
+                doc = docs[0]
 
-            self.snapshot_container.set(to_ref(dm_cls, dm_doc_id), doc)
+                self.snapshot_container.set(to_ref(dm_cls, dm_doc_id), doc)
+            except Exception as e:
+                CTX.logger.exception(f"Error encountered when updating"
+                                     f" {docs[0].reference._path} "
+                                     f"for {dm_cls, dm_doc_id}")
 
         return _on_update
 

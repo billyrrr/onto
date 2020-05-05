@@ -49,6 +49,8 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
                 snapshot = change.document
                 assert isinstance(snapshot, DocumentSnapshot)
                 try:
+                    CTX.logger.info(f"DAV started "
+                                    f"for {snapshot.reference.path}")
                     if change.type.name == 'ADDED':
                         self.Protocol.on_create(
                             snapshot=snapshot,

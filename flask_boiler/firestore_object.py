@@ -63,7 +63,7 @@ class FirestoreObjectMixin:
         obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
         return obj
 
-    def save(self, transaction: Transaction = None, doc_ref=None, save_rel=True):
+    def save(self, transaction: Transaction=None, doc_ref=None, save_rel=True):
         """ Save an object to Firestore
 
         :param transaction: Firestore Transaction
@@ -124,9 +124,25 @@ class FirestoreObjectValMixin:
         else:
             return super()._export_val(val, to_save=to_save)
 
-    def _export_as_dict(self, **kwargs):
+    # def _export_val_view(self, val):
+    #     def is_nested_relationship(val):
+    #         return isinstance(val, RelationshipReference) and val.nested
+    #
+    #     def is_ref_only_relationship(val):
+    #         return isinstance(val, RelationshipReference) and not val.nested
+    #
+    #     if is_nested_relationship(val):
+    #         return super()._export_val_view(val.obj)
+    #     elif is_ref_only_relationship(val):
+    #         return super()._export_val_view(val.doc_ref.path)
+    #     else:
+    #         return super()._export_val_view(val)
+
+    def _export_as_dict(self, transaction=None, **kwargs):
+        if transaction is None:
+            transaction = self.transaction
         return super()._export_as_dict(**kwargs,
-                                       transaction=self.transaction)
+                                       transaction=transaction)
 
     def _export_val_view(self, val):
 
