@@ -20,6 +20,11 @@ from celery import Celery
 from .config import Config
 import logging
 
+from contextvars import ContextVar
+
+_transaction_var: ContextVar[firestore.Transaction] = \
+    ContextVar('_transaction_var', default=None)
+
 
 class Context:
     """ Context Singleton for Firestore, Firebase and Celery app.
@@ -34,6 +39,9 @@ class Context:
     config: Config = None
     celery_app: Celery = None
     logger: logging.Logger = None
+
+    transaction_var = _transaction_var
+
 
     # Deleted on purpose to ensure that .<flag> is not evaluated as False
     #   when .<flag> is neither set to True, nor set to False.

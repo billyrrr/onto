@@ -3,20 +3,11 @@ import typing
 from flask_boiler import fields
 from typing import Type, Callable
 
+from flask_boiler.common import _NA
 
 _ATTRIBUTE_STORE_NAME = "_attrs"
 
 class ValueNotProvided:
-    pass
-
-
-class _NA:
-    """
-    Used when the value of a parameter is not supplied by
-        the user. Created in order to differentiate from
-        None or False.
-
-    """
     pass
 
 
@@ -51,15 +42,15 @@ class AttributeBase:
     def __init__(
             self,
             *,
-            initialize:bool=_NA,
+            initialize:bool= _NA,
             initializer: typing.Union[Callable[[object], None], _NA] = _NA,
             data_key=_NA,
 
-            import_enabled:bool=_NA,
+            import_enabled:bool= _NA,
             import_default=_NA,
             import_required=_NA,
 
-            export_enabled:bool=_NA,
+            export_enabled:bool= _NA,
             export_default=_NA,
             export_required=_NA,
 
@@ -98,6 +89,8 @@ class AttributeBase:
         """
 
         field_kwargs = dict()
+
+        field_kwargs["allow_none"] = True
 
         """
         Initialization precedes import 
@@ -241,7 +234,7 @@ class PropertyAttribute(AttributeBase):
     """
 
     def  __init__(self,
-                 *, fget=None, fset=None, fdel=None, doc=None,
+                  *, fget=None, fset=None, fdel=None, doc=None,
                   initializer=_NA,
                   **kwargs):
 
@@ -346,14 +339,14 @@ class RelationshipAttribute(PropertyAttribute):
         super().__init__(
             **kwargs
         )
-        if nested==_NA:
+        if nested== _NA:
             raise ValueError
         else:
             self.nested = nested
         if self.nested:
             self._field_kwargs["nested"] = self.nested
 
-        if many==_NA:
+        if many== _NA:
             many = False
         self.many = many
         self._field_kwargs["many"] = self.many

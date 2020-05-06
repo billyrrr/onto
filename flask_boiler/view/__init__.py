@@ -6,7 +6,9 @@ from .document import ViewMediatorDAV as DocumentMediator
 """ QueryMediator listens to the result of a query and triggers 
         functions when the result of such query changes. 
 """
-from .query_delta import ViewMediatorDeltaDAV as QueryMediator, ProtocolBase
+from .query_delta import ViewMediatorDeltaDAV as QueryMediator, \
+    ProtocolBase, \
+    OnSnapshotTasksMixin
 
 """ RestMediator pulls and modifies data when requested with REST API. 
 """

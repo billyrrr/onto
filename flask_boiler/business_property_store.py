@@ -1,6 +1,7 @@
 from collections import defaultdict
 
-from flask_boiler.attrs.attribute import RelationshipAttribute, _NA
+from flask_boiler.attrs.attribute import RelationshipAttribute
+from flask_boiler.common import _NA
 from typing import Tuple
 
 from google.cloud.firestore import DocumentReference

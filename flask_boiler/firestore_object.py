@@ -4,6 +4,7 @@ from google.cloud.firestore import DocumentReference
 from google.cloud.firestore import Transaction
 
 from flask_boiler import fields
+from flask_boiler.common import _NA
 from flask_boiler.helpers import RelationshipReference, EmbeddedElement
 # from flask_boiler.view_model import ViewModel
 from flask_boiler.collection_mixin import CollectionMixin
@@ -11,11 +12,16 @@ from flask_boiler.models.meta import ModelRegistry
 from flask_boiler.models.base import Serializable
 from flask_boiler.factory import ClsFactory
 from flask_boiler.utils import snapshot_to_obj
+from flask_boiler.context import Context as CTX
 
 
 class FirestoreObjectMixin:
 
-    def __init__(self, *args, doc_ref=None, transaction=None, **kwargs):
+    def __init__(self, *args, doc_ref=None, transaction=_NA, **kwargs):
+
+        if transaction is _NA:
+            transaction = CTX.transaction_var.get()
+
         self._doc_ref = doc_ref
         self.transaction = transaction
         super().__init__(*args, **kwargs)
@@ -37,13 +43,17 @@ class FirestoreObjectMixin:
         return self.doc_ref.path
 
     @classmethod
-    def get(cls, *, doc_ref=None, transaction=None, **kwargs):
+    def get(cls, *, doc_ref=None, transaction=_NA, **kwargs):
         """ Retrieves an object from Firestore
 
         :param doc_ref:
         :param transaction:
         :param kwargs: Keyword arguments to be forwarded to from_dict
         """
+
+        if transaction is _NA:
+            transaction = CTX.transaction_var.get()
+
         if transaction is None:
             snapshot = doc_ref.get()
         else:
@@ -63,7 +73,7 @@ class FirestoreObjectMixin:
         obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
         return obj
 
-    def save(self, transaction: Transaction=None, doc_ref=None, save_rel=True):
+    def save(self, transaction: Transaction=_NA, doc_ref=None, save_rel=True):
         """ Save an object to Firestore
 
         :param transaction: Firestore Transaction
@@ -71,6 +81,10 @@ class FirestoreObjectMixin:
         :param save_rel: If true, objects nested in this
             object will be saved to the Firestore.
         """
+
+        if transaction is _NA:
+            transaction = CTX.transaction_var.get()
+
         if doc_ref is None:
             doc_ref = self.doc_ref
 
@@ -82,11 +96,15 @@ class FirestoreObjectMixin:
             transaction.set(reference=doc_ref,
                             document_data=d)
 
-    def delete(self, transaction: Transaction = None) -> None:
+    def delete(self, transaction: Transaction = _NA) -> None:
         """ Deletes and object from Firestore.
 
         :param transaction: Firestore Transaction
         """
+
+        if transaction is _NA:
+            transaction = CTX.transaction_var.get()
+
         if transaction is None:
             self.doc_ref.delete()
         else:
