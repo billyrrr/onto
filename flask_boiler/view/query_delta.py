@@ -39,7 +39,6 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
         super().__init__(*args, **kwargs)
         self.query = query
 
-    @staticmethod
     def _on_snapshot(self, snapshots, changes, timestamp):
         """
         Note that server reboot will result in some "Modified" objects
@@ -53,7 +52,7 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
             snapshot = change.document
             assert isinstance(snapshot, DocumentSnapshot)
             try:
-                CTX.logger.info(f"DAV started "
+                CTX.logger.info(f"DAV: {self.__class__.__name__} started "
                                 f"for {snapshot.reference.path}")
                 if change.type.name == 'ADDED':
                     self.Protocol.on_create(
@@ -74,14 +73,15 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
                 """
                 Expects e to be printed to the logger 
                 """
-                CTX.logger.exception(f"DAV failed "
+                CTX.logger.exception(f"DAV {self.__class__.__name__} failed "
                                      f"for {snapshot.reference.path}")
             else:
-                CTX.logger.info(f"DAV succeeded "
+                CTX.logger.info(f"DAV {self.__class__.__name__} succeeded "
+                                f"or enqueued "
                                 f"for {snapshot.reference.path}")
 
     def _get_on_snapshot(self):
-        return functools.partial(self._on_snapshot, self)
+        return self._on_snapshot
 
     def start(self):
         """ Starts a listener to the query.
@@ -159,7 +159,7 @@ class OnSnapshotTasksMixin:
             item = self.q.get()
             if item is None:
                 break
-            asyncio.run(item)
+            item()
             self.q.task_done()
 
     def _start_thread(self):
@@ -167,48 +167,53 @@ class OnSnapshotTasksMixin:
         self.thread.start()
 
     def _add_awaitable(self, item):
+        """ TODO: test
+
+        :param item:
+        :return:
+        """
         self.q.put(item)
 
     class Protocol(ProtocolBase):
 
         @staticmethod
-        @run_transaction
-        def on_create(snapshot: DocumentSnapshot, mediator, transaction):
-            mediator._add_awaitable(mediator.on_create(snapshot, transaction))
+        def on_create(snapshot: DocumentSnapshot, mediator):
+            f = functools.partial(mediator.on_create, snapshot=snapshot)
+            mediator._add_awaitable(f)
 
         @staticmethod
-        @run_transaction
-        def on_update(snapshot: DocumentSnapshot, mediator, transaction):
-            mediator._add_awaitable(mediator.on_update(snapshot, transaction))
+        def on_update(snapshot: DocumentSnapshot, mediator):
+            f = functools.partial(mediator.on_update, snapshot=snapshot)
+            mediator._add_awaitable(f)
 
         @staticmethod
-        @run_transaction
-        def on_delete(snapshot: DocumentSnapshot, mediator, transaction):
-            mediator._add_awaitable(mediator.on_delete(snapshot, transaction))
+        def on_delete(snapshot: DocumentSnapshot, mediator):
+            f = functools.partial(mediator.on_delete, snapshot=snapshot)
+            mediator._add_awaitable(f)
 
 
-    async def on_create(self, snapshot: DocumentSnapshot, transaction):
+    def on_create(self, snapshot: DocumentSnapshot):
         """
         Called when a document is 'ADDED' to the result of a query.
+        (Will be enqueued to a different thread and run concurrently)
 
         :param snapshot: Firestore Snapshot added
-        :param transaction: transaction that is activated for the scope
         """
         pass
 
-    async def on_update(self, snapshot: DocumentSnapshot, transaction):
+    def on_update(self, snapshot: DocumentSnapshot):
         """ Called when a document is 'MODIFIED' in the result of a query.
+        (Will be enqueued to a different thread and run concurrently)
 
         :param snapshot: Firestore Snapshot modified
-        :param transaction: transaction that is activated for the scope
         """
         pass
 
-    async def on_delete(self, snapshot: DocumentSnapshot, transaction):
+    def on_delete(self, snapshot: DocumentSnapshot):
         """ Called when a document is 'REMOVED' in the result of a query.
+        (Will be enqueued to a different thread and run concurrently)
 
         :param snapshot: Firestore Snapshot deleted
-        :param transaction: transaction that is activated for the scope
         """
         pass
 
