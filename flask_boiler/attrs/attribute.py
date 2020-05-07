@@ -372,6 +372,38 @@ class ReferenceAttribute(PropertyAttribute):
         self._field_kwargs["dm_cls"] = self.dm_cls
 
 
+class EmbeddedAttribute(PropertyAttribute):
+
+    field_cls = fields.Embedded
+
+    def __init__(self, many=_NA, obj_cls=_NA, **kwargs):
+        super().__init__(
+            **kwargs
+        )
+
+        if many == _NA:
+            many = False
+        self.many = many
+        self._field_kwargs["many"] = self.many
+
+        if obj_cls == _NA:
+            obj_cls = None
+        self.dm_cls = obj_cls
+        self._field_kwargs["obj_cls"] = self.dm_cls
+
+
+class ObjectTypeAttribute(PropertyAttribute):
+
+    field_cls = fields.ObjectTypeField
+
+    def __init__(self, f_serialize=_NA, f_deserialize=_NA, **kwargs):
+        super().__init__(
+            **kwargs
+        )
+        self._field_kwargs["serialize"] = f_serialize
+        self._field_kwargs["deserialize"] = f_deserialize
+
+
 class Attribute(AttributeBase):
 
     def __init__(

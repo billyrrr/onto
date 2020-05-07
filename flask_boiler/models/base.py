@@ -119,7 +119,8 @@ class Immutable(BaseRegisteredModel, Schemed, NewMixin, Exportable):
 
 class Serializable(Mutable, metaclass=SerializableMeta):
 
-    # class Meta:
+    class Meta:
+        pass
     #     """
     #     Options object for a Serializable model.
     #     """

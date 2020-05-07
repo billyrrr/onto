@@ -16,11 +16,11 @@ class SerializableMeta(ModelRegistry):
 
         if attributed is not None:
             klass._schema_cls = attributed
-        if hasattr(klass, "Meta"):
-            # Moves Model.Meta.schema_cls to Model._schema_cls
-            meta = klass.Meta
-            if hasattr(meta, "schema_cls"):
-                klass._schema_cls = meta.schema_cls
+        # if hasattr(klass, "Meta"):
+        #     Moves Model.Meta.schema_cls to Model._schema_cls
+        meta = klass.Meta
+        if hasattr(meta, "schema_cls"):
+            klass._schema_cls = meta.schema_cls
 
 
             # if hasattr(meta, "default_fields"):

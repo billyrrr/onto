@@ -153,12 +153,9 @@ class Exportable:
 
         def embed_element(val: EmbeddedElement):
             obj = val.obj
-            return self._export_val(obj)
+            return obj._export_as_dict()
 
-        from .base import Serializable
-        if issubclass(val.__class__, Serializable):
-             return val._export_as_dict(to_save=to_save)
-        elif isinstance(val, EmbeddedElement):
+        if isinstance(val, EmbeddedElement):
             return embed_element(val)
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):
@@ -192,10 +189,7 @@ class Exportable:
             obj = val.obj
             return obj._export_as_view_dict()
 
-        from .base import Serializable
-        if issubclass(val.__class__, Serializable):
-            return val._export_as_view_dict()
-        elif isinstance(val, EmbeddedElement):
+        if isinstance(val, EmbeddedElement):
             return embed_element(val)
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):

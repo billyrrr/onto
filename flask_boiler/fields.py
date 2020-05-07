@@ -199,15 +199,19 @@ class ObjectTypeField(fields.Function, Field):
         else:
             return None
 
-    def __init__(self, *args, serialize=_NA, data_key="obj_type", **kwargs):
+    def __init__(self, *args, serialize=_NA, data_key="obj_type",
+                 deserialize=_NA,
+                 **kwargs):
         if serialize is _NA:
             serialize = self.f_serialize
+        if deserialize is _NA:
+            deserialize = None
 
         super().__init__(
             *args,
             serialize=serialize,
             data_key=data_key,
-            deserialize=None,
+            deserialize=deserialize,
             **kwargs
         )
 

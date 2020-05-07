@@ -18,16 +18,20 @@ def _schema_cls_from_attributed_class(cls):
         d[key] = field
     if len(d) == 0:
         return None
+
+    d["Meta"] = type(
+        "Meta",
+        tuple(),
+        {
+            "exclude": getattr(cls.Meta, "exclude", tuple())
+        })
+
+    if hasattr(cls.Meta, "case_conversion"):
+        d["case_conversion"] = cls.Meta.case_conversion
+
     schema_base = cls._schema_base
 
-    TempSchema = type(_make_schema_name(cls), (schema_base,),
-                      {
-                          **d,
-                          "Meta": type("Meta", tuple(), {
-                              "exclude": getattr(cls, "exclude", tuple())
-                          })
-                      }
-                      )
+    TempSchema = type(_make_schema_name(cls), (schema_base,), d)
 
     return TempSchema
 

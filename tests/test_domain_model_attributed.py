@@ -256,7 +256,8 @@ def test_exclude_fields(CTX):
         Example of a use case of excluding "obj_type", "doc_id", and "doc_ref"
         """
 
-        exclude = ("obj_type", "doc_id", "doc_ref")
+        class Meta:
+            exclude = ("obj_type", "doc_id", "doc_ref")
         status = attrs.bproperty()
 
     order = OrderAttributed.from_dict(
