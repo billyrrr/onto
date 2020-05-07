@@ -9,6 +9,6 @@ RelationshipReference = namedtuple(
 
 EmbeddedElement = namedtuple(
     "EmbeddedElement",
-    ['d', 'obj'],
-    defaults=(None, None)
+    ['d', 'obj_cls', 'obj'],
+    defaults=(None, None, None)
 )

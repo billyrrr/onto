@@ -12,7 +12,7 @@ from google.cloud.firestore import DocumentSnapshot
 from inflection import camelize, underscore
 
 from flask_boiler.context import Context as CTX
-from flask_boiler.models.meta import ModelRegistry
+from flask_boiler.registry import ModelRegistry
 
 
 def random_id():

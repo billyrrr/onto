@@ -20,12 +20,13 @@ def ModelASchema():
     class ModelASchema(schema.Schema):
         int_a = fields.Integer(load_from="intA", dump_to="intA")
         int_b = fields.Integer(load_from="intB", dump_to="intB")
+
     return ModelASchema
+
 
 @pytest.fixture
 @lru_cache(maxsize=1)
 def ModelA(ModelASchema):
-
     class ModelA(flask_boiler.models.base.Serializable):
         _schema_cls = ModelASchema
 
@@ -33,7 +34,6 @@ def ModelA(ModelASchema):
 
 
 def test_create_model():
-
     class ModelKSchema(schema.Schema):
         int_a = fields.Integer(load_from="intA", dump_to="intA")
         int_b = fields.Integer(load_from="intB", dump_to="intB")
@@ -74,7 +74,6 @@ def test_cls_factory(ModelA):
 
 
 def test_from_dict(ModelA):
-
     obj = ModelA.from_dict({
         "intA": 1,
         "intB": 2,
@@ -87,7 +86,6 @@ def test_from_dict(ModelA):
 
 
 def test__additional_fields(ModelASchema, ModelA):
-
     class ModelAASchema(ModelASchema):
         int_aa = fields.Integer(load_from="intAA", dump_to="intAA")
 
@@ -106,7 +104,6 @@ def test__additional_fields(ModelASchema, ModelA):
 
 
 def test_default_value(ModelA):
-
     obj_a = ModelA.new()
 
     assert obj_a.int_a == 0
@@ -132,7 +129,6 @@ def test_property_fields():
 
 
 def test_multiple_inheritance(ModelASchema):
-
     class ModelBSchema(schema.Schema):
         int_b = fields.Integer(load_from="intB", dump_to="intB")
 
@@ -158,7 +154,6 @@ def test_multiple_inheritance(ModelASchema):
 
 
 def test__export_as_dict(ModelA):
-
     a = ModelA.new()
     a.int_a = 1
     a.int_b = 2
@@ -171,7 +166,6 @@ def test__export_as_dict(ModelA):
 
 
 def test__import_properties(ModelA):
-
     a = ModelA.new()
     a.update_vals(with_dict={
         "int_a": 1,
@@ -235,7 +229,7 @@ def test_embedded():
     t.latest = 20
 
     class PlanSchema(schema.Schema):
-        target = fields.Embedded()
+        target = fields.Embedded(obj_cls="Target")
         name = fields.Str()
 
     class Plan(flask_boiler.models.base.Serializable):
@@ -263,11 +257,11 @@ def test_embedded():
 
 
 def test_embedded_many_with_dict():
-    class SpeciesSchema(schema.Schema):
+    class SpeciesSchema(schema.BasicSchema):
         scientific_name = fields.Str()
         weight = fields.Str()
-        habitats = fields.Embedded(many=True)
-        related_species = fields.Embedded(many=True)
+        habitats = fields.Embedded(obj_cls="Habitat", many=True)
+        related_species = fields.Embedded(obj_cls="Species", many=True)
 
     class Species(flask_boiler.models.base.Serializable):
         _schema_cls = SpeciesSchema
@@ -278,7 +272,7 @@ def test_embedded_many_with_dict():
     class EndangeredSpecies(flask_boiler.models.base.Serializable):
         _schema_cls = EndangeredSpeciesSchema
 
-    class HabitatSchema(schema.Schema):
+    class HabitatSchema(schema.BasicSchema):
         habitat_name = fields.Str()
 
     class Habitat(flask_boiler.models.base.Serializable):
@@ -314,55 +308,23 @@ def test_embedded_many_with_dict():
         }
     )
 
-    d = {
-        "obj_type": "EndangeredSpecies",
-        "relatedSpecies": {
-            "jaguar": {
-                "obj_type": "Species",
-                "relatedSpecies": [],
-                "scientificName": "Panthera onca",
-                "weight": "",
-                "habitats": [
-                    {
-                        "obj_type": "Habitat",
-                        "habitatName": "Forests"
-                    },
-                    {
-                        "obj_type": "Habitat",
-                        "habitatName": "Grasslands"
-                    }
-                ]
-            },
-            "snow leopard": {
-                "obj_type": "Species",
-                "relatedSpecies": [],
-                "scientificName": "Panthera uncia",
-                "weight": "",
-                "habitats": [
-                    {
-                        "obj_type": "Habitat",
-                        "habitatName": "cold high mountains"
-                    }
-                ]
-            }
-        },
-        "scientificName": "Panthera pardus orientalis",
-        "weight": "70 - 105 pounds",
-        "habitats": [
-            {
-                "obj_type": "Habitat",
-                "habitatName": "Temperate"
-            },
-            {
-                "obj_type": "Habitat",
-                "habitatName": "Broadleaf"
-            },
-            {
-                "obj_type": "Habitat",
-                "habitatName": "Mixed Forests"
-            }
-        ]
-    }
+    d = {'habitats': [{'habitatName': 'Temperate'},
+                      {'habitatName': 'Broadleaf'},
+                      {'habitatName': 'Mixed Forests'}],
+         'relatedSpecies': {'jaguar': {'habitats': [{'habitatName': 'Forests'},
+                                                    {
+                                                        'habitatName': 'Grasslands'}],
+                                       'relatedSpecies': [],
+                                       'scientificName': 'Panthera onca',
+                                       'weight': ''},
+                            'snow leopard': {
+                                'habitats': [{'habitatName': 'cold high '
+                                                             'mountains'}],
+                                'relatedSpecies': [],
+                                'scientificName': 'Panthera uncia',
+                                'weight': ''}},
+         'scientificName': 'Panthera pardus orientalis',
+         'weight': '70 - 105 pounds'}
 
     assert d == amur_leopard.to_dict()
 

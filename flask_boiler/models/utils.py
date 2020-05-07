@@ -19,8 +19,17 @@ def _schema_cls_from_attributed_class(cls):
     if len(d) == 0:
         return None
     schema_base = cls._schema_base
-    tmp_schema = schema_base.from_dict(d, name=_make_schema_name(cls))
-    return tmp_schema
+
+    TempSchema = type(_make_schema_name(cls), (schema_base,),
+                      {
+                          **d,
+                          "Meta": type("Meta", tuple(), {
+                              "exclude": getattr(cls, "exclude", tuple())
+                          })
+                      }
+                      )
+
+    return TempSchema
 
 
 def _collect_attrs(cls) -> Iterable[Tuple[str, AttributeBase]]:

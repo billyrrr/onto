@@ -252,18 +252,10 @@ def test_schema_load():
         'cityName': 'Washington D.C.',
         'country': 'USA',
         'capital': True,
-        'obj_type': "Municipality",
-        # 'obj_type': "Municipality",
-        # 'doc_id': 'DC',
-        # 'doc_ref': 'City/DC'
     }) == {
         'city_name': 'Washington D.C.',
         'country': 'USA',
         'capital': True,
-        'obj_type': "Municipality",
-
-        # 'doc_id': 'DC',
-        # 'doc_ref': 'City/DC'
     }
 
 

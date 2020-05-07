@@ -12,10 +12,9 @@ from google.cloud.firestore import Query, DocumentReference, \
 from flask_boiler.config import Config
 from flask_boiler.context import Context as CTX
 
-from flask_boiler.firestore_object import ClsFactory
 from flask_boiler.domain_model import DomainModel
-from flask_boiler.schema import Schema
-from flask_boiler import fields, collection_mixin
+from flask_boiler.schema import Schema, BasicSchema
+from flask_boiler import fields, collection_mixin, attrs
 
 # For pytest, DO NOT DELETE
 from .fixtures import *
@@ -27,7 +26,6 @@ from examples.city.models import City, Municipality, StandardCity
 
 @pytest.fixture
 def setup_cities(request, CTX):
-
     def fin():
         _delete_all(collection_name="City", CTX=CTX)
 
@@ -167,7 +165,6 @@ def test_where_with_kwargs(CTX):
 
 @pytest.fixture
 def setup_and_finalize(request, CTX):
-
     # Clear City collection before test
     _delete_all(collection_name="City", CTX=CTX)
 
@@ -229,3 +226,67 @@ def test_from_dict_and_doc_id(CTX):
     # tear down steps
     sf.delete()
 
+
+def test_customized_reserved_fields_domain_model(CTX):
+    """ Tests deserialization of domain model that has no default fields:
+            doc_ref, doc_id, obj_type
+
+    :return:
+    """
+
+    class OrderComplex(DomainModel):
+        """
+        Example of a use case of overriding obj_type field to customize
+            the data_key for saving and reading obj_type
+        """
+
+        class _schema_cls(Schema):
+            obj_type = fields.ObjectTypeField(data_key="_object_type")
+
+            status = fields.String()
+
+    order = OrderComplex.from_dict(
+        {
+            'status': 'good',
+            '_object_type': "OrderComplex"
+        }, doc_id="1"
+    )
+
+    assert isinstance(order, OrderComplex)
+
+    """
+    TODO: assert that this code fails (currently does not fail)
+    
+        order = DomainModel.from_dict(
+        {
+            'status': 'good',
+            '_object_type': "Order"
+        }, doc_id="SF"
+    )
+    
+    """
+
+    assert order.to_dict() == {
+        '_object_type': 'OrderComplex',
+        'doc_id': '1',
+        'doc_ref': 'OrderComplex/1',
+        'status': 'good'}
+
+    class Order(DomainModel):
+        """
+        Example of a use case of excluding "obj_type", "doc_id", and "doc_ref"
+        """
+
+        class _schema_cls(Schema):
+            class Meta:
+                exclude = ("obj_type", "doc_id", "doc_ref")
+
+            status = fields.String()
+
+    order = Order.from_dict(
+        {
+            'status': 'good',
+        }, doc_id="2"
+    )
+
+    assert order.to_dict() == {'status': 'good'}

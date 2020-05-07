@@ -5,14 +5,13 @@ from google.cloud.firestore import Transaction
 
 from flask_boiler import fields
 from flask_boiler.common import _NA
-from flask_boiler.helpers import RelationshipReference, EmbeddedElement
+from flask_boiler.helpers import RelationshipReference
 # from flask_boiler.view_model import ViewModel
-from flask_boiler.collection_mixin import CollectionMixin
-from flask_boiler.models.meta import ModelRegistry
+from flask_boiler.registry import ModelRegistry
 from flask_boiler.models.base import Serializable
-from flask_boiler.factory import ClsFactory
 from flask_boiler.utils import snapshot_to_obj
 from flask_boiler.context import Context as CTX
+from flask_boiler.factory import ClsFactory
 
 
 class FirestoreObjectMixin:
@@ -229,14 +228,26 @@ class FirestoreObjectValMixin:
 
         super_cls, obj_cls = cls, cls
 
-        if "obj_type" in d:
-            obj_type = d["obj_type"]
-            obj_cls = ModelRegistry.get_cls_from_name(obj_type)
+        from flask_boiler.common import read_obj_type
+        obj_type_str = read_obj_type(d, obj_cls)
 
+        if obj_type_str is not None:
+            """ If obj_type string is specified, use it instead of cls supplied 
+                to from_dict. 
+
+            TODO: find a way to raise error when obj_type_str reading 
+                fails with None and obj_type evaluates to cls supplied 
+                to from_dict unintentionally. 
+
+            """
+            obj_cls = ModelRegistry.get_cls_from_name(obj_type_str)
             if obj_cls is None:
-                raise ValueError("Cannot read obj_type: {}. "
-                                 "Make sure that obj_type is a subclass of {}. "
-                                 .format(obj_type, super_cls))
+                """ If obj_type string is specified but invalid, 
+                    throw a ValueError. 
+                """
+                raise ValueError("Cannot read obj_type string: {}. "
+                                 "Make sure that obj_type is a subclass of {}."
+                                 .format(obj_type_str, super_cls))
 
         d = obj_cls.get_schema_obj().load(d)
 

@@ -6,7 +6,7 @@ from flask_boiler import fields, errors
 from flask_boiler.context import Context as CTX
 from flask_boiler.helpers import EmbeddedElement
 # from .base import BaseRegisteredModel, Serializable
-from .meta import ModelRegistry
+from ..registry import ModelRegistry
 
 
 class Importable:
@@ -31,10 +31,9 @@ class Importable:
 
         def embed_element(val: EmbeddedElement):
             d = val.d
-            obj_type = d["obj_type"]
-            obj_cls = ModelRegistry.get_cls_from_name(obj_type)
-            data = {key: val for key, val in d.items() if key != "obj_type"}
-            obj = obj_cls.from_dict(d=data)
+            obj_cls = val.obj_cls
+            # data = {key: val for key, val in d.items()}
+            obj = obj_cls.from_dict(d=d)
             return obj
 
         if isinstance(val, EmbeddedElement):
@@ -85,14 +84,28 @@ class Importable:
                   **kwargs):
         super_cls, obj_cls = cls, cls
 
-        if "obj_type" in d:
-            obj_type = d["obj_type"]
-            obj_cls = ModelRegistry.get_cls_from_name(obj_type)
+        from flask_boiler.common import read_obj_type
+        obj_type_str = read_obj_type(d, obj_cls)
+        # Note: "obj_type" is NOT the "attribute" property
+        # of obj_type field instance
 
+        if obj_type_str is not None:
+            """ If obj_type string is specified, use it instead of cls supplied 
+                to from_dict. 
+                
+            TODO: find a way to raise error when obj_type_str reading 
+                fails with None and obj_type evaluates to cls supplied 
+                to from_dict unintentionally. 
+                
+            """
+            obj_cls = ModelRegistry.get_cls_from_name(obj_type_str)
             if obj_cls is None:
-                raise ValueError("Cannot read obj_type: {}. "
-                                 "Make sure that obj_type is a subclass of {}. "
-                                 .format(obj_type, super_cls))
+                """ If obj_type string is specified but invalid, 
+                    throw a ValueError. 
+                """
+                raise ValueError("Cannot read obj_type string: {}. "
+                                 "Make sure that obj_type is a subclass of {}."
+                                 .format(obj_type_str, super_cls))
 
         d = obj_cls.get_schema_obj().load(d)
 

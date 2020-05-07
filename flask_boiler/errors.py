@@ -5,12 +5,17 @@ class BoilerError(Exception):
     pass
 
 
+class ModelDeclarationError(BoilerError):
+    pass
+
+
 class DefaultNotAllowedError(BoilerError):
     """
     Thrown when a field's value is not provided and cannot
         be initialized with the default value.
     """
     pass
+
 
 class PropertyEvalError(BoilerError):
     """ An error generated when getting a property from an instance

@@ -1,3 +1,5 @@
+import warnings
+
 from google.cloud.firestore_v1 import Transaction
 
 from flask_boiler.collection_mixin import CollectionMixin
@@ -42,12 +44,16 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
         if super().get_schema_cls() is None:
             for child in cls._get_children():
                 for key, val in child.get_schema_obj().fields.items():
-                    field_cls = val.__class__
+                    field_obj = val
 
-                    if key in d and d[key] != field_cls:
-                        raise ValueError
-
-                    d[key] = field_cls
+                    if key in d and d[key] != field_obj:
+                        warnings.warn(
+                            f"Conflict when resolving field for {key}. The "
+                            f"field is for querying database "
+                            f"from a parent PrimaryObject when "
+                            f"such base has no declared schema. ")
+                    else:
+                        d[key] = field_obj
             tmp_schema = Schema.from_dict(d)
             return tmp_schema
         else:

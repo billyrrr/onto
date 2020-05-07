@@ -248,3 +248,21 @@ def test_from_dict_and_doc_id(CTX):
     # tear down steps
     sf.delete()
 
+
+def test_exclude_fields(CTX):
+
+    class OrderAttributed(DomainModel):
+        """
+        Example of a use case of excluding "obj_type", "doc_id", and "doc_ref"
+        """
+
+        exclude = ("obj_type", "doc_id", "doc_ref")
+        status = attrs.bproperty()
+
+    order = OrderAttributed.from_dict(
+        {
+            'status': 'good',
+        }, doc_id="3"
+    )
+
+    assert order.to_dict() == {'status': 'good'}

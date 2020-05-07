@@ -1,19 +1,27 @@
+import functools
 import typing
+import warnings
 
 import iso8601
 import pytz
 from google.cloud.firestore import DocumentReference
 from marshmallow import fields
 
+from flask_boiler.common import _NA
 from flask_boiler.helpers import RelationshipReference, EmbeddedElement
+
 from datetime import datetime
 from math import inf
 
 from marshmallow import utils as mutils
 
+from flask_boiler.registry import ModelRegistry
+
 # Firestore Integer supports up to 64-bit signed
 # Note that this may result in defect where business data reaches
 #   this maximum.
+# from flask_boiler.models.meta import ModelRegistry
+
 _POS_INF_APPROX = 2 ** 63 - 1
 _NEGATIVE_INF_APPROX = -2 ** 63
 
@@ -111,6 +119,97 @@ class Function(fields.Function, Field):
     """
     def __init__(self, missing=fields.missing_, *args, **kwargs):
         super().__init__(missing=missing, *args, **kwargs)
+
+
+class DocIdField(fields.Function, Field):
+
+    def __init__(self, *args, **kwargs):
+        def serialize(obj):
+            """ serialize: A callable from which to retrieve the value.
+            The function must take a single argument ``obj`` which is the object
+            to be serialized. It can also optionally take a ``context`` argument,
+            which is a dictionary of context variables passed to the serializer.
+            If no callable is provided then the ```load_only``` flag will be set
+
+            to True.
+            :param obj:
+            :return:
+            """
+            # TODO: delete
+            try:
+                res = getattr(obj, self.attribute)
+            except AttributeError as e:
+                return fields.missing_
+            else:
+                return res
+
+        # def deserialize(value):
+        #     """ deserialize: A callable from which to retrieve the value.
+        #     The function must take a single argument ``value`` which is the value
+        #     to be deserialized. It can also optionally take a ``context`` argument,
+        #     which is a dictionary of context variables passed to the deserializer.
+        #     If no callable is provided then ```value``` will be passed through
+        #     unchanged.
+        #
+        #     :param value:
+        #     :return:
+        #     """
+        #     return value[self.data_key]
+
+        super().__init__(
+            *args,
+            serialize=serialize,
+            deserialize=None,
+            **kwargs
+        )
+
+
+class ObjectTypeField(fields.Function, Field):
+
+    @staticmethod
+    def f_serialize(obj, context):
+        """ serialize: A callable from which to retrieve the value.
+        The function must take a single argument ``obj`` which is the object
+        to be serialized. It can also optionally take a ``context`` argument,
+        which is a dictionary of context variables passed to the serializer.
+        If no callable is provided then the ```load_only``` flag will be set
+        to True.
+
+        :param obj:
+        :return:
+        """
+        # TODO: delete
+
+        try:
+            from flask_boiler.utils import obj_type_serialize
+            res = obj_type_serialize(obj)
+        except AttributeError:
+            return fields.missing_
+        else:
+            return res
+
+    def read_obj_type_str(self, raw_dict) -> typing.Optional[str]:
+        """ Read obj_type string from inputs that are to be
+        deserialized/imported/loaded soon
+
+        :return:
+        """
+        if self.data_key in raw_dict:
+            return raw_dict[self.data_key]
+        else:
+            return None
+
+    def __init__(self, *args, serialize=_NA, data_key="obj_type", **kwargs):
+        if serialize is _NA:
+            serialize = self.f_serialize
+
+        super().__init__(
+            *args,
+            serialize=serialize,
+            data_key=data_key,
+            deserialize=None,
+            **kwargs
+        )
 
 
 class String(fields.String, Field):
@@ -232,19 +331,33 @@ class Embedded(fields.Raw, Field):
     """
 
     def __init__(self, *args, missing=_MissingNotSpecified, many=False,
+                 obj_cls=_NA,
                  **kwargs):
         """
 
         :param args: Positional arguments to pass to marshmallow.fields.Str
         :param many: If set to True, will deserialize and serialize the field
                     as a list. (TODO: add support for more iterables)
+        :param obj_cls: cls of the element
         :param kwargs: Keyword arguments to pass to marshmallow.fields.Str
         """
 
+        if obj_cls is _NA:
+            raise ValueError
+
         if missing == _MissingNotSpecified:
             missing = list if many else None
-        super().__init__(*args, missing=missing, **kwargs)
         self.many = many
+
+        self._obj_cls = obj_cls
+        super().__init__(*args, missing=missing, **kwargs)
+
+    @property
+    def obj_cls(self):
+        _obj_cls = self._obj_cls
+        if isinstance(self._obj_cls, str):
+            _obj_cls = ModelRegistry.get_cls_from_name(obj_type_str=_obj_cls)
+        return _obj_cls
 
     def _serialize(self, value, *args, embed_many=None, **kwargs):
         if embed_many is None:
@@ -285,7 +398,8 @@ class Embedded(fields.Raw, Field):
                 raise NotImplementedError
         else:
             return EmbeddedElement(
-                d=value
+                d=value,
+                obj_cls=self.obj_cls
             )
 
 

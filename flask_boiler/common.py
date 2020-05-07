@@ -6,3 +6,18 @@ class _NA:
 
     """
     pass
+
+
+def read_obj_type(d, obj_cls):
+    """ Returns obj_type from the raw dictionary
+
+    Note: "obj_type" is NOT the "attribute" property of obj_type field instance
+    :param d:
+    :param obj_cls:
+    :return:
+    """
+    fds = obj_cls.get_schema_obj().fields
+    if "obj_type" in fds:
+        return fds["obj_type"].read_obj_type_str(d)
+    else:
+        return None
