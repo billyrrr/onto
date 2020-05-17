@@ -18,7 +18,7 @@ def run_transaction(func):
         transaction = CTX.db.transaction()
         token = CTX.transaction_var.set(transaction)
         @firestore.transactional
-        def new_func(transaction):
+        def new_func(transaction: firestore.Transaction):
             return func(*args, **kwargs, transaction=transaction)
         res = new_func(transaction)
         # Reverse transaction context variable

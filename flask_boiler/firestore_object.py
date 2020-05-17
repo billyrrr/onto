@@ -2,6 +2,7 @@ import warnings
 
 from google.cloud.firestore import DocumentReference
 from google.cloud.firestore import Transaction
+from google.cloud.firestore_v1 import WriteOption, LastUpdateOption
 
 from flask_boiler import fields
 from flask_boiler.common import _NA
@@ -69,10 +70,17 @@ class FirestoreObjectMixin:
 
         :param snapshot: Firestore Snapshot
         """
-        obj = snapshot_to_obj(snapshot=snapshot, super_cls=cls)
+        if not snapshot.exists:
+            return None
+
+        obj = cls.from_dict(d=snapshot.to_dict(), doc_ref=snapshot.reference)
         return obj
 
-    def save(self, transaction: Transaction=_NA, doc_ref=None, save_rel=True):
+    def save(self,
+             transaction: Transaction=_NA,
+             doc_ref=None,
+             save_rel=True,
+             ):
         """ Save an object to Firestore
 
         :param transaction: Firestore Transaction
@@ -94,6 +102,8 @@ class FirestoreObjectMixin:
         else:
             transaction.set(reference=doc_ref,
                             document_data=d)
+
+
 
     def delete(self, transaction: Transaction = _NA) -> None:
         """ Deletes and object from Firestore.
