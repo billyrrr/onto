@@ -15,6 +15,7 @@ import logging
 import firebase_admin
 from firebase_admin import credentials
 from google.cloud import firestore
+from google.cloud import storage
 from celery import Celery
 
 from .config import Config
@@ -140,7 +141,9 @@ class Context:
         # TODO delete certificate path in function call
 
         try:
-            cls.firebase_app = firebase_admin.initialize_app(credential=cls._cred, name=cls.config.APP_NAME)
+            cls.firebase_app = firebase_admin.initialize_app(credential=cls._cred, name=cls.config.APP_NAME, options={
+                'storageBucket': cls.config.STORAGE_BUCKET_NAME
+            })
         except Exception as e:
             logging.exception('Error initializing firebase_app')
             raise e

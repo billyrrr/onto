@@ -39,10 +39,14 @@ class ConfigBase:
     TESTING: bool = None
     FIREBASE_CERTIFICATE_JSON_PATH: str = None
     APP_NAME: str = None
+    STORAGE_BUCKET_NAME: str = None
 
     def __eq__(self, other):
         """
         Comparator for configs to avoid reloading the same config.
+
+        Note: this does not compare all fields
+
         :param other:
         :return:
         """
@@ -55,7 +59,7 @@ class ConfigBase:
 
     def __new__(cls, certificate_filename=None, certificate_path=None,
                 testing=False, debug=False,
-                app_name=None, *args, **kwargs):
+                app_name=None, storage_bucket_name=None, *args, **kwargs):
         if certificate_path is not None:
             cls.FIREBASE_CERTIFICATE_JSON_PATH = certificate_path
         else:
@@ -64,6 +68,10 @@ class ConfigBase:
         cls.TESTING = testing
         cls.DEBUG = debug
         cls.APP_NAME = app_name
+        if storage_bucket_name is not None:
+            cls.STORAGE_BUCKET_NAME = storage_bucket_name
+        else:
+            cls.STORAGE_BUCKET_NAME = f"{app_name}.appspot.com"
         return cls
 
 
