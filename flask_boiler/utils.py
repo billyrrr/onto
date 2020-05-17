@@ -70,16 +70,16 @@ def snapshot_to_obj(
         return None
 
     d = snapshot.to_dict()
-    obj_type = d["obj_type"]
-    obj_cls = ModelRegistry.get_cls_from_name(obj_type)
+    obj_cls = super_cls
 
-    if obj_cls is None:
-        raise ValueError("Cannot read obj_type: {}. "
-                         "Make sure that obj_type is a subclass of {}. "
-                         .format(obj_type, super_cls))
+    if "obj_type" in d:
+        obj_type = d["obj_type"]
+        obj_cls = ModelRegistry.get_cls_from_name(obj_type)
 
-    if super_cls is not None:
-        assert issubclass(obj_cls, super_cls)
+        if obj_cls is None:
+            raise ValueError("Cannot read obj_type: {}. "
+                             "Make sure that obj_type is a subclass of {}. "
+                             .format(obj_type, super_cls))
 
     obj = obj_cls.from_dict(d=d, **kwargs, doc_ref=snapshot.reference)
     return obj

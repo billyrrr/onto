@@ -70,13 +70,13 @@ class BusinessPropertyStore:
 
     @property
     def bprefs(self):
-        return self._manifest.copy()
+        return {doc_ref for (_, doc_ref) in self._manifest.copy()}
 
     def refresh(self):
-        for doc_ref in self._manifest:
+        for obj_cls, doc_ref in self._manifest:
             self.objs[doc_ref] = snapshot_to_obj(
                 self._container.get(doc_ref),
-                super_cls=None,
+                super_cls=obj_cls,
                 **self._obj_options
             )
 
@@ -114,12 +114,12 @@ class BusinessPropertyStore:
                     doc_ref = to_ref(*v)
                     g[key][k] = doc_ref
                     gr[doc_ref].append("{}.{}".format(key, k))
-                    manifest.add(doc_ref)
+                    manifest.add( (v[0], doc_ref) )
             else:
                 doc_ref = to_ref(*val)
                 g[key] = doc_ref
                 gr[doc_ref].append(key)
-                manifest.add(doc_ref)
+                manifest.add( (val[0], doc_ref) )
 
         return dict(g), dict(gr), manifest
 
