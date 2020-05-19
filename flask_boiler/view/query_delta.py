@@ -6,6 +6,7 @@ from typing import Optional, Awaitable
 
 from google.cloud.firestore_v1 import DocumentSnapshot, Watch, \
     DocumentReference
+from google.cloud.firestore_v1.watch import DocumentChange
 
 from flask_boiler.context import Context as CTX
 from flask_boiler.query import run_transaction
@@ -174,25 +175,74 @@ class OnSnapshotTasksMixin:
         """
         self.q.put(item)
 
+    def _on_snapshot(self, snapshots, changes, timestamp):
+        """
+        Note that server reboot will result in some "Modified" objects
+            to be routed as "Added" objects
+
+        :param snapshots:
+        :param changes:
+        :param timestamp:
+        """
+        for change in changes:
+            assert isinstance(change, DocumentChange)
+            snapshot = change.document
+            assert isinstance(snapshot, DocumentSnapshot)
+            try:
+                CTX.logger.info(f"DAV: {self.__class__.__name__} started "
+                                f"for {snapshot.reference.path}")
+                if change.type.name == 'ADDED':
+                    self.Protocol.on_create(
+                        snapshot=snapshot,
+                        mediator=self
+                    )
+                elif change.type.name == 'MODIFIED':
+                    if change.old_index != -1:
+                        # Append before snapshot if available
+                        before_snapshot = snapshots[change.old_index]
+                    else:
+                        before_snapshot = None
+                    after_snapshot = snapshots[change.new_index]
+                    self.on_patch(after_snapshot=after_snapshot,
+                                  before_snapshot=before_snapshot)
+                elif change.type.name == 'REMOVED':
+                    self.Protocol.on_delete(
+                        snapshot=snapshot,
+                        mediator=self
+                    )
+            except Exception as e:
+                """
+                Expects e to be printed to the logger 
+                """
+                CTX.logger.exception(f"DAV {self.__class__.__name__} failed "
+                                     f"for {snapshot.reference.path}")
+            else:
+                CTX.logger.info(f"DAV {self.__class__.__name__} succeeded "
+                                f"or enqueued "
+                                f"for {snapshot.reference.path}")
+
+
     class Protocol(ProtocolBase):
 
         @staticmethod
         def on_create(snapshot: DocumentSnapshot, mediator):
-            f = functools.partial(mediator.on_create, snapshot=snapshot)
+            if snapshot.update_time == snapshot.create_time:
+                f = functools.partial(mediator.on_post, snapshot=snapshot)
+            else:
+                f = functools.partial(mediator.on_patch, snapshot=snapshot)
             mediator._add_awaitable(f)
 
         @staticmethod
         def on_update(snapshot: DocumentSnapshot, mediator):
-            f = functools.partial(mediator.on_update, snapshot=snapshot)
+            f = functools.partial(mediator.on_patch, snapshot=snapshot)
             mediator._add_awaitable(f)
 
         @staticmethod
         def on_delete(snapshot: DocumentSnapshot, mediator):
-            f = functools.partial(mediator.on_delete, snapshot=snapshot)
+            f = functools.partial(mediator.on_remove, snapshot=snapshot)
             mediator._add_awaitable(f)
 
-
-    def on_create(self, snapshot: DocumentSnapshot):
+    def on_post(self, snapshot: DocumentSnapshot):
         """
         Called when a document is 'ADDED' to the result of a query.
         (Will be enqueued to a different thread and run concurrently)
@@ -201,15 +251,22 @@ class OnSnapshotTasksMixin:
         """
         pass
 
-    def on_update(self, snapshot: DocumentSnapshot):
+    def on_patch(
+            self,
+            after_snapshot: DocumentSnapshot,
+            before_snapshot: Optional[DocumentSnapshot]=None,
+            ):
         """ Called when a document is 'MODIFIED' in the result of a query.
         (Will be enqueued to a different thread and run concurrently)
 
-        :param snapshot: Firestore Snapshot modified
+        :param after_snapshot:
+        :param before_snapshot: May be None if timestamp set to watcher
+            is later than the last_updated time of a snapshot
+        :return:
         """
         pass
 
-    def on_delete(self, snapshot: DocumentSnapshot):
+    def on_remove(self, snapshot: DocumentSnapshot):
         """ Called when a document is 'REMOVED' in the result of a query.
         (Will be enqueued to a different thread and run concurrently)
 

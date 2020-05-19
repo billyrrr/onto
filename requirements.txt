@@ -30,3 +30,5 @@ flask-socketio
 iso8601
 
 pyyaml
+
+google-cloud-logging

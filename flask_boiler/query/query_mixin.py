@@ -156,6 +156,18 @@ class QueryMixin:
         """ Queries the datastore. Note that indexes may need to be added
                 from the link provided by firestore in the error messages.
 
+        NOTE: all subclasses of the current class will be queried
+        NOTE: this method will fail when the descendents of the class
+            plus itself counts to >10 due to Firestore query limitation.
+            (10 "in" queries max, which is 9 descendant classes max).
+            Watch for dynamically constructed class
+            in runtime, as this may increase the number of descendants of its
+            superclass, and may result in fail. To turn off obj_type behavior,
+            use a separate collection for each class and/or customize
+            obj_type field/attribute.
+
+        TODO: post more examples for customizing obj_type field/attribute
+
         TODO: add error handling and argument checking
         TODO: implement limit, orderby, etc.
 

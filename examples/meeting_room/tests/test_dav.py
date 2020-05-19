@@ -62,11 +62,12 @@ class MeetingSessionGet(ViewMediatorDeltaDAV):
 
 
 def test_start(users, tickets, location, meeting):
-    mediator = MeetingSessionGet(query=
+
+    mediator_get = MeetingSessionGet(query=
                                  Query(parent=Meeting._get_collection())
                                  )
 
-    mediator.start()
+    mediator_get.start()
 
     testing_utils._wait(factor=.7)
 
@@ -123,8 +124,21 @@ def test_mutate(users, tickets, location, meeting, delete_after):
 
     mediator.start()
 
+    patch_collection_name = "{}_PATCH".format(MeetingSession.__name__)
+
+    patch_mediator = MeetingSessionPatch(
+        query=Context.db.collection_group(patch_collection_name)
+    )
+
+    patch_mediator.start()
+
     testing_utils._wait(factor=.7)
 
+    # testing_utils._wait(60)  # TODO: delete; used right now for breakpoint
+
+    """
+    Tests that MeetingSessionGet works 
+    """
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSession.__name__).document(meeting.doc_id)
     assert ref.get().to_dict() == {'latitude': 32.880361,
@@ -145,14 +159,11 @@ def test_mutate(users, tickets, location, meeting, delete_after):
                                    'inSession': True,
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
 
-    patch_collection_name = "{}_PATCH".format(MeetingSession.__name__)
+    # testing_utils._wait(500)
 
-    patch_mediator = MeetingSessionPatch(
-        query=Context.db.collection_group(patch_collection_name)
-    )
-
-    patch_mediator.start()
-
+    """
+    Tests that MeetingSessionPatch works 
+    """
     ref: CollectionReference = Context.db.collection(
         f'users/tijuana/{patch_collection_name}'
     )
@@ -209,7 +220,8 @@ def test_domain_model_changes(users, tickets, location, meeting):
     mediator.start()
 
     testing_utils._wait(factor=2)
-    #
+    testing_utils._wait(500)
+
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSession.__name__).document(meeting.doc_id)
 
@@ -235,7 +247,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
     tickets[0].save()
 
     testing_utils._wait()
-    #
+
     """
     Expect the document to be updated to exclude Tijuana Furlong from a
       list of people attending the meeting session and the hearing aid
