@@ -82,7 +82,8 @@ class Context:
     #         raise TypeError
 
     @classmethod
-    def _enable_logging(cls, output_level=logging.DEBUG, output_choice=None):
+    def _enable_logging(cls, output_level=logging.DEBUG, output_choice=None,
+                        certificate_path=None):
         """ Set cls.logger to output to standard out.
         NOTE: cls._reload_logger should be called first.
         level applies when output_choice is sys-logger, and does not
@@ -102,7 +103,9 @@ class Context:
             handler.setFormatter(formatter)
             root.addHandler(handler)
         elif output_choice == 'gcloud-logger':
-            logging_client = google.cloud.logging.Client()
+            logging_client = google.cloud.logging.Client.from_service_account_json(
+                json_credentials_path=certificate_path
+            )
             # "Retrieves a Cloud Logging handler based on the environment
             # you're running in and integrates the handler with the
             # Python logging module. By default this captures all logs
@@ -151,7 +154,8 @@ class Context:
             cls._enable_logging(output_level=logging.DEBUG,
                                 output_choice='sys-logger')
         else:
-            cls._enable_logging(output_choice='gcloud-logger')
+            cls._enable_logging(output_choice='gcloud-logger',
+                                certificate_path=cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
 
         cls._reload_debug_flag(cls.config.DEBUG)
         cls._reload_testing_flag(cls.config.TESTING)

@@ -3,4 +3,5 @@ from .attribute import AttributeBase, \
     RelationshipAttribute as relation, \
     DictAttribute as bdict, \
     EmbeddedAttribute as embed, \
-    ObjectTypeAttribute as object_type
+    ObjectTypeAttribute as object_type, \
+    LocalTimeAttribute as local_time

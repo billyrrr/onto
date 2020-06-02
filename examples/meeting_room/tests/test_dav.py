@@ -220,7 +220,6 @@ def test_domain_model_changes(users, tickets, location, meeting):
     mediator.start()
 
     testing_utils._wait(factor=2)
-    testing_utils._wait(500)
 
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSession.__name__).document(meeting.doc_id)

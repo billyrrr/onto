@@ -70,6 +70,14 @@ def test_relationship_many(CTX):
                    2: RelationshipReference(nested=False, doc_ref=doc_ref_2)}
 
 
+def test_local_time():
+    from flask_boiler.fields import local_time_from_timestamp, timestamp_from_local_time
+    local_time_str = local_time_from_timestamp(1545062400)
+    assert local_time_str == "2018-12-17T08:00:00"
+    local_time_timestamp = timestamp_from_local_time("2018-12-17T08:00:00")
+    assert local_time_timestamp == 1545062400
+
+
 # def test_projected():
 #
 #     from flask_boiler.schema import Schema

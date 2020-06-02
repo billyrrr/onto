@@ -29,7 +29,9 @@ def test_get_manifest(color_refs):
     assert gr == {
         'projects/flask-boiler-testing/databases/(default)/documents/colors/doc_id_cian': ["favorite_color"]
     }
-    assert manifest == {'projects/flask-boiler-testing/databases/(default)/documents/colors/doc_id_cian', }
+    assert manifest == {
+        (Color, 'projects/flask-boiler-testing/databases/(default)/documents/colors/doc_id_cian'),
+    }
 
 
 def test_update(CTX, color_refs):

@@ -160,7 +160,10 @@ class OnSnapshotTasksMixin:
             item = self.q.get()
             if item is None:
                 break
-            item()
+            try:
+                item()
+            except Exception as e:
+                CTX.logger.exception(f"a task in the queue has failed {item}")
             self.q.task_done()
 
     def _start_thread(self):
@@ -226,10 +229,10 @@ class OnSnapshotTasksMixin:
 
         @staticmethod
         def on_create(snapshot: DocumentSnapshot, mediator):
-            if snapshot.update_time == snapshot.create_time:
-                f = functools.partial(mediator.on_post, snapshot=snapshot)
-            else:
-                f = functools.partial(mediator.on_patch, snapshot=snapshot)
+            # if snapshot.update_time == snapshot.create_time:
+            f = functools.partial(mediator.on_post, snapshot=snapshot)
+            # else:
+            #     f = functools.partial(mediator.on_patch, after_snapshot=snapshot)
             mediator._add_awaitable(f)
 
         @staticmethod

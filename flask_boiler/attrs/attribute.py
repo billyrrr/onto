@@ -352,6 +352,11 @@ class RelationshipAttribute(PropertyAttribute):
         self._field_kwargs["many"] = self.many
 
 
+class LocalTimeAttribute(PropertyAttribute):
+
+    field_cls = fields.Localtime
+
+
 class ReferenceAttribute(PropertyAttribute):
 
     field_cls = fields.StructuralRef

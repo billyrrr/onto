@@ -48,25 +48,25 @@ def test_errors(monkeypatch):
         import firebase_admin
         m.setattr(firebase_admin.credentials, "Certificate", initialize_cert_fail)
         with pytest.raises(CertFailError):
-            Context._reload_firebase_app('./non-existent.json')
+            Context._reload_credentials('./non-existent.json')
 
-    class AppFailError(Exception):
-        pass
-
-    def initialize_app_fail(*args, **kwargs):
-        raise AppFailError
-
-    with monkeypatch.context() as m:
-        import firebase_admin
-        m.setattr(firebase_admin, "initialize_app", initialize_app_fail)
-        _PartialConfig = type(
-            "_PartialConfig",
-            (object,),
-            {"APP_NAME": "AppNameFail"}
-        )
-        m.setattr(Context, "config", _PartialConfig())
-        with pytest.raises(AppFailError):
-            Context._reload_firebase_app('./config_jsons/flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json')
+    # class AppFailError(Exception):
+    #     pass
+    #
+    # def initialize_app_fail(*args, **kwargs):
+    #     raise AppFailError
+    #
+    # with monkeypatch.context() as m:
+    #     import firebase_admin
+    #     m.setattr(firebase_admin, "initialize_app", initialize_app_fail)
+    #     _PartialConfig = type(
+    #         "_PartialConfig",
+    #         (object,),
+    #         {"APP_NAME": "AppNameFail"}
+    #     )
+    #     m.setattr(Context, "config", _PartialConfig())
+    #     with pytest.raises(AppFailError):
+    #         Context._reload_firebase_app()
 
     with pytest.raises(Exception):
-        Context._reload_firestore_client(cred_path="non-existent")
+        Context._reload_credentials(certificate_path="non-existent")

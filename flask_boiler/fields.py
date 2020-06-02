@@ -409,15 +409,15 @@ class Embedded(fields.Raw, Field):
 
 def local_time_from_timestamp(timestamp) -> datetime:
     """
-
+    Accurate to seconds
     :param timestamp: for example: 1545062400
     :return: for example: "2018-12-17T08:00:00"
     """
-    tz = pytz.timezone('US/Pacific')  # ('America/Los_Angeles')
+    tz = pytz.timezone('US/Pacific')  # ('America/Los_Angeles')   // TODO: make consistent with str_to_local_time
 
     d: datetime = datetime.fromtimestamp(timestamp, tz=tz)
     d = d.replace(tzinfo=None)  # Convert to local time
-    return d
+    return d.isoformat()
 
 
 def str_to_local_time(s) -> datetime:

@@ -251,6 +251,8 @@ class ViewModelMixin:
 
         # Note: technically this can go wrong as it can read the value from
         #   the next refresh
+        # TODO: fix a bug where success_condition keeps waiting when this line
+        #   fails with exception
         self._notify()
 
         with self.success_condition:
@@ -260,6 +262,11 @@ class ViewModelMixin:
 
     def wait_for_first_success(self):
         """ Blocks a thread until self.has_first_success is True.
+        TODO: fix a bug where error may arise when a prior task crashes
+            with an exception and the code here keeps waiting for
+            self.has_first_success to become true and blocks the thread
+            from executing the next task
+        NOTE: the above-said behaviors happen when using self._notify
         :return:
         """
         with self.success_condition:
