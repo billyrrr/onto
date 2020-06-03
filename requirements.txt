@@ -32,3 +32,5 @@ iso8601
 pyyaml
 
 google-cloud-logging
+
+functions-framework

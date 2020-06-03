@@ -293,4 +293,5 @@ class NewMixin:
             # elif isinstance(getattr(self.__class__, key), property):
             #     setattr(self, key, val)
 
+        # TODO: log and throw with extraneous arguments
         super().__init__(**kwargs)

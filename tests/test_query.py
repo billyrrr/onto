@@ -1,5 +1,7 @@
 import pytest
+from google.cloud.firestore_v1 import DocumentSnapshot, DocumentReference
 
+from flask_boiler.view.query_delta import make_snapshot
 from .fixtures import CTX
 from .test_domain_model import setup_cities, City
 
@@ -95,3 +97,19 @@ def test_query_with_cmp():
 
     assert res_dict['San Francisco'] == expected_dict['San Francisco']
     assert res_dict['Los Angeles'] == expected_dict['Los Angeles']
+
+
+def test_trigger_snapshot(CTX):
+    data = {"oldValue": {}, "updateMask": {},
+            "value": {"createTime": "2020-06-03T00:23:18.348623Z",
+                      "fields": {"a": {"stringValue": "b"}},
+                      "name": "projects/flask-boiler-testing/databases/(default)/documents/gcfTest/36ea7LTtYJHpW4yJQCp2",
+                      "updateTime": "2020-06-03T00:23:18.348623Z"}}
+
+    snapshot = make_snapshot(data['value'], client=CTX.db)
+    assert isinstance(snapshot, DocumentSnapshot)
+    assert snapshot.to_dict() == {'a': 'b'}
+    assert snapshot.create_time is not None
+    assert snapshot.update_time is not None
+
+    assert make_snapshot(dict(), client=CTX.db) is None
