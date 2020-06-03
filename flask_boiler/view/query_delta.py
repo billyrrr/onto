@@ -149,7 +149,54 @@ class ProtocolBase:
         pass
 
 
-class OnSnapshotTasksMixin:
+class OnTriggerMixin:
+
+    def _on_trigger(self, data, context: GcfContext):
+        """ For use with Cloud Functions
+
+        :return:
+        """
+        event_type = context.event_type
+        if event_type == EVENT_TYPE_MAPPING['create']:
+            snapshot = make_snapshot(data['value'], client=CTX.db)
+            self.on_post(snapshot=snapshot)
+        elif event_type == EVENT_TYPE_MAPPING['update']:
+            before_snapshot = make_snapshot(data['oldValue'], client=CTX.db)
+            after_snapshot = make_snapshot(data['value'], client=CTX.db)
+            self.on_patch(
+                after_snapshot=after_snapshot,
+                before_snapshot=before_snapshot)
+        elif event_type == EVENT_TYPE_MAPPING['delete']:
+            before_snapshot = make_snapshot(data['oldValue'], client=CTX.db)
+            self.on_remove(snapshot=before_snapshot)
+        elif event_type == EVENT_TYPE_MAPPING['write']:
+            before_snapshot = make_snapshot(data['oldValue'], client=CTX.db)
+            after_snapshot = make_snapshot(data['value'], client=CTX.db)
+            if before_snapshot is None and after_snapshot is not None:
+                self.on_post(snapshot=after_snapshot)
+            elif before_snapshot is not None and after_snapshot is not None:
+                self.on_patch(
+                    after_snapshot=after_snapshot,
+                    before_snapshot=before_snapshot)
+            elif before_snapshot is not None and after_snapshot is None:
+                self.on_remove(snapshot=before_snapshot)
+            else:
+                CTX.logger.error(
+                    f"flask-boiler failed to route for: {data} {context}")
+                raise ValueError
+        else:
+            #  TODO: implement mapping for 'write'
+            CTX.logger.error(
+                msg=f"event_type not supported. {data} {context}")
+
+    def __call__(self, *args, **kwargs):
+        try:
+            return self._on_trigger(*args, **kwargs)
+        except Exception as e:
+            CTX.logger.exception(msg="trigger failed")
+
+
+class OnSnapshotTasksMixin(OnTriggerMixin):
     """
     To be added before ViewModel
 
@@ -330,69 +377,6 @@ def make_snapshot(value, client) -> Optional[DocumentSnapshot]:
     )
 
     return snapshot
-
-
-class OnTriggerMixin:
-
-    def _on_trigger(self, data, context: GcfContext):
-        """ For use with Cloud Functions
-
-        :return:
-        """
-        event_type = context.event_type
-        if event_type == EVENT_TYPE_MAPPING['create']:
-            snapshot = make_snapshot(data['value'], client=CTX.db)
-            self.on_post(snapshot=snapshot)
-        elif event_type == EVENT_TYPE_MAPPING['update']:
-            before_snapshot = make_snapshot(data['oldValue'], client=CTX.db)
-            after_snapshot = make_snapshot(data['value'], client=CTX.db)
-            self.on_patch(
-                after_snapshot=after_snapshot,
-                before_snapshot=before_snapshot)
-        elif event_type == EVENT_TYPE_MAPPING['delete']:
-            before_snapshot = make_snapshot(data['oldValue'], client=CTX.db)
-            self.on_remove(snapshot=before_snapshot)
-        else:
-            #  TODO: implement mapping for 'write'
-            CTX.logger.exception(msg=f"event_type not supported. {data} {context}")
-
-    def __call__(self, *args, **kwargs):
-        try:
-            return self._on_trigger(*args, **kwargs)
-        except Exception as e:
-            CTX.logger.exception(msg="trigger failed")
-
-    def on_post(self, snapshot: DocumentSnapshot):
-        """
-        Called when a document is 'ADDED' to the result of a query.
-        (Will be enqueued to a different thread and run concurrently)
-
-        :param snapshot: Firestore Snapshot added
-        """
-        CTX.logger.info(f"on_post called {snapshot.to_dict()}")
-
-    def on_patch(
-            self,
-            after_snapshot: DocumentSnapshot,
-            before_snapshot: Optional[DocumentSnapshot]=None,
-            ):
-        """ Called when a document is 'MODIFIED' in the result of a query.
-        (Will be enqueued to a different thread and run concurrently)
-
-        :param after_snapshot:
-        :param before_snapshot: May be None if timestamp set to watcher
-            is later than the last_updated time of a snapshot
-        :return:
-        """
-        CTX.logger.info(f"on_patch called {after_snapshot.to_dict()} {before_snapshot.to_dict()} ")
-
-    def on_remove(self, snapshot: DocumentSnapshot):
-        """ Called when a document is 'REMOVED' in the result of a query.
-        (Will be enqueued to a different thread and run concurrently)
-
-        :param snapshot: Firestore Snapshot deleted
-        """
-        CTX.logger.info(f"on_remove called {snapshot.to_dict()}")
 
 
 def create_mutation_protocol(mutation):
