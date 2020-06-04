@@ -34,3 +34,6 @@ pyyaml
 google-cloud-logging
 
 functions-framework
+
+google-cloud-resource-manager  # for deploying cloud functions TODO: move to dev-requirements.txt
+gitpython  # For deploying cloud functions: generate archive

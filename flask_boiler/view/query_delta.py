@@ -151,6 +151,11 @@ class ProtocolBase:
 
 class OnTriggerMixin:
 
+    TRIGGER_EVENT_TYPE: str = "providers/cloud.firestore/eventTypes/document.write"
+
+    def __init__(self, *args, resource=None, **kwargs):
+        self.resource = resource
+
     def _on_trigger(self, data, context: GcfContext):
         """ For use with Cloud Functions
 
