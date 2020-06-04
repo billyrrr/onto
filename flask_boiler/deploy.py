@@ -224,14 +224,11 @@ def deploy_all(entry_points):
             else:
                 raise error
         else:
-            if resp.status == 200:
-                # Patch existing functions if one already exists with the same name
-                resp = functions_service.projects().locations().functions().patch(
-                    name=name, body=body
-                ).execute()
-                print(resp)
-            else:
-                raise ValueError()
+            # Patch existing functions if one already exists with the same name
+            resp = functions_service.projects().locations().functions().patch(
+                name=name, body=body
+            ).execute()
+            print(resp)
 
         print(resp)
 
