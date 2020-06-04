@@ -4,6 +4,7 @@ See: https://cloud.google.com/functions/docs/deploying/api
 gcloud functions deploy to_trigger --runtime python37 --trigger-event providers/cloud.firestore/eventTypes/document.create --trigger-resource "projects/flask-boiler-testing/databases/(default)/documents/gcfTest/{gcfTestDocId}"
 """
 from datetime import datetime
+from zipfile import ZipFile
 
 if __name__ == "__main__":
     """
@@ -50,6 +51,12 @@ if __name__ == "__main__":
     file_path = os.path.join(os.path.curdir, 'repo.zip')
     with open(file_path, 'wb') as fp:
         repo.archive(fp, format='zip')
+    zip_obj = ZipFile(file_path, 'w')
+    # TODO: NOTE that this is supposed to be filename;
+    #  this example will fail for all path != name
+    # TODO: improve
+    zip_obj.write(config.FIREBASE_CERTIFICATE_JSON_PATH)
+
     with open(file_path, 'rb') as fp:
         resp = requests.request(
             'PUT', url=upload_url, headers={
