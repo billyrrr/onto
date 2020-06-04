@@ -95,10 +95,13 @@ def configurations(*, env_vars: dict, resource: str, event_type: str,
     }
 
 
-def deploy_all(entry_points):
+def deploy_all(entry_points, env_vars=None):
     """
     Ref: https://cloud.google.com/functions/docs/reference/rest/v1/projects.locations.functions/generateUploadUrl
     """
+
+    if env_vars is None:
+        env_vars = dict()
 
     import googleapiclient.discovery
     from google.oauth2 import service_account
@@ -198,7 +201,7 @@ def deploy_all(entry_points):
         name = f'projects/{project_id}/locations/{location_id}/functions/{entry_point}'
 
         body = configurations(
-            env_vars=dict(),
+            env_vars=env_vars,
             entry_point=entry_point,
             resource=mediator.resource,
             event_type=mediator.TRIGGER_EVENT_TYPE,

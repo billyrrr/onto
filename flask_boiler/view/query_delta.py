@@ -150,11 +150,12 @@ class ProtocolBase:
 
 
 class OnTriggerMixin:
-
     TRIGGER_EVENT_TYPE: str = "providers/cloud.firestore/eventTypes/document.write"
 
-    def __init__(self, *args, resource=None, **kwargs):
-        self.resource = resource
+    def __init__(self, *args, resource_path=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if resource_path is not None:
+            self.resource = "projects/" + CTX.config.APP_NAME + "/databases/(default)/documents/" + resource_path
 
     def _on_trigger(self, data, context: GcfContext):
         """ For use with Cloud Functions
@@ -290,7 +291,6 @@ class OnSnapshotTasksMixin(OnTriggerMixin):
                                 f"or enqueued "
                                 f"for {snapshot.reference.path}")
 
-
     class Protocol(ProtocolBase):
 
         @staticmethod
@@ -323,8 +323,8 @@ class OnSnapshotTasksMixin(OnTriggerMixin):
     def on_patch(
             self,
             after_snapshot: DocumentSnapshot,
-            before_snapshot: Optional[DocumentSnapshot]=None,
-            ):
+            before_snapshot: Optional[DocumentSnapshot] = None,
+    ):
         """ Called when a document is 'MODIFIED' in the result of a query.
         (Will be enqueued to a different thread and run concurrently)
 
@@ -385,7 +385,6 @@ def make_snapshot(value, client) -> Optional[DocumentSnapshot]:
 
 
 def create_mutation_protocol(mutation):
-
     class _MutationProtocol:
 
         @staticmethod
