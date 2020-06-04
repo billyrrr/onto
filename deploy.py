@@ -48,23 +48,24 @@ if __name__ == "__main__":
 
     import os
 
+    # Archives current repo and add FIREBASE_CERTIFICATE_JSON_PATH to the zip
     file_path = os.path.join(os.path.curdir, 'repo.zip')
     with open(file_path, 'wb') as fp:
         repo.archive(fp, format='zip')
-    zip_obj = ZipFile(file_path, 'w')
+
     # TODO: NOTE that this is supposed to be filename;
     #  this example will fail for all path != name
     # TODO: improve
-    zip_obj.write(config.FIREBASE_CERTIFICATE_JSON_PATH)
+    cert_json_path = config.FIREBASE_CERTIFICATE_JSON_PATH
+    with ZipFile(file_path, 'a') as zipf:
+        zipf.write(cert_json_path, cert_json_path)
 
     with open(file_path, 'rb') as fp:
-        resp = requests.request(
-            'PUT', url=upload_url, headers={
+        resp = requests.put(
+            url=upload_url, headers={
                 'x-goog-content-length-range': "0,104857600",
                 'content-type': 'application/zip',
-            }, files={
-                'only': fp
-            }
+            }, data=fp
         )
 
     print(resp)
@@ -145,18 +146,18 @@ if __name__ == "__main__":
 
         return {
             "eventTrigger": {
-                "resource": "projects/flask-boiler-testing/databases/(default)/documents/gcfTest/{gcfTestDocId}",
-                "eventType": "providers/cloud.firestore/eventTypes/document.write"
+                "resource": resource,
+                "eventType": event_type,
             },
             "labels": labels,
             "availableMemoryMb": available_memory_mb,
-            "description": "A String",  #
+            "description": description,
             "maxInstances": 42,
             "entryPoint": entry_point,
             "name": name,
             "environmentVariables": env_vars,
             "sourceUploadUrl": upload_url,
-            "serviceAccountEmail": credentials.service_account_email,
+            # "serviceAccountEmail": credentials.service_account_email,
             "timeout": timeout,
             "ingressSettings": "ALLOW_ALL",
             "runtime": "python37",
