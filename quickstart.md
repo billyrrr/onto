@@ -26,6 +26,21 @@ This page is adapted from [Quickstart using a server client library](https://clo
 5. Click Create. A JSON file that contains your key downloads to your computer.
 
 
+## Configure service account
+
+Grant ```roles/cloudfunctions.admin``` role if you will use flask-boiler to deploy cloud functions. 
+(Replace with your own service account information where applicable)
+```shell script
+gcloud projects add-iam-policy-binding flask-boiler-testing --member=serviceAccount:firebase-adminsdk-4m0ec@flask-boiler-testing.iam.gserviceaccount.com --role roles/cloudfunctions.admin
+```
+
+Also run, 
+You may need to run 
+```shell script
+gcloud iam service-accounts add-iam-policy-binding firebase-adminsdk-nztgj@gravitate-backend-testing.iam.gserviceaccount.com --member=$MEMBER --role=roles/iam.serviceAccountUser
+```
+(Effect unclear)
+ 
  
 ### Add flask-boiler and the server client library to your app
 

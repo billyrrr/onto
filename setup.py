@@ -47,6 +47,13 @@ setuptools.setup(
         "celery",
         "flask-socketio",
         "iso8601",
-        "pyyaml"
+        "pyyaml",
+        "google-cloud-logging",
+        "functions-framework",
+        "google-cloud-resource-manager",
+        "gitpython"
     ],
+    # entry_points = {
+    #     'console_scripts': ['flask-boiler=scripts.deploy:deploy_all'],
+    # }
 )
