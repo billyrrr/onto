@@ -210,7 +210,41 @@ Object created when a new domain model is created in database ->
 Object changed when underlying datasource changes -> 
 Object calls ```self.notify``` 
 
-## ViewMediator Use Cases 
+## Typical ViewMediator Use Cases 
+
+### Rest 
+
+1. Front end sends HTTP request to Server  
+2. Server queries datastore
+3. Server returns response
+
+### Query
+
+1. Datastore triggers update function 
+2. Server rebuilds ViewModel that may be changed as a result 
+3. Server saves newly built ViewModel to datastore 
+
+### Query+Task
+
+1. Datastore triggers update function for document `d` at time `t`
+2. Server starts a transaction
+3. Server sets write_option to only allow commit if documents are last updated at time `t` (still under design)
+3. Server builds ViewModel with transaction 
+5. Server saves ViewModel with transaction
+7. Server marks document `d` as processed (remove document or update a field)
+7. Server retries up to MAX_RETRIES from step 2 if precondition failed 
+
+### WebSocket / Document
+
+1. Front end subscribes to a ViewModel by sending a WebSocket event to server 
+2. Server attaches listener to the result of the query
+3. Every time the result of the query is changed and consistent:
+    1. Server rebuilds ViewModel that may be changed as a result 
+    2. Server publishes newly built ViewModel
+4. Front end ends the session
+5. Document listeners are released 
+
+### Comparisons 
 
 |                 	| Rest 	            | Query 	     | Query+Task                   | WebSocket 	    | Document |
 |-----------------	|------         	|-------	|------------	|-----------	|----------	|
@@ -218,8 +252,9 @@ Object calls ```self.notify```
 | Idempotent      	| If Implemented    | No            | Yes, with transaction[^1]    	| If Implemented  	| No    |
 | Designed For      | Stateless Lambda  |  Stateful Container   | Stateless Lambda      | Stateless Lambda  | Stateful Container |
 | Latency         	| Higher            | Higher 	|   Higher     |  Lower           	|     Higher     	|
-| Throughput      	| Higher when Scaled| Lower[^2]       	| Lower[^2]       	|   Higher when Scaled	|   Lower[^2]      	|
+| Throughput      	| Higher when Scaled| Lower[^2]       	| Lower          	|   Higher when Scaled	|   Lower[^2]      	|
 | Stateful        	| No   	            | If Implemented    | If Implemented   	| Yes        	| Yes         	|
+| Reactive        	| No   	        | Yes    | Yes   	| Yes        	| Yes         	|
 
 <!---
 Gaurantees
@@ -230,10 +265,9 @@ Throughput
 Stateful
 -->
 
-[^1]: A message may be received and processed by multiple consumer, but only one 
+[^1]:  A message may be received and processed by multiple consumer, but only one 
 consumer can successfully commit change and mark the event as processed. 
-[^2]: Scalability is limited by the number of listeners you can attach to the datastore. 
-
+[^2]:  Scalability is limited by the number of listeners you can attach to the datastore. 
 
 ## Advantages
 
