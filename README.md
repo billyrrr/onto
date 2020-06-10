@@ -212,7 +212,15 @@ Object calls ```self.notify```
 
 ## Typical ViewMediator Use Cases 
 
+Data flow direction is described as Source -> Sink. 
+"Read" describes the flow of data where front end would find data in Sink useful. 
+"Write" describes the flow of data where the Sink is the single source 
+of truth. 
+
 ### Rest 
+
+Read: Request -> Response \
+Write: Request -> Document
 
 1. Front end sends HTTP request to Server  
 2. Server queries datastore
@@ -220,11 +228,17 @@ Object calls ```self.notify```
 
 ### Query
 
+Read: Document -> Document \
+Write: Document -> Document
+
 1. Datastore triggers update function 
 2. Server rebuilds ViewModel that may be changed as a result 
 3. Server saves newly built ViewModel to datastore 
 
 ### Query+Task
+
+Read: Document -> Document \
+Write: Document -> Document
 
 1. Datastore triggers update function for document `d` at time `t`
 2. Server starts a transaction
@@ -234,7 +248,10 @@ Object calls ```self.notify```
 7. Server marks document `d` as processed (remove document or update a field)
 7. Server retries up to MAX_RETRIES from step 2 if precondition failed 
 
-### WebSocket / Document
+### WebSocket
+
+Read: Document -> WebSocket Event \
+Write: WebSocket Event -> Document
 
 1. Front end subscribes to a ViewModel by sending a WebSocket event to server 
 2. Server attaches listener to the result of the query
@@ -244,12 +261,17 @@ Object calls ```self.notify```
 4. Front end ends the session
 5. Document listeners are released 
 
+### Document
+
+Read: Document -> Document
+Write: Document -> Document
+
 ### Comparisons 
 
 |                 	| Rest 	            | Query 	     | Query+Task                   | WebSocket 	    | Document |
 |-----------------	|------         	|-------	|------------	|-----------	|----------	|
 | Guarantees      	|    ≤1   (At-Most-Once)         	| ≥ 1 (At-Least-Once)          |  =1[^1] (Exactly-Once)    |   ≤1   (At-Most-Once)  	|       ≥ 1 (At-Least-Once) 	|
-| Idempotent      	| If Implemented    | No            | Yes, with transaction[^1]    	| If Implemented  	| No    |
+| Idempotence      	| If Implemented    | No            | Yes, with transaction[^1]    	| If Implemented  	| No    |
 | Designed For      | Stateless Lambda  |  Stateful Container   | Stateless Lambda      | Stateless Lambda  | Stateful Container |
 | Latency         	| Higher            | Higher 	|   Higher     |  Lower           	|     Higher     	|
 | Throughput      	| Higher when Scaled| Lower[^2]       	| Lower          	|   Higher when Scaled	|   Lower[^2]      	|
