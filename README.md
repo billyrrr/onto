@@ -210,6 +210,31 @@ Object created when a new domain model is created in database ->
 Object changed when underlying datasource changes -> 
 Object calls ```self.notify``` 
 
+## ViewMediator Use Cases 
+
+|                 	| Rest 	            | Query 	     | Query+Task                   | WebSocket 	    | Document |
+|-----------------	|------         	|-------	|------------	|-----------	|----------	|
+| Guarantees      	|    ≤1   (At-Most-Once)         	| ≥ 1 (At-Least-Once)          |  =1[^1] (Exactly-Once)    |   ≤1   (At-Most-Once)  	|      ≤1   (At-Most-Once) 	|
+| Idempotent      	| If Implemented    | No            | Yes, with transaction[^1]    	| If Implemented  	| No    |
+| Designed For      | Stateless Lambda  |  Stateful Container   | Stateless Lambda      | Stateless Lambda  | Stateful Container |
+| Latency         	| Higher            | Higher 	|   Higher     |  Lower           	|     Higher     	|
+| Throughput      	| Higher when Scaled| Lower[^2]       	| Lower[^2]       	|   Higher when Scaled	|   Lower[^2]      	|
+| Stateful        	| No   	            | If Implemented    | If Implemented   	| Yes        	| Yes         	|
+
+<!---
+Gaurantees
+| Back Pressure   	|      	|       	|            	|           	|          	|
+Latency
+Throughput
+| Fault Tolerance 	|      	|       	|            	|           	|          	|
+Stateful
+-->
+
+[^1]: A message may be received and processed by multiple consumer, but only one 
+consumer can successfully commit change and mark the event as processed. 
+[^2]: Scalability is limited by the number of listeners you can attach to the datastore. 
+
+
 ## Advantages
 
 ### Decoupled Domain Model and View Model
