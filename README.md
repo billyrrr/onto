@@ -214,7 +214,7 @@ Object calls ```self.notify```
 
 |                 	| Rest 	            | Query 	     | Query+Task                   | WebSocket 	    | Document |
 |-----------------	|------         	|-------	|------------	|-----------	|----------	|
-| Guarantees      	|    ≤1   (At-Most-Once)         	| ≥ 1 (At-Least-Once)          |  =1[^1] (Exactly-Once)    |   ≤1   (At-Most-Once)  	|      ≤1   (At-Most-Once) 	|
+| Guarantees      	|    ≤1   (At-Most-Once)         	| ≥ 1 (At-Least-Once)          |  =1[^1] (Exactly-Once)    |   ≤1   (At-Most-Once)  	|       ≥ 1 (At-Least-Once) 	|
 | Idempotent      	| If Implemented    | No            | Yes, with transaction[^1]    	| If Implemented  	| No    |
 | Designed For      | Stateless Lambda  |  Stateful Container   | Stateless Lambda      | Stateless Lambda  | Stateful Container |
 | Latency         	| Higher            | Higher 	|   Higher     |  Lower           	|     Higher     	|
