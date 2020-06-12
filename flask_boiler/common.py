@@ -16,8 +16,15 @@ def read_obj_type(d, obj_cls):
     :param obj_cls:
     :return:
     """
-    fds = obj_cls.get_schema_obj().fields
-    if "obj_type" in fds:
-        return fds["obj_type"].read_obj_type_str(d)
+    schema_obj = obj_cls.get_schema_obj()
+    if schema_obj is None:
+        if "obj_type" in d:
+            return d["obj_type"]
+        else:
+            return None
     else:
-        return None
+        fds = schema_obj.fields
+        if "obj_type" in fds:
+            return fds["obj_type"].read_obj_type_str(d)
+        else:
+            return None

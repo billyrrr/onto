@@ -1,15 +1,24 @@
+import functools
+from _weakref import ProxyType
+from collections import UserDict, UserList
+
 import pytest
 
-from flask_boiler import utils, fields
+from flask_boiler import utils, fields, attrs
 from flask_boiler import schema as fb_schema
 from flask_boiler import fields as fb_fields
 from marshmallow import fields as marshmallow_fields, schema
 
 from unittest import mock
 
+from flask_boiler.common import _NA
+from flask_boiler.domain_model import DomainModel
 from flask_boiler.factory import ClsFactory
-from flask_boiler.firestore_object import FirestoreObject
+from flask_boiler.firestore_object import FirestoreObject, \
+    _nest_relationship_import, RelationshipStore
 from flask_boiler.helpers import RelationshipReference
+from flask_boiler.models.base import Serializable
+from flask_boiler.snapshot_container import SnapshotContainer
 
 from .fixtures import CTX
 
@@ -69,6 +78,121 @@ def test_relationship_many(CTX):
     assert res == {1: RelationshipReference(nested=False, doc_ref=doc_ref_1),
                    2: RelationshipReference(nested=False, doc_ref=doc_ref_2)}
 
+
+def test_something():
+
+    class MyDescriptor:
+
+        def __init__(self):
+            self._val = None
+
+        def __get__(self, obj, objtype):
+            return self._val
+
+        def __set__(self, obj, val):
+            self._val = val
+
+    class Owner:
+
+        my = MyDescriptor()
+
+    instance = Owner()
+    instance.my = "hi"
+    assert instance.my == "hi"
+
+    d = dict(a=MyDescriptor())
+    assert d['a'] == "hello"
+
+
+def test_wrapper():
+
+    class Retriever:
+
+        def __set_name__(self, owner, name):
+            self.parent = owner
+            self.name = name
+
+        def __set__(self, instance, value):
+            raise TypeError("Reassigning an iterable wrapper is not allowed")
+
+        def __get__(self, instance, owner):
+            import weakref
+
+            return weakref.proxy(instance.original)
+
+    class Dict(UserDict):
+        pass
+
+    class List(UserList):
+        pass
+
+    _original = List([1, 2])
+
+    class K:
+
+        proxy = Retriever()
+
+        def __init__(self):
+            self.original = _original
+
+    k = K()
+
+    assert k.proxy.index(1) == 0
+    assert not hasattr(k.proxy, "non_existent")
+
+    _internal_list = k.proxy
+    try:
+        k.proxy = list()
+    except TypeError as e:
+        assert True
+    else:
+        assert False
+
+    class M:
+        pass
+
+    m = M()
+    m.original = k.original
+
+    print(m.original)
+
+    assert k.proxy[0] == 1
+    assert len(m.original) == 2
+
+
+def test_proxy(CTX):
+
+    class A(DomainModel):
+        foo = attrs.bproperty()
+
+    doc_ref = CTX.db.document('A/a')
+    doc_ref.set(dict(foo='bar'))
+
+    s = RelationshipStore()
+
+    from google.cloud.firestore import transactional
+    @transactional
+    def execute(transaction):
+        rr = RelationshipReference(doc_ref=doc_ref, obj_type=A)
+        a = _nest_relationship_import(rr, store=s)
+
+        s.refresh(transaction=transaction)
+
+        assert a.foo == 'bar'
+        assert isinstance(a, A)
+
+    execute(transaction=CTX.db.transaction())
+
+    def execute_no_transaction():
+        rr = RelationshipReference(doc_ref=doc_ref, obj_type=A)
+        a = _nest_relationship_import(rr, store=s)
+
+        s.refresh(transaction=None)
+
+        assert a.foo == 'bar'
+        assert isinstance(a, A)
+
+    execute_no_transaction()
 
 def test_local_time():
     from flask_boiler.fields import local_time_from_timestamp, timestamp_from_local_time

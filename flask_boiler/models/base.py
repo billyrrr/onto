@@ -73,7 +73,10 @@ class Schemed(SchemedBase):
         """
         # Use __dict__ to avoid reading from super class
         if "_schema_obj" not in cls.__dict__:
-            cls._schema_obj = cls.get_schema_cls()()
+            schema_cls = cls.get_schema_cls()
+            if schema_cls is None:
+                return None
+            cls._schema_obj = schema_cls()
         return cls._schema_obj
 
     @property

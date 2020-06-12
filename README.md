@@ -263,7 +263,7 @@ Write: WebSocket Event -> Document
 
 ### Document
 
-Read: Document -> Document
+Read: Document -> Document \
 Write: Document -> Document
 
 ### Comparisons 

@@ -51,7 +51,8 @@ setuptools.setup(
         "google-cloud-logging",
         "functions-framework",
         "google-cloud-resource-manager",
-        "gitpython"
+        "gitpython",
+        "ProxyTypes"
     ],
     # entry_points = {
     #     'console_scripts': ['flask-boiler=scripts.deploy:deploy_all'],

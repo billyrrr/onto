@@ -10,6 +10,7 @@ from flask_boiler.helpers import RelationshipReference
 # from flask_boiler.view_model import ViewModel
 from flask_boiler.registry import ModelRegistry
 from flask_boiler.models.base import Serializable
+from flask_boiler.snapshot_container import SnapshotContainer
 from flask_boiler.utils import snapshot_to_obj
 from flask_boiler.context import Context as CTX
 from flask_boiler.factory import ClsFactory
@@ -120,6 +121,60 @@ class FirestoreObjectMixin:
             transaction.delete(reference=self.doc_ref)
 
 
+def _nest_relationship_import(rr, store):
+    """ (Experimental)
+
+    :param rr:
+    :param container:
+    :return:
+    """
+
+    store.insert(doc_ref=rr.doc_ref, obj_type=rr.obj_type)
+    from peak.util.proxies import CallbackProxy
+    import functools
+    _callback = functools.partial(store.retrieve, doc_ref=rr.doc_ref, obj_type=rr.obj_type)
+    return CallbackProxy(_callback)
+
+
+class RelationshipStore:
+
+    def __init__(self):
+        self.queue = list()
+        self.container = SnapshotContainer()
+
+    def insert(self, *, doc_ref, obj_type):
+        """
+        TODO: implement obj_type kwarg or toss it
+        :param doc_ref:
+        :param obj_type:
+        :return:
+        """
+        self.queue.append(doc_ref)
+
+    def refresh(self, transaction):
+        refs = list()
+        for doc_ref in self.queue:
+            refs.append(doc_ref)
+
+        def get_snapshots(transaction, **kwargs):
+            """ needed because transactional wrapper uses specific argument
+                ordering
+
+            :param transaction:
+            :param kwargs:
+            :return:
+            """
+            return CTX.db.get_all(transaction=transaction, **kwargs)
+
+        res = get_snapshots(references=refs, transaction=transaction)
+        for doc in res:
+            self.container.set(key=doc.reference._document_path, val=doc)
+
+    def retrieve(self, *, doc_ref, obj_type):
+        snapshot = self.container.get(key=doc_ref._document_path)
+        return obj_type.from_snapshot(snapshot=snapshot)
+
+
 class FirestoreObjectValMixin:
 
     def __init__(self, *args, **kwargs):
@@ -189,7 +244,7 @@ class FirestoreObjectValMixin:
             return super()._export_val_view(val)
 
     @classmethod
-    def _import_val(cls, val, to_get=False, must_get=False, transaction=None):
+    def _import_val(cls, val, to_get=False, must_get=False, transaction=None, store=None):
 
         def is_nested_relationship(val):
             return isinstance(val, RelationshipReference) and val.nested
@@ -198,12 +253,13 @@ class FirestoreObjectValMixin:
             return isinstance(val, RelationshipReference) and not val.nested
 
         def nest_relationship(val: RelationshipReference):
-            if transaction is None:
-                snapshot = val.doc_ref.get()
-                return snapshot_to_obj(snapshot, transaction=transaction)
-            else:
-                snapshot = val.doc_ref.get(transaction=transaction)
-                return snapshot_to_obj(snapshot, transaction=transaction)
+            return _nest_relationship_import(val, store=store)
+            # if transaction is None:
+            #     snapshot = val.doc_ref.get()
+            #     return snapshot_to_obj(snapshot, transaction=transaction)
+            # else:
+            #     snapshot = val.doc_ref.get(transaction=transaction)
+            #     return snapshot_to_obj(snapshot, transaction=transaction)
 
         if is_nested_relationship(val):
             if to_get:
@@ -261,13 +317,15 @@ class FirestoreObjectValMixin:
 
         d = obj_cls.get_schema_obj().load(d)
 
+        _store = RelationshipStore()
+
         def apply(val):
             if isinstance(val, dict):
                 return {k: obj_cls._import_val(
                     v,
                     to_get=to_get,
                     must_get=must_get,
-                    transaction=transaction)
+                    transaction=transaction, store=_store)
                     for k, v in val.items()
                 }
             elif isinstance(val, list):
@@ -275,19 +333,21 @@ class FirestoreObjectValMixin:
                     v,
                     to_get=to_get,
                     must_get=must_get,
-                    transaction=transaction)
+                    transaction=transaction, store=_store)
                     for v in val]
             else:
                 return obj_cls._import_val(
                     val,
                     to_get=to_get,
                     must_get=must_get,
-                    transaction=transaction)
+                    transaction=transaction, store=_store)
 
         d = {
             key: apply(val)
             for key, val in d.items() if val != fields.allow_missing
         }
+
+        _store.refresh(transaction=transaction)
 
         instance = obj_cls.new(**d, transaction=transaction, **kwargs)  # TODO: fix unexpected arguments
         return instance

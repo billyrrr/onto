@@ -247,7 +247,7 @@ class Relationship(fields.Str, Field):
     """
 
     def __init__(self, *args, missing=_MissingNotSpecified, nested=False,
-                 many=False, **kwargs):
+                 many=False, obj_type=_NA, **kwargs):
         """ Initializes a relationship. A field of the master object
                 to describe relationship to another object or document
                 being referenced. Set missing=dict if many=True and
@@ -266,6 +266,10 @@ class Relationship(fields.Str, Field):
         if missing == _MissingNotSpecified:
             missing = list if many else None
         super().__init__(*args, missing=missing, **kwargs)
+        if obj_type is _NA:
+            from flask_boiler.firestore_object import FirestoreObject
+            obj_type = FirestoreObject
+        self.obj_type = obj_type
         self.nested = nested
         self.many = many
 
@@ -304,7 +308,8 @@ class Relationship(fields.Str, Field):
         assert isinstance(value, DocumentReference)
         return RelationshipReference(
             doc_ref=value,
-            nested=self.nested
+            nested=self.nested,
+            obj_type=self.obj_type
         )
 
 
