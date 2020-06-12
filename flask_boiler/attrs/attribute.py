@@ -334,22 +334,27 @@ class RelationshipAttribute(PropertyAttribute):
 
     field_cls = fields.Relationship
 
-    def __init__(self, *, nested=_NA, many=_NA, **kwargs):
-
+    def __init__(self, *, nested=_NA, many=_NA, dm_cls=_NA, **kwargs):
+        # TODO: compare _NA everywhere with "is" rather than "=="
         super().__init__(
             **kwargs
         )
-        if nested== _NA:
+        if nested == _NA:
             raise ValueError
         else:
             self.nested = nested
         if self.nested:
             self._field_kwargs["nested"] = self.nested
 
-        if many== _NA:
+        if many == _NA:
             many = False
         self.many = many
         self._field_kwargs["many"] = self.many
+
+        if dm_cls == _NA:
+            dm_cls = None
+        self.dm_cls = dm_cls
+        self._field_kwargs["obj_type"] = self.dm_cls
 
 
 class LocalTimeAttribute(PropertyAttribute):

@@ -96,7 +96,7 @@ class FirestoreObjectMixin:
         if doc_ref is None:
             doc_ref = self.doc_ref
 
-        d = self._export_as_dict(to_save=save_rel, transaction=transaction)
+        d = self._export_as_dict(transaction=transaction)
 
         if transaction is None:
             doc_ref.set(document_data=d)
@@ -180,7 +180,7 @@ class FirestoreObjectValMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _export_val(self, val, transaction=None, to_save=False):
+    def _export_val(self, val, transaction=None):
 
         def is_nested_relationship(val):
             return isinstance(val, RelationshipReference) and val.nested
@@ -196,15 +196,15 @@ class FirestoreObjectValMixin:
             return obj.doc_ref
 
         if is_nested_relationship(val):
-            if to_save:
-                return nest_relationship(val.obj)
-            else:
-                return val.obj.doc_ref
+            # if to_save:
+            return nest_relationship(val.obj)
+            # else:
+            #     return val.obj.doc_ref
         elif is_ref_only_relationship(val):
             return val.doc_ref
 
         else:
-            return super()._export_val(val, to_save=to_save)
+            return super()._export_val(val, transaction=transaction)
 
     # def _export_val_view(self, val):
     #     def is_nested_relationship(val):

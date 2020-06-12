@@ -138,7 +138,7 @@ class Exportable:
         be serialized/dumped/output into a dictionary.
     """
 
-    def _export_val(self, val, to_save=False):
+    def _export_val(self, val, **kwargs):
         """
         Private method for serializing an instance variable of the object.
         TODO: test nested
@@ -153,25 +153,25 @@ class Exportable:
 
         def embed_element(val: EmbeddedElement):
             obj = val.obj
-            return obj._export_as_dict()
+            return obj._export_as_dict(**kwargs)  # TODO: remove to_save from elsewhere
 
         if isinstance(val, EmbeddedElement):
             return embed_element(val)
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):
-                val_list = [self._export_val(elem, to_save) for elem in val]
+                val_list = [self._export_val(elem, **kwargs) for elem in val]
                 return val_list
             elif isinstance(val, dict):
                 val_d = dict()
                 for k, v in val.items():
-                    val_d[k] = self._export_val(v, to_save)
+                    val_d[k] = self._export_val(v, **kwargs)
                 return val_d
             else:
                 raise NotImplementedError
         else:
             return val
 
-    def _export_as_dict(self, to_save=False, **kwargs) -> dict:
+    def _export_as_dict(self, **kwargs) -> dict:
         """ Map/dict is only supported at root level for now
 
         """
@@ -179,7 +179,7 @@ class Exportable:
 
         res = dict()
         for key, val in d.items():
-            res[key] = self._export_val(val, to_save=to_save, **kwargs)
+            res[key] = self._export_val(val, **kwargs)
 
         return res
 
