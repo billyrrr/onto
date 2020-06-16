@@ -362,7 +362,17 @@ class ViewModelMixin:
 
     def to_view_dict(self):
         with self.lock:
-            return self._export_as_view_dict()
+            return self._export_as_dict()
+
+    # def _export_as_dict(self, *args, transaction=None, **kwargs):
+    #     """ Must not modify datastore
+    #
+    #     :param args:
+    #     :param transaction:
+    #     :param kwargs:
+    #     :return:
+    #     """
+    #     return self._export_as_view_dict(*args, **kwargs)
 
     def to_dict(self):
         return self.to_view_dict()

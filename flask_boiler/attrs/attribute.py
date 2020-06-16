@@ -13,14 +13,13 @@ class ValueNotProvided:
 
 class AttributeBase:
 
-    field_cls: Type[fields.Field] = fields.Field
-
     def _make_field(self) -> fields.Field:
         """
         TODO: implement
         :return:
         """
-        return self.field_cls(**self._field_kwargs, attribute=self.name)
+        field_cls: Type[fields.Field] = fields.Field
+        return field_cls(**self._field_kwargs, attribute=self.name)
 
     def __set_name__(self, owner, name):
         self.parent = owner
@@ -332,9 +331,34 @@ class DictAttribute(PropertyAttribute):
 
 class RelationshipAttribute(PropertyAttribute):
 
-    field_cls = fields.Relationship
+    def _make_field(self) -> fields.Field:
+        """
+        TODO: implement
+        :return:
+        """
+        field_cls = fields.Relationship
+        one = field_cls(**self._field_kwargs, attribute=self.name)
 
-    def __init__(self, *, nested=_NA, many=_NA, dm_cls=_NA, **kwargs):
+        if self.collection is None:
+            return one
+        elif self.collection is dict:
+            # TODO: test rigorously; see if the name _Temporary__make_field may
+            #     cause it to be affected by another run of _make_field
+            dict_field_cls = type(
+                '_Temporary__make_field',
+                (fields.Mapping,),
+                {
+                    'mapping_type': self.collection
+                })
+            return dict_field_cls(values=one)
+        elif self.collection is list:
+            # TODO: confirm that set and tuple and etc. are compatible
+            list_field_cls = fields.List
+            return list_field_cls(one)
+        else:
+            raise NotImplementedError
+
+    def __init__(self, *, nested=_NA, collection=_NA, dm_cls=_NA, **kwargs):
         # TODO: compare _NA everywhere with "is" rather than "=="
         super().__init__(
             **kwargs
@@ -346,10 +370,9 @@ class RelationshipAttribute(PropertyAttribute):
         if self.nested:
             self._field_kwargs["nested"] = self.nested
 
-        if many == _NA:
-            many = False
-        self.many = many
-        self._field_kwargs["many"] = self.many
+        if collection == _NA:
+            collection = None
+        self.collection = collection
 
         if dm_cls == _NA:
             dm_cls = None
@@ -359,12 +382,16 @@ class RelationshipAttribute(PropertyAttribute):
 
 class LocalTimeAttribute(PropertyAttribute):
 
-    field_cls = fields.Localtime
+    def _make_field(self) -> fields.Field:
+        field_cls = fields.Localtime
+        return field_cls(**self._field_kwargs, attribute=self.name)
 
 
 class ReferenceAttribute(PropertyAttribute):
 
-    field_cls = fields.StructuralRef
+    def _make_field(self) -> fields.Field:
+        field_cls = fields.StructuralRef
+        return field_cls(**self._field_kwargs, attribute=self.name)
 
     def __init__(self, many=_NA, dm_cls=_NA, **kwargs):
         super().__init__(
@@ -384,7 +411,9 @@ class ReferenceAttribute(PropertyAttribute):
 
 class EmbeddedAttribute(PropertyAttribute):
 
-    field_cls = fields.Embedded
+    def _make_field(self) -> fields.Field:
+        field_cls = fields.Embedded
+        return field_cls(**self._field_kwargs, attribute=self.name)
 
     def __init__(self, many=_NA, obj_cls=_NA, **kwargs):
         super().__init__(
@@ -404,7 +433,9 @@ class EmbeddedAttribute(PropertyAttribute):
 
 class ObjectTypeAttribute(PropertyAttribute):
 
-    field_cls = fields.ObjectTypeField
+    def _make_field(self) -> fields.Field:
+        field_cls = fields.ObjectTypeField
+        return field_cls(**self._field_kwargs, attribute=self.name)
 
     def __init__(self, f_serialize=_NA, f_deserialize=_NA, **kwargs):
         super().__init__(

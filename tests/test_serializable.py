@@ -216,6 +216,46 @@ def test_separate_class():
     }
 
 
+def test_many():
+
+    class TimeRangeSchema(schema.Schema):
+        earliest = fields.Raw()
+        latest = fields.Raw()
+
+    class TimeRange(flask_boiler.models.base.Serializable):
+        _schema_cls = TimeRangeSchema
+
+    t = TimeRange()
+    t.earliest = 10
+    t.latest = 20
+
+    from marshmallow import fields as m_fields
+
+    class MyPlanSchema(schema.Schema):
+        range = m_fields.Nested(TimeRangeSchema)
+        ranges = m_fields.List(fields.Embedded(obj_cls='TimeRange'))
+        ranged = m_fields.Dict(fields.Embedded(obj_cls='TimeRange'))
+        name = fields.Str()
+
+    class MyPlan(flask_boiler.models.base.Serializable):
+        _schema_cls = MyPlanSchema
+
+    d = MyPlanSchema().load({
+        "range": t.to_dict(),
+        "ranges": [t.to_dict(), t.to_dict()],
+        "ranged": {
+          'a': t.to_dict(),
+          'b': t.to_dict()
+        },
+        "name": "my plan"
+    })
+
+    print(d)
+    print(dict(d))
+
+    assert d == dict()
+
+
 def test_embedded():
     class TargetSchema(schema.Schema):
         earliest = fields.Raw()

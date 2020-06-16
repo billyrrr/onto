@@ -5,7 +5,7 @@ from google.cloud.firestore_v1.watch import Watch, WATCH_TARGET_ID, document_wat
 
 
 class _Watch(Watch):
-
+    # pass
     def _on_snapshot_target_change_remove(self, proto):
         """
         target removed: assuming once=True and on_snapshot invoked
@@ -31,6 +31,12 @@ class DataListener:
             }
 
         def comparator(doc1: DocumentSnapshot, doc2: DocumentSnapshot):
+            """ TODO: use carefully
+
+            :param doc1:
+            :param doc2:
+            :return:
+            """
             if doc1.reference._document_path > doc2.reference._document_path:
                 return 1
             elif doc1.reference._document_path == doc2.reference._document_path:

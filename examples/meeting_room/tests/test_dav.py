@@ -279,7 +279,7 @@ def test_view_model(users, tickets, location, meeting):
     meeting_session = MeetingSession.new(doc_id=meeting.doc_id,
                                          once=True)
 
-    assert meeting_session._export_as_view_dict() == \
+    assert meeting_session.to_dict() == \
            {'inSession': True,
             'longitude': -117.242929,
             'latitude': 32.880361,
@@ -347,7 +347,7 @@ def test_user_view(users, tickets, location, meeting):
     user_view.wait_for_first_success()
     # time.sleep(3)  # TODO: delete after implementing sync
 
-    assert user_view._export_as_view_dict() == {'meetings': [
+    assert user_view.to_dict() == {'meetings': [
         {'status': 'in-session', 'users': [
             {'lastName': 'Furlong', 'firstName': 'Tijuana',
              'hearingAidRequested': True, 'organization': 'UCSD'},
@@ -443,6 +443,6 @@ def test_mutation(users, tickets, location, meeting):
 
     assert updated_user.last_name == "Manes-Kennedy"
 
-    res = user_view._export_as_view_dict()
+    res = user_view.to_dict()
 
     assert res['lastName'] == "Manes-Kennedy"

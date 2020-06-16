@@ -33,9 +33,12 @@ pyyaml
 
 google-cloud-logging
 
-functions-framework
+# functions-framework # for deploying cloud functions TODO: move to dev-requirements.txt
+# TODO: google-cloud-resource-manager may cause errors in resolving modules of google.cloud statically
 
-google-cloud-resource-manager  # for deploying cloud functions TODO: move to dev-requirements.txt
+# google-cloud-resource-manager  # for deploying cloud functions TODO: move to dev-requirements.txt
+# TODO: google-cloud-resource-manager may cause errors in resolving modules of google.cloud statically
+
 gitpython  # For deploying cloud functions: generate archive
 
 ProxyTypes

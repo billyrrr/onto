@@ -1,20 +1,8 @@
-from flask_boiler import schema, fields, domain_model, factory
+from flask_boiler import schema, fields, domain_model, factory, attrs
 
 
-class UserSchema(schema.Schema):
-
-    first_name = fields.Str()
-    last_name = fields.Raw()
-    organization = fields.Raw()
-
-    hearing_aid_requested = fields.Raw()
-
-
-UserBase = factory.ClsFactory.create(
-    name="UserBase",
-    schema=UserSchema,
-    base=domain_model.DomainModel
-)
+class UserBase(domain_model.DomainModel):
+    pass
 
 
 class User(UserBase):
@@ -22,7 +10,12 @@ class User(UserBase):
     class Meta:
         collection_name = "users"
 
-    @property
+    first_name = attrs.bproperty()
+    last_name = attrs.bproperty()
+    organization = attrs.bproperty()
+    hearing_aid_requested = attrs.bproperty()
+    display_name = attrs.bproperty(import_enabled=False)
+
+    @display_name.getter
     def display_name(self):
         return "{} {}".format(self.first_name, self.last_name)
-

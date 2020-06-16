@@ -49,8 +49,8 @@ setuptools.setup(
         "iso8601",
         "pyyaml",
         "google-cloud-logging",
-        "functions-framework",
-        "google-cloud-resource-manager",
+        # "functions-framework",
+        # "google-cloud-resource-manager",
         "gitpython",
         "ProxyTypes"
     ],

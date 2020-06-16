@@ -6,7 +6,37 @@ from flask_boiler import fields, errors
 from flask_boiler.context import Context as CTX
 from flask_boiler.helpers import EmbeddedElement
 # from .base import BaseRegisteredModel, Serializable
+from ..common import _NA
 from ..registry import ModelRegistry
+
+
+def resolve_obj_cls(*, cls, d):
+    super_cls, obj_cls = cls, cls
+
+    from flask_boiler.common import read_obj_type
+    obj_type_str = read_obj_type(d, obj_cls)
+    # Note: "obj_type" is NOT the "attribute" property
+    # of obj_type field instance
+
+    if obj_type_str is not None:
+        """ If obj_type string is specified, use it instead of cls supplied 
+            to from_dict. 
+
+        TODO: find a way to raise error when obj_type_str reading 
+            fails with None and obj_type evaluates to cls supplied 
+            to from_dict unintentionally. 
+
+        """
+        obj_cls = ModelRegistry.get_cls_from_name(obj_type_str)
+        if obj_cls is None:
+            """ If obj_type string is specified but invalid, 
+                throw a ValueError. 
+            """
+            raise ValueError("Cannot read obj_type string: {}. "
+                             "Make sure that obj_type is a subclass of {}."
+                             .format(obj_type_str, super_cls))
+
+    return obj_cls
 
 
 class Importable:
@@ -72,7 +102,7 @@ class Importable:
         if with_raw is not None:
             d = self.get_schema_obj().load(with_raw)
             with_dict = {
-                key: self._import_val(val, to_get=False)
+                key: self._import_val(val)
                 for key, val in d.items()
             }
         kwargs_new = {**with_dict, **kwargs}
@@ -80,53 +110,18 @@ class Importable:
             setattr(self, key, val)
 
     @classmethod
-    def from_dict(cls, d, to_get=True, must_get=False, transaction=None,
-                  **kwargs):
-        super_cls, obj_cls = cls, cls
+    def _import_from_dict(cls, d, **kwargs):
+        return cls._import_val(d, **kwargs)
 
-        from flask_boiler.common import read_obj_type
-        obj_type_str = read_obj_type(d, obj_cls)
-        # Note: "obj_type" is NOT the "attribute" property
-        # of obj_type field instance
+    @classmethod
+    def from_dict(cls, d, transaction=_NA, **kwargs):
 
-        if obj_type_str is not None:
-            """ If obj_type string is specified, use it instead of cls supplied 
-                to from_dict. 
-                
-            TODO: find a way to raise error when obj_type_str reading 
-                fails with None and obj_type evaluates to cls supplied 
-                to from_dict unintentionally. 
-                
-            """
-            obj_cls = ModelRegistry.get_cls_from_name(obj_type_str)
-            if obj_cls is None:
-                """ If obj_type string is specified but invalid, 
-                    throw a ValueError. 
-                """
-                raise ValueError("Cannot read obj_type string: {}. "
-                                 "Make sure that obj_type is a subclass of {}."
-                                 .format(obj_type_str, super_cls))
+        obj_cls = resolve_obj_cls(cls=cls, d=d)
 
-        d = obj_cls.get_schema_obj().load(d)
+        schema_obj = obj_cls.get_schema_obj()
+        d = schema_obj.load(d)
 
-        def apply(val):
-            if isinstance(val, dict):
-                return {k: obj_cls._import_val(
-                    v)
-                    for k, v in val.items()
-                }
-            elif isinstance(val, list):
-                return [obj_cls._import_val(
-                    v)
-                    for v in val]
-            else:
-                return obj_cls._import_val(
-                    val)
-
-        d = {
-            key: apply(val)
-            for key, val in d.items() if val != fields.allow_missing
-        }
+        d = cls._import_from_dict(d, transaction=transaction)
 
         instance = obj_cls.new(**d, **kwargs)  # TODO: fix unexpected arguments
         return instance
@@ -176,12 +171,7 @@ class Exportable:
 
         """
         d = self.schema_obj.dump(self)
-
-        res = dict()
-        for key, val in d.items():
-            res[key] = self._export_val(val, **kwargs)
-
-        return res
+        return self._export_val(val=d, **kwargs)
 
     def _export_val_view(self, val):
 
@@ -205,18 +195,15 @@ class Exportable:
         else:
             return val
 
-    def _export_as_view_dict(self) -> dict:
-        """ Export as dictionary representable to front end.
-
-        """
-        d = self.schema_obj.dump(self)
-
-        res = dict()
-        for key, val in d.items():
-            if key not in self.schema_cls._get_reserved_fieldnames():
-                res[key] = self._export_val_view(val)
-
-        return res
+    # def _export_as_view_dict(self) -> dict:
+    #     """ Export as dictionary representable to front end.
+    #
+    #     """
+    #     d = self.schema_obj.dump(self)
+    #     for key in self.schema_cls._get_reserved_fieldnames():
+    #         _ = d.pop(key, None)
+    #
+    #     return self._export_val_view(d)
 
     def to_dict(self):
         return self._export_as_dict()

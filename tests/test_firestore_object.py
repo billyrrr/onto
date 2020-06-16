@@ -8,7 +8,7 @@ from flask_boiler import schema, fields
 from flask_boiler.context import Context as CTX
 from flask_boiler.config import Config
 from flask_boiler.firestore_object import FirestoreObject, \
-    ClsFactory
+    ClsFactory, RelationshipStore
 from flask_boiler.helpers import RelationshipReference
 from flask_boiler.primary_object import PrimaryObject
 from flask_boiler.query import run_transaction
@@ -119,30 +119,33 @@ def test_import_nested():
     Import document reference from database as object 
     """
     with patch.object(doc_ref, 'get', return_value=snapshot) as mock_method:
-        obj = ContainsNested()
-
+        store = RelationshipStore()
         field_deserialized = RelationshipReference(
             nested=True,
-            doc_ref=doc_ref
+            doc_ref=doc_ref,
+            obj_type=TestObject
         )
-        res = obj._import_val(val=field_deserialized, to_get=True)
+        res = ContainsNested._import_val(val=field_deserialized, store=store)
+
+        def _get_snapshots(transaction, references):
+            return list(
+                ref.get()
+                for ref in references
+            )
+
+        store.refresh(transaction=None, get_snapshots=_get_snapshots)
         assert isinstance(res, TestObject)
         mock_method.assert_called_once()
 
-    """ (Default behavior)
-        Import document reference from database as reference to 
-            avoid circular reference issues. 
+    """ Import document reference from database without circular reference 
+            issues. 
     """
     with patch.object(doc_ref, 'get', return_value=snapshot) as mock_method:
         obj = ContainsNested()
-
-        field_deserialized = RelationshipReference(
-            nested=True,
-            doc_ref=doc_ref
-        )
-        # to_get is set to False when importing a nested object in a
-        #     nested object to avoid circular reference.
-        res = obj._import_val(val=field_deserialized, to_get=False)
+        obj.inner = obj  # An example of circularly referenced object
+        store = RelationshipStore()
+        ContainsNested._export_as_dict()
+        d = {'obj_type': 'ContainsNested', 'doc_ref': 'primary/test_document_0', 'inner': primary_doc_ref}
         assert isinstance(res, DocumentReference)
         mock_method.assert_not_called()
 
@@ -186,7 +189,7 @@ def test_export_nested():
             nested=True,
             obj=obj.inner
         )
-        res = obj._export_val(val=field_deserialized, to_save=True)
+        res = obj._export_val(val=field_deserialized)
         assert isinstance(res, DocumentReference)
         mock_method.assert_called_once()
 
@@ -202,7 +205,7 @@ def test_export_nested():
         )
         # to_get is set to False when importing a nested object in a
         #     nested object to avoid circular reference.
-        res = obj._export_val(val=field_deserialized, to_save=False)
+        res = obj._export_val(val=field_deserialized)
         assert isinstance(res, DocumentReference)
         mock_method.assert_not_called()
 
@@ -217,13 +220,13 @@ def test_export_nested():
             obj=obj.inner
         )
         res = obj._export_val(
-            val=field_deserialized, to_save=True, transaction=transaction)
+            val=field_deserialized, transaction=transaction)
         assert isinstance(res, DocumentReference)
         mock_method.assert_called_once()
 
     with patch.object(Transaction, 'set', return_value=None) as mock_method:
         obj = ContainsNested.new(inner=inner, transaction=transaction)
-        obj._export_as_dict(transaction=transaction, to_save=True)
+        obj._export_as_dict(transaction=transaction)
         assert mock_method.call_args == call(document_data=inner._export_as_dict(), reference=doc_ref)
 
     with patch.object(Transaction, 'set', return_value=None) as mock_method:
@@ -232,7 +235,7 @@ def test_export_nested():
         def do_stuffs(transaction: Transaction):
             global primary_doc_ref
             obj = ContainsNested.new(inner=inner, transaction=transaction, doc_ref=primary_doc_ref)
-            obj._export_as_dict(transaction=transaction, to_save=True)
+            obj._export_as_dict(transaction=transaction)
 
         do_stuffs()
 
@@ -244,7 +247,7 @@ def test_export_nested():
         def do_stuffs(transaction: Transaction):
             global primary_doc_ref
             obj = ContainsNested.new(inner=inner, transaction=transaction, doc_ref=primary_doc_ref)
-            obj._export_as_dict(transaction=transaction, to_save=True)
+            obj._export_as_dict(transaction=transaction)
 
         do_stuffs()
 
@@ -257,7 +260,7 @@ def test_export_nested():
             global primary_doc_ref
             # transaction.set = Mock(return_value=None)
             obj = ContainsNested.new(inner=inner, doc_ref=primary_doc_ref)
-            obj._export_as_dict(to_save=True)
+            obj._export_as_dict()
 
         do_stuffs()
 

@@ -1,7 +1,8 @@
 import pytest as pytest
 from google.type.color_pb2 import Color
 
-from flask_boiler import schema, fields, domain_model, view_model, factory
+from flask_boiler import schema, fields, domain_model, view_model, factory, \
+    attrs
 from flask_boiler.business_property_store import BPSchema
 from flask_boiler.registry import ModelRegistry
 from flask_boiler.struct import Struct
@@ -22,11 +23,6 @@ class RainbowStoreBpss(BPSchema):
     colors = fields.StructuralRef(dm_cls=Color, many=True)
 
 
-class RainbowSchemaDAV(schema.Schema):
-    rainbow_name = fields.Raw(dump_only=True)
-    colors = fields.Raw(dump_only=True)
-
-
 @pytest.fixture
 def rainbow_vm(CTX):
 
@@ -35,17 +31,27 @@ def rainbow_vm(CTX):
 
     class RainbowViewModelDAV(ViewModel):
 
-        _schema_cls = RainbowSchemaDAV
+        rainbow_name = attrs.bproperty(import_enabled=False)
+        colors = attrs.bproperty(import_enabled=False)
+
+        doc_ref = attrs.bproperty(export_enabled=False)
+
+        @doc_ref.getter
+        def doc_ref(self):
+            return self._doc_ref
+
+        obj_type = attrs.bproperty(import_enabled=False, export_enabled=False)
+
         _color_d = dict()
 
-        @property
+        @colors.getter
         def colors(self):
             res = list()
             for key in sorted(self._color_d):
                 res.append(self._color_d[key])
             return res
 
-        @property
+        @rainbow_name.getter
         def rainbow_name(self):
             res = list()
             for key in sorted(self._color_d):
@@ -120,7 +126,7 @@ def color_refs(request):
 
 class Palette(schema.Schema):
     palette_name = fields.Str()
-    colors = fields.Relationship(nested=False, many=True)
+    colors = fields.Relationship(nested=True, many=True)
 
 
 class PaletteViewModelBase(view_model.ViewModel):
@@ -154,11 +160,26 @@ Color = factory.ClsFactory.create(
 )
 
 
-PaletteViewModel = factory.ClsFactory.create(
-    name="PaletteViewModel",
-    schema=Palette,
-    base=PaletteViewModelBase
-)
+class ColorViewModel(view_model.ViewModel):
+
+    color = attrs.relation(export_enabled=False, nested=True, dm_cls=Color)
+    name = attrs.bproperty()
+
+    @name.getter
+    def name(self):
+        return self.color.name
+
+
+class PaletteViewModel(view_model.ViewModel):
+    palette_name = attrs.bproperty()
+    colors = attrs.embed(obj_cls=ColorViewModel, many=True)
+
+    @colors.getter
+    def colors(self):
+        return [
+            ColorViewModel.new(color=Color.get(doc_ref=color_ref))
+            for color_ref in self._attrs.colors
+        ]
 
 
 PaletteDomainModel = factory.ClsFactory.create(
@@ -166,4 +187,3 @@ PaletteDomainModel = factory.ClsFactory.create(
     schema=Palette,
     base=domain_model.DomainModel
 )
-

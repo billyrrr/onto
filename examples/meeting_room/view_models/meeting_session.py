@@ -115,10 +115,14 @@ class MeetingSession(view_model.ViewModel):
     #         for obj in Meeting.where(**query_d)]
 
     @classmethod
-    def new(cls, doc_id=None, once=True, **kwargs):
-        struct = Struct(schema_obj=MeetingSessionBpss())
+    def new(cls, doc_id=None, once=True, meeting=None, **kwargs):
 
-        m: Meeting = Meeting.get(doc_id=doc_id)
+        if meeting is None:
+            m: Meeting = Meeting.get(doc_id=doc_id)
+        else:
+            m = meeting
+
+        struct = Struct(schema_obj=MeetingSessionBpss())
 
         struct["meeting"] = (Meeting, m.doc_ref.id)
 

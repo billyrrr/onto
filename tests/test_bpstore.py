@@ -89,21 +89,21 @@ def test_obj_options(CTX, color_refs, request):
     assert isinstance(store.favorite_palette, PaletteDomainModel)
     assert isinstance(store.favorite_palette.colors[0], DocumentReference)
 
-    """
-    New: nested retrieves objects
-    """
-    store = Store(
-        struct=struct,
-        snapshot_container=SnapshotContainer(),
-        obj_options=dict(
-            must_get=True
-        )
-    )
-    store._container.set(
-        'projects/flask-boiler-testing/databases/(default)/documents/PaletteDomainModel/partial_rainbow_palette',
-        CTX.db.document(
-            'projects/flask-boiler-testing/databases/(default)/documents/PaletteDomainModel/partial_rainbow_palette').get()
-    )
-    store.refresh()
-    assert isinstance(store.favorite_palette, PaletteDomainModel)
-    assert isinstance(store.favorite_palette.colors[0], Color)
+    # """
+    # New: nested retrieves objects
+    # """
+    # store = Store(
+    #     struct=struct,
+    #     snapshot_container=SnapshotContainer(),
+    #     obj_options=dict(
+    #         must_get=True
+    #     )
+    # )
+    # store._container.set(
+    #     'projects/flask-boiler-testing/databases/(default)/documents/PaletteDomainModel/partial_rainbow_palette',
+    #     CTX.db.document(
+    #         'projects/flask-boiler-testing/databases/(default)/documents/PaletteDomainModel/partial_rainbow_palette').get()
+    # )
+    # store.refresh()
+    # assert isinstance(store.favorite_palette, PaletteDomainModel)
+    # assert isinstance(store.favorite_palette.colors[0], Color)

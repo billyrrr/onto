@@ -86,21 +86,28 @@ class Raw(fields.Raw, Field):
     pass
 
 
-class List(fields.Raw, Field):
+class List(fields.List, Field):
     # TODO: change
 
     @typing.overload
     def __get__(self, instance, owner) -> typing.Union[Field, typing.List]:
         """
         Type hinting
+        # TODO: prevent this section of code from being accidentally called
+            even if typing.overload decorator got accidentally erased
         """
         pass
 
-    def __init__(self, missing=list, *args, **kwargs):
-        super().__init__(missing=missing, *args, **kwargs)
+    def __init__(self, *args, missing=list, **kwargs):
+        super().__init__(*args, missing=missing, **kwargs)
 
 
-class Dict(fields.Raw, Field):
+class Mapping(fields.Mapping, Field):
+    def __init__(self, *args, missing=dict, **kwargs):
+        super().__init__(*args, missing=missing, **kwargs)
+
+
+class Dict(fields.Dict, Field):
 
     @typing.overload
     def __get__(self, instance, owner) -> typing.Union[Field, typing.Dict]:
@@ -109,8 +116,8 @@ class Dict(fields.Raw, Field):
         """
         pass
 
-    def __init__(self, missing=dict, *args, **kwargs):
-        super().__init__(missing=missing, *args, **kwargs)
+    def __init__(self, *args, missing=dict, **kwargs):
+        super().__init__(*args, missing=missing, **kwargs)
 
 
 class Function(fields.Function, Field):
@@ -198,6 +205,14 @@ class ObjectTypeField(fields.Function, Field):
             return raw_dict[self.data_key]
         else:
             return None
+
+    def get_obj_type_data_key(self):
+        # NOTE: this is different from not self.dump_only
+        # NOTE: load_only and dump_only can be true at the same time
+        if self.load_only:
+            return None
+        else:
+            return self.data_key
 
     def __init__(self, *args, serialize=_NA, data_key="obj_type",
                  deserialize=_NA,

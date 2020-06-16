@@ -8,6 +8,7 @@ from flask_boiler import fields
 from flask_boiler.common import _NA
 from flask_boiler.helpers import RelationshipReference
 # from flask_boiler.view_model import ViewModel
+from flask_boiler.models.mixin import resolve_obj_cls
 from flask_boiler.registry import ModelRegistry
 from flask_boiler.models.base import Serializable
 from flask_boiler.snapshot_container import SnapshotContainer
@@ -18,13 +19,16 @@ from flask_boiler.factory import ClsFactory
 
 class FirestoreObjectMixin:
 
-    def __init__(self, *args, doc_ref=None, transaction=_NA, **kwargs):
+    def __init__(self, *args, doc_ref=None, transaction=_NA, _store=None, **kwargs):
 
         if transaction is _NA:
             transaction = CTX.transaction_var.get()
 
         self._doc_ref = doc_ref
         self.transaction = transaction
+        if _store is None:
+            _store = RelationshipStore()
+        self._store = _store
         super().__init__(*args, **kwargs)
 
     def get_firestore_ref(self):
@@ -80,7 +84,7 @@ class FirestoreObjectMixin:
     def save(self,
              transaction: Transaction=_NA,
              doc_ref=None,
-             save_rel=True,
+             _store=None,
              ):
         """ Save an object to Firestore
 
@@ -96,15 +100,13 @@ class FirestoreObjectMixin:
         if doc_ref is None:
             doc_ref = self.doc_ref
 
-        d = self._export_as_dict(transaction=transaction)
+        d = self._export_as_dict(transaction=transaction, _store=_store)
 
         if transaction is None:
             doc_ref.set(document_data=d)
         else:
             transaction.set(reference=doc_ref,
                             document_data=d)
-
-
 
     def delete(self, transaction: Transaction = _NA) -> None:
         """ Deletes and object from Firestore.
@@ -121,54 +123,96 @@ class FirestoreObjectMixin:
             transaction.delete(reference=self.doc_ref)
 
 
-def _nest_relationship_import(rr, store):
+def _nest_relationship_import(rr, _store):
     """ (Experimental)
 
     :param rr:
     :param container:
     :return:
     """
+    doc_ref, obj_type = rr.doc_ref, rr.obj_type
+    if isinstance(obj_type, str):
+        obj_type = ModelRegistry.get_cls_from_name(obj_type)
 
-    store.insert(doc_ref=rr.doc_ref, obj_type=rr.obj_type)
+    _store.insert(doc_ref=doc_ref, obj_type=obj_type)
     from peak.util.proxies import CallbackProxy
     import functools
-    _callback = functools.partial(store.retrieve, doc_ref=rr.doc_ref, obj_type=rr.obj_type)
+    _callback = functools.partial(_store.retrieve, doc_ref=doc_ref, obj_type=obj_type)
     return CallbackProxy(_callback)
+
+
+# def _nest_relationship_export(rr, store):
+#     """ (Experimental)
+#
+#     :param rr:
+#     :param container:
+#     :return:
+#     """
+#     obj, obj_type = rr.obj, rr.obj_type
+#
+#     store.insert(doc_ref=doc_ref, obj_type=obj_type)
+#     from peak.util.proxies import CallbackProxy
+#     import functools
+#     _callback = functools.partial(store.retrieve, doc_ref=doc_ref, obj_type=obj_type)
+#     return CallbackProxy(_callback)
+
+
+def _get_snapshots(transaction, **kwargs):
+    """ needed because transactional wrapper uses specific argument
+        ordering
+
+    :param transaction:
+    :param kwargs:
+    :return:
+    """
+    return CTX.db.get_all(transaction=transaction, **kwargs)
 
 
 class RelationshipStore:
 
     def __init__(self):
-        self.queue = list()
+        self.tasks = dict()  # TODO: Watch out for when (doc_ref, obj_type_super) and (doc_ref, obj_type_sub) are both in the set; the objects will be equivalent, but initialized twice under the current plan
+        self.visited = set()
         self.container = SnapshotContainer()
+        self.object_container = dict()
+        self.saved = set()
 
-    def insert(self, *, doc_ref, obj_type):
+    def insert(self, *, doc_ref, obj_type) -> None:
         """
         TODO: implement obj_type kwarg or toss it
         :param doc_ref:
         :param obj_type:
         :return:
         """
-        self.queue.append(doc_ref)
+        if doc_ref in self.tasks or doc_ref in self.visited:
+            return
+        self.tasks[doc_ref] = obj_type
+        self.visited.add(doc_ref)
 
-    def refresh(self, transaction):
-        refs = list()
-        for doc_ref in self.queue:
-            refs.append(doc_ref)
+    def refresh(self, transaction, get_snapshots=_get_snapshots):
 
-        def get_snapshots(transaction, **kwargs):
-            """ needed because transactional wrapper uses specific argument
-                ordering
+        while len(self.tasks) != 0:
 
-            :param transaction:
-            :param kwargs:
-            :return:
-            """
-            return CTX.db.get_all(transaction=transaction, **kwargs)
+            refs = list()
+            for doc_ref in self.tasks:
+                refs.append(doc_ref)
 
-        res = get_snapshots(references=refs, transaction=transaction)
-        for doc in res:
-            self.container.set(key=doc.reference._document_path, val=doc)
+            res = get_snapshots(references=refs, transaction=transaction)
+            for doc in res:
+                self.container.set(key=doc.reference._document_path, val=doc)
+                del self.tasks[doc.reference]
+
+            for doc in res:
+                obj_type = self.tasks[doc.reference]
+                d = doc.to_dict()
+                obj_cls = resolve_obj_cls(cls=obj_type, d=d)
+
+                schema_obj = obj_cls.get_schema_obj()
+                d = schema_obj.load(d)
+                d = obj_cls._import_from_dict(d, transaction=transaction, _store=self)
+
+                instance = obj_cls.new(**d, transaction=transaction)
+                self.object_container[doc.reference] = instance
 
     def retrieve(self, *, doc_ref, obj_type):
         snapshot = self.container.get(key=doc_ref._document_path)
@@ -180,31 +224,42 @@ class FirestoreObjectValMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _export_val(self, val, transaction=None):
-
-        def is_nested_relationship(val):
-            return isinstance(val, RelationshipReference) and val.nested
-
-        def is_ref_only_relationship(val):
-            return isinstance(val, RelationshipReference) and not val.nested
+    def _export_val(self, val, transaction=None, _store=None):
 
         def nest_relationship(obj):
-            if transaction is None:
-                obj.save()
-            else:
-                obj.save(transaction=transaction)
+            def _save():
+                if transaction is None:
+                    obj.save(_store=_store)
+                else:
+                    obj.save(transaction=transaction, _store=_store)
+
+            if _store is not None and obj.doc_ref not in _store.saved:
+                _store.saved.add(obj.doc_ref)
+                _save()
+            elif _store is None:
+                _save()
             return obj.doc_ref
 
-        if is_nested_relationship(val):
-            # if to_save:
-            return nest_relationship(val.obj)
-            # else:
-            #     return val.obj.doc_ref
-        elif is_ref_only_relationship(val):
-            return val.doc_ref
-
+        if isinstance(val, RelationshipReference):
+            if val.nested and val.obj is not None:
+                return nest_relationship(val.obj)
+            elif val.nested and val.doc_ref is not None:
+                return val.doc_ref
+            elif not val.nested and val.doc_ref is not None:
+                return val.doc_ref
+            elif not val.nested and val.obj is not None:
+                """ We should stay away from serializing a 
+                    referenced object in domain model since references on 
+                    domain model can be circularly referenced. Such case 
+                    results in a loop that may create dangerous amount of 
+                    external or internal API usage. 
+                """
+                raise ValueError
+            else:
+                return None
         else:
-            return super()._export_val(val, transaction=transaction)
+            return super()._export_val(val, transaction=transaction, _store=_store)
+
 
     # def _export_val_view(self, val):
     #     def is_nested_relationship(val):
@@ -220,67 +275,60 @@ class FirestoreObjectValMixin:
     #     else:
     #         return super()._export_val_view(val)
 
-    def _export_as_dict(self, transaction=None, **kwargs):
+    def _export_as_dict(self, transaction=None, _store=None, **kwargs):
         if transaction is None:
             transaction = self.transaction
+        if _store is None:
+            _store = self._store
+
         return super()._export_as_dict(**kwargs,
-                                       transaction=transaction)
+                                       transaction=transaction, _store=_store)
 
-    def _export_val_view(self, val):
-
-        def get_vm(doc_ref):
-            obj = FirestoreObject.get(doc_ref=doc_ref,
-                                      transaction=self.transaction)
-            return obj._export_as_view_dict()
-
-        if isinstance(val, RelationshipReference):
-            if val.obj is not None:
-                return val.obj._export_as_view_dict()
-            elif val.doc_ref is not None:
-                return get_vm(val.doc_ref)
-            else:
-                return val.doc_ref
-        else:
-            return super()._export_val_view(val)
+    # def _export_val_view(self, val):
+    #
+    #     def get_vm(doc_ref):
+    #         obj = FirestoreObject.get(doc_ref=doc_ref,
+    #                                   transaction=self.transaction)
+    #         return obj._export_as_view_dict()
+    #
+    #     if isinstance(val, RelationshipReference):
+    #         if val.obj is not None:
+    #             return val.obj._export_as_view_dict()
+    #         elif val.doc_ref is not None:
+    #             return get_vm(val.doc_ref)
+    #         else:
+    #             return val.doc_ref
+    #     else:
+    #         return super()._export_val_view(val)
 
     @classmethod
-    def _import_val(cls, val, to_get=False, must_get=False, transaction=None, store=None):
+    def _import_val(cls, val, transaction=None, _store=None):
 
-        def is_nested_relationship(val):
-            return isinstance(val, RelationshipReference) and val.nested
-
-        def is_ref_only_relationship(val):
-            return isinstance(val, RelationshipReference) and not val.nested
-
-        def nest_relationship(val: RelationshipReference):
-            return _nest_relationship_import(val, store=store)
-            # if transaction is None:
-            #     snapshot = val.doc_ref.get()
-            #     return snapshot_to_obj(snapshot, transaction=transaction)
-            # else:
-            #     snapshot = val.doc_ref.get(transaction=transaction)
-            #     return snapshot_to_obj(snapshot, transaction=transaction)
-
-        if is_nested_relationship(val):
-            if to_get:
-                return nest_relationship(val)
-            else:
+        if isinstance(val, RelationshipReference):
+            if val.nested and val.doc_ref is not None:
+                return _nest_relationship_import(val, _store=_store)
+            elif not val.nested and val.doc_ref is not None:
                 return val.doc_ref
-        elif is_ref_only_relationship(val):
-            if must_get:
-                return nest_relationship(val)
             else:
-                return val.doc_ref
+                return None
         else:
-            return super()._import_val(
-                val, to_get=to_get, transaction=transaction)
+            return super()._import_val(val, transaction=transaction, _store=_store)
+
+    @classmethod
+    def _import_from_dict(cls, d, transaction=None, _store=_NA, **kwargs):
+        if _store is _NA:
+            _store = RelationshipStore()
+            res = cls._import_val(d, transaction=transaction, _store=_store, **kwargs)
+            _store.refresh(transaction=transaction)
+        else:
+            res = cls._import_val(d, transaction=transaction, _store=_store,
+                                  **kwargs)
+        return res
 
     @classmethod
     def from_dict(
             cls,
             d,
-            to_get=True,
-            must_get=False,
             transaction=None,
             **kwargs):
         """ Deserializes an object from a dictionary.
@@ -291,66 +339,7 @@ class FirestoreObjectValMixin:
             related documents, and for saving this object.
         :param kwargs: Keyword arguments to be forwarded to new
         """
-
-        super_cls, obj_cls = cls, cls
-
-        from flask_boiler.common import read_obj_type
-        obj_type_str = read_obj_type(d, obj_cls)
-
-        if obj_type_str is not None:
-            """ If obj_type string is specified, use it instead of cls supplied 
-                to from_dict. 
-
-            TODO: find a way to raise error when obj_type_str reading 
-                fails with None and obj_type evaluates to cls supplied 
-                to from_dict unintentionally. 
-
-            """
-            obj_cls = ModelRegistry.get_cls_from_name(obj_type_str)
-            if obj_cls is None:
-                """ If obj_type string is specified but invalid, 
-                    throw a ValueError. 
-                """
-                raise ValueError("Cannot read obj_type string: {}. "
-                                 "Make sure that obj_type is a subclass of {}."
-                                 .format(obj_type_str, super_cls))
-
-        d = obj_cls.get_schema_obj().load(d)
-
-        _store = RelationshipStore()
-
-        def apply(val):
-            if isinstance(val, dict):
-                return {k: obj_cls._import_val(
-                    v,
-                    to_get=to_get,
-                    must_get=must_get,
-                    transaction=transaction, store=_store)
-                    for k, v in val.items()
-                }
-            elif isinstance(val, list):
-                return [obj_cls._import_val(
-                    v,
-                    to_get=to_get,
-                    must_get=must_get,
-                    transaction=transaction, store=_store)
-                    for v in val]
-            else:
-                return obj_cls._import_val(
-                    val,
-                    to_get=to_get,
-                    must_get=must_get,
-                    transaction=transaction, store=_store)
-
-        d = {
-            key: apply(val)
-            for key, val in d.items() if val != fields.allow_missing
-        }
-
-        _store.refresh(transaction=transaction)
-
-        instance = obj_cls.new(**d, transaction=transaction, **kwargs)  # TODO: fix unexpected arguments
-        return instance
+        return super().from_dict(d, transaction=transaction, **kwargs)
 
 
 class FirestoreObject(FirestoreObjectValMixin,

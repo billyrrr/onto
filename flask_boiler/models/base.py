@@ -1,3 +1,5 @@
+from typing import Optional, Tuple
+
 from flask_boiler.business_property_store import SimpleStore
 from .meta import SerializableMeta
 from ..registry import ModelRegistry

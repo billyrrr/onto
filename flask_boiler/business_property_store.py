@@ -104,7 +104,10 @@ class BusinessPropertyStore:
 
         for fd in schema_obj.structural_ref_fields:
             key = fd.attribute
-            val = struct[key]
+            val = struct.get_item(key)
+
+            if val is None:
+                continue
 
             if fd.many:
                 g[key] = dict()

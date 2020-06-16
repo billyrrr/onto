@@ -9,8 +9,8 @@ from google.cloud.firestore_v1 import DocumentSnapshot, Watch, \
 from google.cloud.firestore_v1.watch import DocumentChange
 
 from flask_boiler.context import Context as CTX
-# https://dev.to/googlecloud/portable-cloud-functions-with-the-python-functions-framework-a6a
-from google.cloud.functions.context import Context as GcfContext
+# # https://dev.to/googlecloud/portable-cloud-functions-with-the-python-functions-framework-a6a
+# from google.cloud.functions.context import Context as GcfContext
 
 from flask_boiler.query import run_transaction
 from flask_boiler.view.base import ViewMediatorBase
@@ -157,7 +157,7 @@ class OnTriggerMixin:
         if resource_path is not None:
             self.resource = "projects/" + CTX.config.APP_NAME + "/databases/(default)/documents/" + resource_path
 
-    def _on_trigger(self, data, context: GcfContext):
+    def _on_trigger(self, data, context12):
         """ For use with Cloud Functions
 
         :return:

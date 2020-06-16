@@ -19,6 +19,18 @@ class Struct(UserDict):
             else:
                 yield val
 
+    def get_item(self, key):
+        """ Only return when key is defined. Used to access values of
+        this object.
+
+        :param key:
+        :return:
+        """
+        if key not in self.data.keys():
+            return None
+        else:
+            return self.data[key]
+
     def __getitem__(self, key):
         """
         Initializes a field to dict if it was not declared before
@@ -52,6 +64,7 @@ class SnapshotStruct(UserDict):
     def __getitem__(self, key):
         """
         Initializes a field to dict if it was not declared before
+        Used to write to this object.
 
         :param item:
         :return:

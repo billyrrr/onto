@@ -44,23 +44,30 @@ def test_init_read_only():
 
 def test_relationship_many(CTX):
 
+    doc_ref_1, doc_ref_2 = \
+        CTX.db.document("hello/1"), CTX.db.document("hello/2")
+
     class ContainsIterableSchema(schema.Schema):
-        the_iterable = fields.Relationship(nested=False, many=True)
+        the_iterable = marshmallow_fields.Dict(
+            values=fields.Relationship(nested=False, obj_type=None))
 
     fd = ContainsIterableSchema().fields["the_iterable"]
 
-    doc_ref_1, doc_ref_2 = \
-        CTX.db.document("hello/1"), CTX.db.document("hello/2")
+    res = fd.deserialize(value={1: doc_ref_1, 2: doc_ref_2})
+
+    assert res == {1: RelationshipReference(nested=False, doc_ref=doc_ref_1),
+                   2: RelationshipReference(nested=False, doc_ref=doc_ref_2)}
+
+    class ContainsIterableSchema(schema.Schema):
+        the_iterable = fields.Relationship(nested=False, many=True, obj_type=None)
+
+    fd = ContainsIterableSchema().fields["the_iterable"]
 
     res = fd.deserialize(value=[doc_ref_1, doc_ref_2])
 
     assert res == [RelationshipReference(nested=False, doc_ref=doc_ref_1),
                    RelationshipReference(nested=False, doc_ref=doc_ref_2)]
 
-    res = fd.deserialize(value={1: doc_ref_1, 2: doc_ref_2})
-
-    assert res == {1: RelationshipReference(nested=False, doc_ref=doc_ref_1),
-                   2: RelationshipReference(nested=False, doc_ref=doc_ref_2)}
 
     ContainsIterable = ClsFactory.create(
         "ContainsIterable",
@@ -193,6 +200,7 @@ def test_proxy(CTX):
         assert isinstance(a, A)
 
     execute_no_transaction()
+
 
 def test_local_time():
     from flask_boiler.fields import local_time_from_timestamp, timestamp_from_local_time

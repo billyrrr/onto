@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask_boiler import schema, fields, domain_model, utils
+from flask_boiler import schema, fields, domain_model, utils, attrs
 from flask_boiler.config import Config
 from flask_boiler.models.mixin import Exportable, NewMixin
 from flask_boiler.models.base import BaseRegisteredModel, Schemed
@@ -14,60 +14,40 @@ config = Config(
 
 CTX.read(config)
 
+class Post(domain_model.DomainModel):
 
-# class Immutable(BaseRegisteredModel,
-#                Schemed,
-#                NewMixin,
-#                Exportable,):
-#     pass
+    _collection_name = "posts"
 
-class PostSchema(schema.Schema):
-    _id = fields.Raw(data_key="id", dump_only=True)
-    title = fields.Raw()
-    body = fields.Raw()
-    pub_date = fields.Raw()
+    _id = attrs.bproperty(data_key="id", import_enabled=False)
 
-    category = fields.Relationship(nested=True)
-
-
-class PostBase(domain_model.DomainModel):
-
-    @property
+    @_id.getter
     def _id(self):
         return self.doc_id
 
-    _collection_name = "posts"
-    _schema_cls = PostSchema
+    title = attrs.bproperty()
+    body = attrs.bproperty()
+    pub_date = attrs.bproperty(export_default=None)
+
+    category = attrs.relation(dm_cls='Category', nested=True)
 
     def __repr__(self):
         return '<Post %r>' % self.title
 
 
-class Post(PostBase):
-    pass
+class Category(domain_model.DomainModel):
+    _id = attrs.bproperty(data_key="id", import_enabled=False)
 
+    name = attrs.bproperty()
+    posts = attrs.relation(dm_cls='Post', nested=True, collection=list)
 
-class CategorySchema(schema.Schema):
-    _id = fields.Raw(data_key="id", dump_only=True)
-    name = fields.Raw()
-    # posts = fields.Relationship(nested=True, many=True)
-
-
-class CategoryBase(domain_model.DomainModel):
-
-    @property
+    @_id.getter
     def _id(self):
         return self.doc_id
 
     _collection_name = "categories"
-    _schema_cls = CategorySchema
 
     def __repr__(self):
         return '<Category %r>' % self.name
-
-
-class Category(CategoryBase):
-    pass
 
 
 category_id = utils.random_id()
@@ -82,16 +62,22 @@ p.body = "Ssssssss"
 # py.posts.append(p)
 p.category = py
 
-py.save()
+py.posts.append(p)
+
+p.save()
 
 obj = Post.get(doc_id=post_id)
 
-assert str(p.category) == "<Category 'Python'>"
+assert str(obj.category) == "<Category 'Python'>"
 
-assert p._export_as_view_dict() == {'body': 'Ssssssss',
-                                    'id': post_id,
-                                    'category': {
-                                        'id': category_id,
-                                        'name': 'Python'},
-                                    'title': 'snakes',
-                                    'pubDate': None}
+print(obj)
+
+# assert obj._export_as_view_dict() == {'body': 'Ssssssss',
+#                                     'id': post_id,
+#                                     'category': {
+#                                         'id': category_id,
+#                                         'name': 'Python'},
+#                                     'title': 'snakes',
+#                                     'pubDate': None}
+
+assert p.category.doc_id == category_id
