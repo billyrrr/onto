@@ -6,7 +6,7 @@ from typing import Optional, Awaitable
 
 from google.cloud.firestore_v1 import DocumentSnapshot, Watch, \
     DocumentReference
-from google.cloud.firestore_v1.watch import DocumentChange
+from flask_boiler.watch import DocumentChange
 
 from flask_boiler.context import Context as CTX
 # # https://dev.to/googlecloud/portable-cloud-functions-with-the-python-functions-framework-a6a
@@ -18,6 +18,8 @@ from flask_boiler.view.base import ViewMediatorBase
 # NOTE: note for deploying to cloud functions
 # NOTE: gcloud functions deploy to_trigger --runtime python37 --trigger-event providers/cloud.firestore/eventTypes/document.create --trigger-resource "projects/flask-boiler-testing/databases/(default)/documents/gcfTest/{gcfTestDocId}"
 # NOTE: No to unauthenticated invocations
+from flask_boiler.watch import DataListener
+
 EVENT_TYPE_MAPPING = dict(
     create="providers/cloud.firestore/eventTypes/document.create",
     update="providers/cloud.firestore/eventTypes/document.update",
@@ -105,12 +107,8 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
 
         query, on_snapshot = self.query, self._get_on_snapshot()
 
-        watch = Watch.for_query(
-            query=query,
-            snapshot_callback=on_snapshot,
-            snapshot_class_instance=DocumentSnapshot,
-            reference_class_instance=DocumentReference
-        )
+        self.listener = DataListener(snapshot_callback=on_snapshot,
+                         firestore=CTX.db, once=False, query=query)
 
 
 class ProtocolBase:
@@ -157,7 +155,7 @@ class OnTriggerMixin:
         if resource_path is not None:
             self.resource = "projects/" + CTX.config.APP_NAME + "/databases/(default)/documents/" + resource_path
 
-    def _on_trigger(self, data, context12):
+    def _on_trigger(self, data, context):
         """ For use with Cloud Functions
 
         :return:

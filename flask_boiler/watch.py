@@ -774,30 +774,23 @@ class Watch(object):
 
 
 class _Watch(Watch):
-    # pass
-    def _on_snapshot_target_change_remove(self, proto):
-        """
-        target removed: assuming once=True and on_snapshot invoked
-        :param proto:
-        :return:
-        """
-        pass
-
+    pass
+    # def _on_snapshot_target_change_remove(self, proto):
+    #     """
+    #     target removed: assuming once=True and on_snapshot invoked
+    #     :param proto:
+    #     :return:
+    #     """
+    #     pass
 
 class DataListener:
 
-    def __init__(self, document_refs, snapshot_callback, firestore, once=False):
+    def __init__(self, document_refs=None, snapshot_callback=None, firestore=None, once=False, query=None):
         """
 
         :param document_refs: a list of string
         :param snapshot_callback:
         """
-
-        target = {
-                "documents": {"documents": document_refs},
-                "target_id": WATCH_TARGET_ID,
-                "once": once
-            }
 
         def comparator(doc1: DocumentSnapshot, doc2: DocumentSnapshot):
             """ TODO: use carefully
@@ -806,21 +799,49 @@ class DataListener:
             :param doc2:
             :return:
             """
-            if doc1.reference._document_path > doc2.reference._document_path:
-                return 1
-            elif doc1.reference._document_path == doc2.reference._document_path:
-                return 0
-            else:
-                return -1
+            return 1
+            # if doc1.reference._document_path > doc2.reference._document_path:
+            #     return 1
+            # elif doc1.reference._document_path == doc2.reference._document_path:
+            #     return 0
+            # else:
+            #     return -1
 
-        self.watch = _Watch(document_reference=None,
-                           firestore=firestore,
-                           target=target,
-                           comparator=comparator,
-                           snapshot_callback=snapshot_callback,
-                           document_snapshot_cls=DocumentSnapshot,
-                           document_reference_cls=DocumentReference,
-                           )
+        if document_refs is not None:
+
+            target = {
+                    "documents": {"documents": document_refs},
+                    "target_id": WATCH_TARGET_ID,
+                    "once": once
+                }
+
+            self.watch = _Watch(document_reference=None,
+                                firestore=firestore,
+                                target=target,
+                                comparator=comparator,
+                                snapshot_callback=snapshot_callback,
+                                document_snapshot_cls=DocumentSnapshot,
+                                document_reference_cls=DocumentReference,
+                                )
+
+        elif query is not None:
+
+            parent_path, _ = query._parent._parent_info()
+            query_target = firestore_pb2.Target.QueryTarget(
+                parent=parent_path, structured_query=query._to_protobuf()
+            )
+            target = {"query": query_target, "target_id": WATCH_TARGET_ID}
+
+            self.watch = _Watch(document_reference=query,
+                                firestore=query._client,
+                                target=target,
+                                comparator=comparator,
+                                snapshot_callback=snapshot_callback,
+                                document_snapshot_cls=DocumentSnapshot,
+                                document_reference_cls=DocumentReference,
+                                )
+        else:
+            raise ValueError
 
     def wait_for_once_done(self):
         """
