@@ -200,10 +200,11 @@ class RelationshipStore:
             res = get_snapshots(references=refs, transaction=transaction)
             for doc in res:
                 self.container.set(key=doc.reference._document_path, val=doc)
+
+            # for doc in res:
+                obj_type = self.tasks[doc.reference]
                 del self.tasks[doc.reference]
 
-            for doc in res:
-                obj_type = self.tasks[doc.reference]
                 d = doc.to_dict()
                 obj_cls = resolve_obj_cls(cls=obj_type, d=d)
 

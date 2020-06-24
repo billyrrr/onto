@@ -86,29 +86,29 @@ def test_relationship_many(CTX):
                    2: RelationshipReference(nested=False, doc_ref=doc_ref_2)}
 
 
-def test_something():
-
-    class MyDescriptor:
-
-        def __init__(self):
-            self._val = None
-
-        def __get__(self, obj, objtype):
-            return self._val
-
-        def __set__(self, obj, val):
-            self._val = val
-
-    class Owner:
-
-        my = MyDescriptor()
-
-    instance = Owner()
-    instance.my = "hi"
-    assert instance.my == "hi"
-
-    d = dict(a=MyDescriptor())
-    assert d['a'] == "hello"
+# def test_something():
+#
+#     class MyDescriptor:
+#
+#         def __init__(self):
+#             self._val = None
+#
+#         def __get__(self, obj, objtype):
+#             return self._val
+#
+#         def __set__(self, obj, val):
+#             self._val = val
+#
+#     class Owner:
+#
+#         my = MyDescriptor()
+#
+#     instance = Owner()
+#     instance.my = "hi"
+#     assert instance.my == "hi"
+#
+#     d = dict(a=MyDescriptor())
+#     assert d['a'] == "hello"
 
 
 def test_wrapper():
@@ -181,7 +181,7 @@ def test_proxy(CTX):
     @transactional
     def execute(transaction):
         rr = RelationshipReference(doc_ref=doc_ref, obj_type=A)
-        a = _nest_relationship_import(rr, store=s)
+        a = _nest_relationship_import(rr, _store=s)
 
         s.refresh(transaction=transaction)
 
@@ -192,7 +192,7 @@ def test_proxy(CTX):
 
     def execute_no_transaction():
         rr = RelationshipReference(doc_ref=doc_ref, obj_type=A)
-        a = _nest_relationship_import(rr, store=s)
+        a = _nest_relationship_import(rr, _store=s)
 
         s.refresh(transaction=None)
 

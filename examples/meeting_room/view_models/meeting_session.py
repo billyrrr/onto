@@ -21,6 +21,9 @@ class MeetingSessionBpss(BPSchema):
 
 class MeetingSession(view_model.ViewModel):
 
+    class Meta:
+        exclude = ('obj_type',)
+
     latitude = attrs.bproperty(import_enabled=False)
     longitude = attrs.bproperty(import_enabled=False)
     address = attrs.bproperty(import_enabled=False)

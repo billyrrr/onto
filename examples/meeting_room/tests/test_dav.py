@@ -74,7 +74,6 @@ def test_start(users, tickets, location, meeting):
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSession.__name__).document(meeting.doc_id)
     assert ref.get().to_dict() == {'latitude': 32.880361,
-                                   'obj_type': 'MeetingSession',
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -142,7 +141,6 @@ def test_mutate(users, tickets, location, meeting, delete_after):
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSession.__name__).document(meeting.doc_id)
     assert ref.get().to_dict() == {'latitude': 32.880361,
-                                   'obj_type': 'MeetingSession',
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -182,7 +180,6 @@ def test_mutate(users, tickets, location, meeting, delete_after):
     ref = Context.db.collection("users").document(users[0].doc_id) \
         .collection(MeetingSession.__name__).document(meeting.doc_id)
     assert ref.get().to_dict() == {'latitude': 32.880361,
-                                   'obj_type': 'MeetingSession',
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -225,7 +222,6 @@ def test_domain_model_changes(users, tickets, location, meeting):
         .collection(MeetingSession.__name__).document(meeting.doc_id)
 
     assert ref.get().to_dict() == {'latitude': 32.880361,
-                                   'obj_type': 'MeetingSession',
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -253,7 +249,6 @@ def test_domain_model_changes(users, tickets, location, meeting):
       counter.
     """
     assert ref.get().to_dict() == {'latitude': 32.880361,
-                                   'obj_type': 'MeetingSession',
                                    'numHearingAidRequested': 1,
                                    'attending': [
                                        {
@@ -347,38 +342,26 @@ def test_user_view(users, tickets, location, meeting):
     user_view.wait_for_first_success()
     # time.sleep(3)  # TODO: delete after implementing sync
 
-    assert user_view.to_dict() == {'meetings': [
-        {'status': 'in-session', 'users': [
-            {'lastName': 'Furlong', 'firstName': 'Tijuana',
-             'hearingAidRequested': True, 'organization': 'UCSD'},
-            {'lastName': 'Manes', 'firstName': 'Thomasina',
-             'hearingAidRequested': False, 'organization': 'UCSD'},
-            {'lastName': 'Pendergrast', 'firstName': 'Joshua',
-             'hearingAidRequested': True, 'organization': 'SDSU'}],
-         'location': {'latitude': 32.880361,
-                      'address': '9500 Gilman Drive, La Jolla, CA',
-                      'longitude': -117.242929},
-         'tickets': {'joshua': {'attendance': True,
-                                'role': 'Participant',
-                                'user': {'firstName': 'Joshua',
-                                         'hearingAidRequested': True,
-                                         'lastName': 'Pendergrast',
-                                         'organization': 'SDSU'}},
-                     'thomasina': {'attendance': True,
-                                   'role': 'Organizer',
-                                   'user': {'firstName': 'Thomasina',
-                                            'hearingAidRequested': False,
-                                            'lastName': 'Manes',
-                                            'organization': 'UCSD'}},
-                     'tijuana': {'attendance': True,
-                                 'role': 'Participant',
-                                 'user': {'firstName': 'Tijuana',
-                                          'hearingAidRequested': True,
-                                          'lastName': 'Furlong',
-                                          'organization': 'UCSD'}}}}],
-        'lastName': 'Manes',
+    assert user_view.to_dict() == {
+        'doc_ref': 'UserViewDAV/thomasina',
         'firstName': 'Thomasina',
         'hearingAidRequested': False,
+        'lastName': 'Manes',
+        'meetings': [{'address': '9500 Gilman Drive, La Jolla, CA',
+                      'attending': [{'hearing_aid_requested': True,
+                                     'name': 'Joshua Pendergrast',
+                                     'organization': 'SDSU'},
+                                    {'hearing_aid_requested': False,
+                                     'name': 'Thomasina Manes',
+                                     'organization': 'UCSD'},
+                                    {'hearing_aid_requested': True,
+                                     'name': 'Tijuana Furlong',
+                                     'organization': 'UCSD'}],
+                      'inSession': True,
+                      'latitude': 32.880361,
+                      'longitude': -117.242929,
+                      'numHearingAidRequested': 2}],
+        'obj_type': 'UserViewDAV',
         'organization': 'UCSD'}
 
 

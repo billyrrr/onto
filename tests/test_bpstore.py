@@ -87,7 +87,7 @@ def test_obj_options(CTX, color_refs, request):
     )
     store.refresh()
     assert isinstance(store.favorite_palette, PaletteDomainModel)
-    assert isinstance(store.favorite_palette.colors[0], DocumentReference)
+    assert isinstance(store.favorite_palette.colors[0], Color)
 
     # """
     # New: nested retrieves objects

@@ -100,10 +100,10 @@ def test_import_iterable():
     doc_ref_1, doc_ref_2 = \
         CTX.db.document("hello/1"), CTX.db.document("hello/2")
     obj = ContainsIter()
-    res = obj._import_val(val=[doc_ref_1, doc_ref_2], to_get=False)
+    res = obj._import_val(val=[doc_ref_1, doc_ref_2])
     assert res == [doc_ref_1, doc_ref_2]
 
-    res = obj._import_val(val={1: doc_ref_1, 2: doc_ref_2}, to_get=False)
+    res = obj._import_val(val={1: doc_ref_1, 2: doc_ref_2})
     assert res == {1: doc_ref_1, 2: doc_ref_2}
 
 
@@ -125,7 +125,7 @@ def test_import_nested():
             doc_ref=doc_ref,
             obj_type=TestObject
         )
-        res = ContainsNested._import_val(val=field_deserialized, store=store)
+        res = ContainsNested._import_val(val=field_deserialized, _store=store)
 
         def _get_snapshots(transaction, references):
             return list(
@@ -143,11 +143,11 @@ def test_import_nested():
     with patch.object(doc_ref, 'get', return_value=snapshot) as mock_method:
         obj = ContainsNested()
         obj.inner = obj  # An example of circularly referenced object
+        obj.save()
         store = RelationshipStore()
-        ContainsNested._export_as_dict()
-        d = {'obj_type': 'ContainsNested', 'doc_ref': 'primary/test_document_0', 'inner': primary_doc_ref}
-        assert isinstance(res, DocumentReference)
-        mock_method.assert_not_called()
+        d = {'obj_type': 'ContainsNested', 'doc_ref': 'primary/test_document_0', 'inner': RelationshipReference(nested=True, doc_ref=obj.doc_ref)}
+        ContainsNested._import_from_dict(d=d, _store=store)
+        assert isinstance(res, TestObject)
 
     """
     Import document reference from database as object that 
@@ -160,8 +160,11 @@ def test_import_nested():
             nested=True,
             doc_ref=doc_ref
         )
+        store = RelationshipStore()
+
         res = obj._import_val(
-            val=field_deserialized, to_get=True, transaction=transaction)
+            val=field_deserialized, _store=store, transaction=transaction)
+        store.refresh(transaction=None)
         assert isinstance(res, TestObject)
         assert res.transaction == transaction
         mock_method.assert_called_with(
@@ -192,22 +195,6 @@ def test_export_nested():
         res = obj._export_val(val=field_deserialized)
         assert isinstance(res, DocumentReference)
         mock_method.assert_called_once()
-
-    """ (Default behavior)
-    Set object in relationship reference
-    """
-    with patch.object(doc_ref, 'set', return_value=None) as mock_method:
-        obj = ContainsNested.new(inner=inner)
-
-        field_deserialized = RelationshipReference(
-            nested=True,
-            obj=obj.inner
-        )
-        # to_get is set to False when importing a nested object in a
-        #     nested object to avoid circular reference.
-        res = obj._export_val(val=field_deserialized)
-        assert isinstance(res, DocumentReference)
-        mock_method.assert_not_called()
 
     """
     Set object in relationship reference with transaction
@@ -342,7 +329,7 @@ def test_relationship_nested():
     master_obj = MasterObjectNested.new(doc_id="masterObjIdNested1")
     master_obj.nested_obj = referenced_obj
 
-    assert master_obj._export_as_dict(to_save=True) == {
+    assert master_obj._export_as_dict() == {
         'doc_id': 'masterObjIdNested1',
         'doc_ref': 'MasterObjectNested/masterObjIdNested1',
         'obj_type': 'MasterObjectNested',

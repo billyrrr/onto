@@ -22,8 +22,6 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs, rainbow_vm):
     vm_id = obj.doc_ref.id
 
     assert CTX.db.collection("RainbowDAV").document(vm_id).get().to_dict() == {
-        'rainbowName': 'cian-magenta-yellow',
         'colors': ['cian', 'magenta', 'yellow'],
-        'doc_ref': 'RainbowDAV/{}'.format(vm_id),
-        'obj_type': 'RainbowViewModelDAV',
+        'rainbowName': 'cian-magenta-yellow'
     }

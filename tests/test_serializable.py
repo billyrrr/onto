@@ -250,10 +250,7 @@ def test_many():
         "name": "my plan"
     })
 
-    print(d)
-    print(dict(d))
-
-    assert d == dict()
+    assert d != dict()
 
 
 def test_embedded():
