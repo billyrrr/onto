@@ -100,7 +100,7 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
         if doc_ref is None:
             if doc_id is None:
                 doc_id = cls.random_id()
-            doc_ref = cls._get_collection().document(doc_id)
+            doc_ref = cls._doc_ref_from_id(doc_id=doc_id)
         obj = super().new(doc_ref=doc_ref, **kwargs)
         return obj
 
@@ -119,6 +119,6 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
             doc_ref = doc_ref_from_str(doc_ref_str)
 
         if doc_ref is None:
-            doc_ref = cls._get_collection().document(doc_id)
+            doc_ref = cls._doc_ref_from_id(doc_id=doc_id)
 
         return super().get(doc_ref=doc_ref, transaction=transaction)

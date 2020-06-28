@@ -10,7 +10,6 @@ from functools import lru_cache
 
 import flask_boiler.factory
 import flask_boiler.models.base
-from flask_boiler import serializable
 from flask_boiler import view_model, schema, fields
 
 

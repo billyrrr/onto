@@ -188,8 +188,7 @@ class ViewModelMixin:
             # doc_watch.unsubscribe()
         """
 
-        dm_ref: DocumentReference = dm_cls._get_collection().document(
-            dm_doc_id)
+        dm_ref: DocumentReference = dm_cls._doc_ref_from_id(doc_id=dm_doc_id)
         on_update = self.get_on_update(
             dm_cls=dm_cls, dm_doc_id=dm_doc_id,
             dm_doc_ref_str=dm_ref._document_path,

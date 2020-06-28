@@ -59,7 +59,9 @@ class ConfigBase:
 
     def __new__(cls, certificate_filename=None, certificate_path=None,
                 testing=False, debug=False,
-                app_name=None, storage_bucket_name=None, *args, **kwargs):
+                app_name=None, storage_bucket_name=None,
+                database=None,
+                *args, **kwargs):
         if certificate_path is not None:
             cls.FIREBASE_CERTIFICATE_JSON_PATH = certificate_path
         else:
@@ -72,6 +74,7 @@ class ConfigBase:
             cls.STORAGE_BUCKET_NAME = storage_bucket_name
         else:
             cls.STORAGE_BUCKET_NAME = f"{app_name}.appspot.com"
+        cls.database = database if database is not None else dict()
         return cls
 
 

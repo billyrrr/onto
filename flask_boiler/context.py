@@ -135,12 +135,17 @@ class Context:
 
         :rtype:
         """
-        if cls.config == config:
+        # if cls.config == config:
+        #     """
+        #     Skip reading config if the current config is the same as
+        #         the config to read.
+        #     """
+        #     return cls
+        if cls.config is not None:
+            """ Only allow one read/load 
             """
-            Skip reading config if the current config is the same as 
-                the config to read. 
-            """
-            return cls
+            import warnings
+            warnings.warn('Config is read more than once ')
         cls.config = config
 
         cls._reload_credentials(cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
@@ -160,6 +165,7 @@ class Context:
         cls._reload_debug_flag(cls.config.DEBUG)
         cls._reload_testing_flag(cls.config.TESTING)
         cls._reload_firebase_app()
+        cls._reload_dbs(cls.config.database)
         cls._reload_firestore_client(
             certificate_path=cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
         cls._reload_celery_app()
@@ -167,6 +173,42 @@ class Context:
         cls.logger.info(f"flask_boiler.Context has finished "
                         f"loading config: {vars(config)}")
         return cls
+
+    @classmethod
+    def _reload_dbs(cls, database: dict):
+        class Dbs:
+            pass
+
+        cls.dbs = Dbs()
+        for db_name, db_config in database.items():
+            db = cls.create_db(db_config)
+            setattr(cls.dbs, db_name, db)
+
+    @staticmethod
+    def create_db(db_config):
+        if db_config['type'] == "couch":
+            server = db_config['server']
+            try:
+                import couchdb
+            except ImportError as e:
+                raise TypeError('Couch server is configured, but '
+                                'importing couchdb module has failed') from e
+            return couchdb.Server(server)
+        elif db_config['type'] == 'couchbase':
+            try:
+                from couchbase.cluster import Cluster, ClusterOptions
+                from couchbase_core.cluster import PasswordAuthenticator
+            except ImportError as e:
+                raise TypeError('CouchBase server is configured, but '
+                                'importing couchbase module has failed') from e
+
+            cluster = Cluster(db_config['cluster'], ClusterOptions(
+                PasswordAuthenticator(
+                    db_config['username'], db_config['password']
+                )
+            ))
+            bucket = cluster.bucket(db_config['bucket'])
+            return bucket
 
     @classmethod
     def _reload_celery_app(cls):

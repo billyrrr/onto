@@ -42,3 +42,12 @@ google-cloud-logging
 gitpython  # For deploying cloud functions: generate archive
 
 ProxyTypes
+
+# Optional
+apache-flink
+
+# Optional
+couchdb
+
+# Optional
+couchbase

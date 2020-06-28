@@ -2,3 +2,14 @@ app_name: "flask-boiler-testing"
 debug: True
 testing: False
 certificate_filename: "flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
+
+database:
+  couch:
+    type: couch
+    server: http://flask-boiler:xAdme2-pyftos-sunkuc@127.0.0.1:5984/
+  couchbase:
+    type: couchbase
+    cluster: couchbase://localhost
+    username: Administrator
+    password: rumsy5-Rovpyn-romfab
+    bucket: travel-sample

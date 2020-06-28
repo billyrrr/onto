@@ -15,12 +15,7 @@ def CTX():
     from flask_boiler.config import Config
 
     if TST_CTX.config is None:
-        config = Config(
-            app_name="flask-boiler-testing",
-            debug=True,
-            testing=True,
-            certificate_filename="flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
-        )
+        config = Config.load()
         TST_CTX.read(config)
 
     return TST_CTX

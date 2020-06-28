@@ -7,12 +7,7 @@ def pytest_sessionstart(session):
     from flask_boiler.config import Config
 
     if CTX.config is None:
-        config = Config(
-            app_name="flask-boiler-testing",
-            debug=True,
-            testing=True,
-            certificate_filename="flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
-        )
+        config = Config.load()
         CTX.read(config)
 
     _delete_all(CTX, "Orbit")
