@@ -13,15 +13,6 @@ from flask_boiler.helpers import RelationshipReference
 from flask_boiler.primary_object import PrimaryObject
 from flask_boiler.query import run_transaction
 
-config = Config(
-    app_name="flask-boiler-testing",
-    debug=True,
-    testing=True,
-    certificate_filename="flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
-)
-CTX.read(config)
-assert CTX.firebase_app.project_id == "flask-boiler-testing"
-
 
 # Creates a schema for serializing and deserializing to firestore database
 class TestObjectSchema(schema.Schema):

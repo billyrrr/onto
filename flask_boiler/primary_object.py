@@ -8,7 +8,24 @@ from flask_boiler.query.query_mixin import QueryMixin
 from flask_boiler.models.meta import SerializableMeta
 from flask_boiler.utils import random_id, doc_ref_from_str
 
-from flask_boiler.schema import Schema
+from flask_boiler import schema, fields
+
+
+class PrimaryObjectSchema(schema.Schema):
+
+    doc_id = fields.DocIdField(
+        attribute="doc_id",
+        dump_only=True,
+        data_key="doc_id",
+        required=False
+    )
+
+    doc_ref = fields.String(
+        attribute="doc_ref_str",
+        dump_only=True,
+        data_key="doc_ref",
+        required=False
+    )
 
 
 class PrimaryObjectMeta(SerializableMeta):
@@ -32,6 +49,7 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
     """
 
     _collection_name = None
+    _schema_base = PrimaryObjectSchema
 
     @classmethod
     def get_schema_cls(cls):
@@ -54,7 +72,7 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
                             f"such base has no declared schema. ")
                     else:
                         d[key] = field_obj
-            tmp_schema = Schema.from_dict(d)
+            tmp_schema = cls._schema_base.from_dict(d)
             return tmp_schema
         else:
             return super().get_schema_cls()

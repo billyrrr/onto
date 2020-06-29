@@ -61,6 +61,11 @@ class Context:
     _cred = None
     __instance = None
 
+    _ready = False
+    """
+    _ready is True when Context is loaded (and/or is read) 
+    """
+
     def __init__(self, *args, **kwargs):
         raise NotImplementedError('Do not initialize this class, use the class methods and properties instead. ')
 
@@ -117,12 +122,12 @@ class Context:
             raise TypeError
 
     @classmethod
-    def load(cls):
+    def load(cls) -> None:
         config = Config.load()
         cls.read(config)
 
     @classmethod
-    def read(cls, config):
+    def read(cls, config) -> None:
         """ Description
             Read config file andd reload firebase app and firestore client.
 
@@ -141,7 +146,7 @@ class Context:
         #         the config to read.
         #     """
         #     return cls
-        if cls.config is not None:
+        if cls._ready:
             """ Only allow one read/load 
             """
             import warnings
@@ -172,7 +177,7 @@ class Context:
 
         cls.logger.info(f"flask_boiler.Context has finished "
                         f"loading config: {vars(config)}")
-        return cls
+        cls._ready = True
 
     @classmethod
     def _reload_dbs(cls, database: dict):

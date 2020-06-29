@@ -215,6 +215,11 @@ class Exportable:
 class NewMixin:
     """
     Mixin class for initializing instance variable on creation.
+            Needs to be top level.
+            Example:
+                 SomeClass(..., SomeBase, NewMixin, object):
+                    pass
+
     """
 
     @classmethod
@@ -233,7 +238,7 @@ class NewMixin:
         :return: the instance created
         """
 
-        fd = cls._get_fields()  # Calls classmethod
+        # fd = cls._get_fields()  # Calls classmethod
 
         # field_keys = {key for key, field in fd.items() }
 
@@ -261,6 +266,7 @@ class NewMixin:
     def __init__(self, _with_dict=None, **kwargs):
         """ Private initializer; do not call directly.
             Use "YourModelClass.new(...)" instead.
+        Needs to be top level
 
         :param _with_dict:
         :param kwargs:
@@ -272,7 +278,7 @@ class NewMixin:
             try:
                 setattr(self, key, val)
             except AttributeError as ae:
-                CTX.logger.error(f"Error encounntered while setting key: {key}"
+                CTX.logger.error(f"Error encountered while setting key: {key}"
                                  f" and value: {val}."
                                  f" with_dict: {_with_dict}. "
                                  f"Error: {ae.args}")
@@ -281,4 +287,7 @@ class NewMixin:
             #     setattr(self, key, val)
 
         # TODO: log and throw with extraneous arguments
+        if len(kwargs) != 0:
+            raise ValueError(f'Received extraneous arguments '
+                             f'{kwargs}')
         super().__init__(**kwargs)

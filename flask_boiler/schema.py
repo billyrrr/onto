@@ -136,20 +136,6 @@ class Schema(SchemaBase):
         data_key="obj_type",
     )
 
-    doc_id = fields.DocIdField(
-        attribute="doc_id",
-        dump_only=True,
-        data_key="doc_id",
-        required=False
-    )
-
-    doc_ref = fields.Str(
-        attribute="doc_ref_str",
-        dump_only=True,
-        data_key="doc_ref",
-        required=False
-    )
-
     _remainder = fields.Remainder(attribute="_remainder", required=False)
 
     # @pre_load(pass_many=True)

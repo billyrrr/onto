@@ -114,6 +114,11 @@ def test_authenticate(MockProductionCTX, vit):
 
 
 def test_authenticate_testing_config(CTX, vit):
+    """ Tests that auth is skipped when CTX.testing is True
+    :param CTX:
+    :param vit:
+    :return:
+    """
 
     class IntegerResource(Resource):
 

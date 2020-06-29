@@ -10,15 +10,6 @@ from flask_boiler.view.document import ViewMediatorDAV
 from flask_boiler.view_model import ViewModel
 from flask_boiler import testing_utils
 
-config = Config(
-    app_name="flask-boiler-testing",
-    debug=True,
-    testing=True,
-    certificate_filename="flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
-)
-
-CTX.read(config)
-
 class ShardSchema(Schema):
 
     count = Integer()

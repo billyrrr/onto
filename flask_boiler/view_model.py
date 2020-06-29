@@ -385,6 +385,6 @@ class ViewModel(ViewModelMixin, ReferencedObject):
             that is not strongly consistent, fields may be inconsistent.
 
     """
-
-    def __init__(self, *args, doc_ref=None, **kwargs):
-        super().__init__(*args, doc_ref=doc_ref, **kwargs)
+    pass
+    # def __init__(self, *args, doc_ref=None, **kwargs):
+    #     super().__init__(*args, doc_ref=doc_ref, **kwargs)

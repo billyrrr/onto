@@ -40,6 +40,8 @@ API Documentations: [API Docs](https://flask-boiler.readthedocs.io/en/latest/api
 
 Example of a Project using flask-boiler: [gravitate-backend](https://github.com/billyrrr/gravitate-backend)
 
+[Related Technologies](https://medium.baqend.com/real-time-databases-explained-why-meteor-rethinkdb-parse-and-firebase-dont-scale-822ff87d2f87)
+
 ## Installation
 In your project's requirements.txt, 
 

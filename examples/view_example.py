@@ -3,32 +3,17 @@
 Contains test cases inspired by flasgger (MIT licence)
 See: https://github.com/flasgger/flasgger/blob/master/LICENSE
 """
+from flask_boiler import attrs
 from flask import Flask
 from flasgger import Swagger
 
 from flask_boiler import fields
+from flask_boiler.models.base import Serializable
 from flask_boiler.view import rest_api
 from flask_boiler.schema import Schema
 from flask_boiler.firestore_object import ClsFactory
 from flask_boiler.view_model import ViewModel
 
-
-class ExampleColorSchema(Schema):
-    name = fields.Str()
-
-
-class ExamplePaletteSchema(Schema):
-    case_conversion = False
-
-    palette_name = fields.Str()
-    colors = fields.Nested(ExampleColorSchema, many=True)
-
-
-ExamplePaletteViewModelBase = ClsFactory.create(
-    name="ExamplePaletteViewModelBase",
-    schema=ExamplePaletteSchema,
-    base=ViewModel
-)
 
 repo = {
 
@@ -42,7 +27,18 @@ repo = {
 }
 
 
-class ExamplePaletteViewModel(ExamplePaletteViewModelBase):
+class ExampleColor(Serializable):
+    name = attrs.string()
+
+
+class ExamplePaletteViewModel(ViewModel):
+
+    class Meta:
+        case_conversion = False
+
+    palette_name = attrs.string()
+    colors = attrs.embed(obj_cls=ExampleColor, many=True)
+
     description = "A list of colors (may be filtered by palette)"
 
     @classmethod
@@ -80,7 +76,7 @@ if __name__ == "__main__":
     from flask_boiler.config import Config
     from flask_boiler.context import Context as CTX
 
-    if CTX.config is None:
+    if not CTX._ready:
         config = Config(
             app_name="flask-boiler-testing",
             debug=True,
@@ -102,7 +98,7 @@ def test_view_example():
     from flask_boiler.config import Config
     from flask_boiler.context import Context as CTX
 
-    if CTX.config is None:
+    if not CTX._ready:
         config = Config(
             app_name="flask-boiler-testing",
             debug=True,

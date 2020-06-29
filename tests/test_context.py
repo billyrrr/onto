@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.skip(reason='Context should be initialized with conftest already')
 def test_firebase_app_context():
     from flask_boiler import config
     from flask_boiler import context
@@ -18,6 +19,7 @@ def test_firebase_app_context():
     assert CTX.firebase_app.project_id == "flask-boiler-testing"
 
 
+@pytest.mark.skip(reason='Context should be initialized with conftest already')
 def test_context_load():
     from flask_boiler.context import Context as CTX
 
