@@ -387,6 +387,13 @@ class LocalTimeAttribute(PropertyAttribute):
         return field_cls(**self._field_kwargs, attribute=self.name)
 
 
+class DocRefAttribute(PropertyAttribute):
+
+    def _make_field(self) -> fields.Field:
+        field_cls = fields.DocRefField
+        return field_cls(**self._field_kwargs, attribute=self.name)
+
+
 class ReferenceAttribute(PropertyAttribute):
 
     def _make_field(self) -> fields.Field:

@@ -9,7 +9,8 @@ class ReferencedObjectSchema(schema.Schema):
     doc_ref = fields.String(
         # attribute="doc_ref",
         # # dump_only=True,
-        # data_key="doc_ref",
+        data_key="doc_ref",
+        load_only=True,
         required=False,
         allow_none=True
     )

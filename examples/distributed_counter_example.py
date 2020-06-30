@@ -21,33 +21,39 @@ class Shard(DomainModel):
         schema_cls = ShardSchema
 
 
-class CounterViewSchema(Schema):
-
-    total_count = Integer(dump_only=True)
-
-
 class ShardsStoreBpss(BPSchema):
     shards = fields.StructuralRef(dm_cls=Shard, many=True)
 
 
+from flask_boiler import attrs
+
+from flask_boiler.database import reference
+
+
 class CounterView(ViewModel):
 
-    class Meta:
-        schema_cls = CounterViewSchema
+    total_count = attrs.integer(import_enabled=False)
+    shards = attrs.bdict(import_enabled=False, export_enabled=False)
+    doc_ref = attrs.doc_ref(import_enabled=False, data_key='doc_ref')
 
-    def __init__(self, *args, **kwargs):
-        doc_ref = CTX.db.collection("counters").document("counter_0")
-        super().__init__(*args, doc_ref=doc_ref, **kwargs)
-        self.shards = dict()
+    @doc_ref.getter
+    def doc_ref(self):
+        return reference/'counters'/'counter_0'
+        # return CTX.db.collection("counters").document("counter_0")
 
-    @property
+    # def __init__(self, *args, **kwargs):
+    #     doc_ref =
+    #     super().__init__(*args, doc_ref=doc_ref, **kwargs)
+    #     self.shards = dict()
+
+    @total_count.getter
     def total_count(self):
         return sum(v.count for _, v in self.store.shards.items())
 
     def set_shard(self, sid, shard):
         self.shards[sid] = shard
 
-    def get_vm_update_callback(self, dm_cls, *args, **kwargs) :
+    def get_vm_update_callback(self, dm_cls, *args, **kwargs):
 
         if dm_cls == Shard:
             def callback(vm: CounterView, dm: Shard):
@@ -66,7 +72,8 @@ class CounterMediator(ViewMediatorDAV):
 
     @classmethod
     def notify(cls, obj):
-        obj.save()
+        doc_ref = CTX.db.document(obj.doc_ref)
+        doc_ref.set(obj.to_dict())
 
     def start(self):
 
@@ -121,8 +128,8 @@ def test_increment(CTX):
     testing_utils._wait(factor=.7)
 
     doc_ref = CTX.db.collection("counters").document("counter_0")
-
-    assert doc_ref.get().to_dict() == {
+    snapshot = doc_ref.get()
+    assert snapshot.to_dict() == {
         "doc_ref": "counters/counter_0",
         "obj_type": "CounterView",
         "totalCount": 0
@@ -137,7 +144,7 @@ def test_increment(CTX):
         merge=True
     )
 
-    testing_utils._wait(factor=.3)
+    testing_utils._wait()
 
     assert doc_ref.get().to_dict() == {
         "doc_ref": "counters/counter_0",

@@ -36,9 +36,9 @@ def rainbow_vm(CTX):
 
         doc_ref = attrs.bproperty(export_enabled=False)
 
-        @doc_ref.getter
-        def doc_ref(self):
-            return self._doc_ref
+        # @doc_ref.getter
+        # def doc_ref(self):
+        #     return self._doc_ref
 
         obj_type = attrs.bproperty(import_enabled=False, export_enabled=False)
 

@@ -98,7 +98,7 @@ class Schemed(SchemedBase):
     def _get_fields(cls):
         fd = cls.get_schema_obj().fields
         return {
-            key: val for key, val in fd.items() if key not in {"doc_id", "doc_ref"}
+            key: val for key, val in fd.items()  # TODO: change
         }
 
     #     """ TODO: find ways of collecting fields without reading

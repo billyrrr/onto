@@ -6,6 +6,8 @@ from typing import Optional, Awaitable
 
 from google.cloud.firestore_v1 import DocumentSnapshot, Watch, \
     DocumentReference
+
+from flask_boiler.view.sink import Sink
 from flask_boiler.watch import DocumentChange
 
 from flask_boiler.context import Context as CTX
@@ -28,6 +30,12 @@ EVENT_TYPE_MAPPING = dict(
 )
 
 
+class DeltaSink(Sink):
+
+    def emit(self, doc_ref, obj):
+        doc_ref.save(obj.to_dict())
+
+
 class ViewMediatorDeltaDAV(ViewMediatorBase):
 
     def notify(self, obj):
@@ -36,7 +44,7 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
         :param obj: the object with state change
         :return:
         """
-        obj.save()
+        self.sink.emit(obj.doc_ref, obj)
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -54,6 +62,7 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
         """
         super().__init__(*args, **kwargs)
         self.query = query
+        self.sink = DeltaSink()
 
     def _on_snapshot(self, snapshots, changes, timestamp):
         """ For use with

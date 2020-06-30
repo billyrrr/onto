@@ -23,7 +23,7 @@ class PatchMutation(Mutation):
 
     @classmethod
     def mutate_patch(cls, doc_id=None, data=None):
-        obj = cls.view_model_cls.new(doc_id=doc_id)
+        obj = cls.view_model_cls.get(doc_id=doc_id)
         assert isinstance(obj, ViewModelMixin)
         obj.update_vals(with_dict=data)
         obj.propagate_change()

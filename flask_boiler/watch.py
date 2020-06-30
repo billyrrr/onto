@@ -429,18 +429,19 @@ class Watch(object):
             raise RuntimeError("Unexpected target ID %s sent by server" % target_id)
 
     def _on_snapshot_target_change_remove(self, proto):
-        _LOGGER.debug("on_snapshot: target change: REMOVE")
-        change = proto.target_change
-
-        code = 13
-        message = "internal error"
-        if change.cause:
-            code = change.cause.code
-            message = change.cause.message
-
-        message = "Error %s:  %s" % (code, message)
-
-        raise RuntimeError(message)
+        pass
+        # _LOGGER.debug("on_snapshot: target change: REMOVE")
+        # change = proto.target_change
+        #
+        # code = 13
+        # message = "internal error"
+        # if change.cause:
+        #     code = change.cause.code
+        #     message = change.cause.message
+        #
+        # message = "Error %s:  %s" % (code, message)
+        #
+        # raise RuntimeError(message)
 
     def _on_snapshot_target_change_reset(self, proto):
         # Whatever changes have happened so far no longer matter.

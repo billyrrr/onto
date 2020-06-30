@@ -5,14 +5,16 @@ from flask_boiler.models.mixin import Exportable, NewMixin
 from flask_boiler.models.base import BaseRegisteredModel, Schemed
 from flask_boiler.context import Context as CTX
 
-config = Config(
-    app_name="flask-boiler-testing",
-    debug=True,
-    testing=True,
-    certificate_filename="flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
-)
 
-CTX.read(config)
+if not CTX._ready:
+    config = Config(
+        app_name="flask-boiler-testing",
+        debug=True,
+        testing=True,
+        certificate_filename="flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
+    )
+
+    CTX.read(config)
 
 class Post(domain_model.DomainModel):
 

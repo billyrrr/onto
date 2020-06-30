@@ -179,7 +179,7 @@ def test_user_view(users, meeting):
 
 def test_view_model_update(users, tickets, location, meeting):
     meeting_session = view_models.MeetingSession \
-        .new(doc_id=meeting.doc_id, once=False)
+        .get(doc_id=meeting.doc_id, once=False)
 
     # time.sleep(2)  # TODO: delete after implementing sync
 

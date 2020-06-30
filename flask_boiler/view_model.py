@@ -59,7 +59,7 @@ class ViewModelMixin:
         :param once: If set to True, do not listen to future document updates
         :return:
         """
-        obj = cls(struct_d=struct_d, **kwargs)
+        obj = cls.new(struct_d=struct_d, **kwargs)
         obj.bind_all()
 
         if once:
@@ -377,7 +377,7 @@ class ViewModelMixin:
         return self.to_view_dict()
 
 
-class ViewModel(ViewModelMixin, ReferencedObject):
+class ViewModel(ViewModelMixin, Serializable):
     """ View model are generated and refreshed automatically as domain
             model changes. Note that states stored in ViewModel
             are unreliable and should not be used to evaluate other states.

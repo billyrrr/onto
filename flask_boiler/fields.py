@@ -171,6 +171,18 @@ class DocIdField(fields.Function, Field):
         )
 
 
+from flask_boiler.database import Reference
+
+
+class DocRefField(fields.String, Field):
+
+    def _deserialize(self, value, *args, **kwargs) -> Reference:
+        return Reference.from_str(s=value)
+
+    def _serialize(self, value, *args, **kwargs) -> str:
+        return str(value)
+
+
 class ObjectTypeField(fields.Function, Field):
 
     @staticmethod

@@ -5,4 +5,8 @@ from .attribute import AttributeBase, \
     EmbeddedAttribute as embed, \
     ObjectTypeAttribute as object_type, \
     LocalTimeAttribute as local_time, \
-    PropertyAttribute as string
+    PropertyAttribute as string, \
+    PropertyAttribute as integer, \
+    DocRefAttribute as doc_ref
+
+# TODO: change import for string and integer

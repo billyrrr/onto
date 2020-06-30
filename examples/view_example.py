@@ -42,7 +42,7 @@ class ExamplePaletteViewModel(ViewModel):
     description = "A list of colors (may be filtered by palette)"
 
     @classmethod
-    def new(cls, *args, doc_id, once=True, **kwargs):
+    def get(cls, *args, doc_id, once=True, **kwargs):
         """
         Hard code a palette. (Not standard usage)
         """
@@ -55,7 +55,7 @@ class ExamplePaletteViewModel(ViewModel):
         return obj
 
 
-obj = ExamplePaletteViewModel.new(doc_id="doc_id_1")
+# obj = ExamplePaletteViewModel.new(doc_id="doc_id_1")
 
 app = Flask(__name__)
 swagger = Swagger(app)

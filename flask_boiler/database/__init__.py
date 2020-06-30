@@ -7,25 +7,49 @@ class Reference(collections.UserString):
     example: '/myusername/'
     """
 
-    def __init__(self, *, _s=None):
-        if _s is None:
-            _s = ''
+    def __init__(self, _is_empty=True, _s=''):
+        self._is_empty = _is_empty
         super().__init__(_s)
 
     def child(self, s):
-        return self.__class__(_s=f'{self}/{s}')
+        if self._is_empty:
+            return self.__class__(_is_empty=False, _s=s)
+        else:
+            return self.__class__(_is_empty=False, _s=f'{self}/{s}')
+
+    @classmethod
+    def from_str(cls, s: str):
+        if s == '':
+            return cls(_is_empty=True, _s=s)
+        else:
+            return cls(_is_empty=False, _s=s)
 
     @property
     def first(self):
-        return self.data.split('/')[1]  # example: '/myusername/'
+        return self.data.split('/')[0]  # example: '/myusername/'
 
     @property
     def last(self):
         return self.data.split('/')[-1]
 
-    @property
-    def params(self):
-        seq = self.data.split('/')
+    # @property
+    # def params(self):
+    #     seq = self.data.split('/')
+
+    def __truediv__(self, other):
+        """ Overload / operator.
+            Example: SomeReference / 'new_path_segment'
+
+        :param other:
+        :return:
+        """
+        return self.child(other)
+
+    def __rtruediv__(self, other):
+        raise TypeError('str / Reference is not supported')
+
+
+reference = Reference()
 
 
 class Snapshot(collections.UserDict):

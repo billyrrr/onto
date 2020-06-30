@@ -50,6 +50,14 @@ class MeetingSession(view_model.ViewModel):
     def meeting_id(self):
         return self.store.meeting.doc_id
 
+    @property
+    def _view_refs(self):
+        for user_id, user in self.store.users.items():
+            doc_ref = user.doc_ref\
+                .collection(self.__class__.__name__)\
+                .document(self.store.meeting.doc_id)
+            yield doc_ref
+
     @in_session.getter
     def in_session(self):
         return self.store.meeting.status == "in-session"
@@ -118,7 +126,7 @@ class MeetingSession(view_model.ViewModel):
     #         for obj in Meeting.where(**query_d)]
 
     @classmethod
-    def new(cls, doc_id=None, once=True, meeting=None, **kwargs):
+    def get(cls, doc_id=None, once=True, meeting=None, **kwargs):
 
         if meeting is None:
             m: Meeting = Meeting.get(doc_id=doc_id)
@@ -155,18 +163,11 @@ class MeetingSession(view_model.ViewModel):
         :return:
         """
         return [
-            cls.new(doc_id=obj.doc_id, once=once)
+            cls.get(doc_id=obj.doc_id, once=once)
             for obj in Meeting.where(**query_d)]
 
     def propagate_change(self):
         self.store.propagate_back()
-
-    def save(self, *args, **kwargs):
-        for user_id, user in self.store.users.items():
-            doc_ref = user.doc_ref\
-                .collection(self.__class__.__name__)\
-                .document(self.store.meeting.doc_id)
-            super().save(*args, doc_ref=doc_ref, **kwargs)
 
     # def update_vals(self, *args, user_id, **kwargs):
     #     if user_id in self.store.users:
