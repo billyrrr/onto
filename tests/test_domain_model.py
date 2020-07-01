@@ -221,7 +221,7 @@ def test_from_dict_and_doc_id(CTX):
     sf.save()
 
     assert sf.doc_id == "SF"
-    assert sf.doc_ref.path == "City/SF"
+    assert sf.doc_ref == "City/SF"
 
     # tear down steps
     sf.delete()

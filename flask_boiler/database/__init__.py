@@ -42,6 +42,10 @@ class Reference(collections.UserString):
     def params(self):
         return self.data.split('/')
 
+    @property
+    def path(self):
+        return str(self)
+
     def __truediv__(self, other):
         """ Overload / operator.
             Example: SomeReference / 'new_path_segment'

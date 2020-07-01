@@ -19,8 +19,8 @@ def to_ref(dm_cls, dm_doc_id):
     :param val:
     :return:
     """
-    doc_ref: DocumentReference = dm_cls._get_collection().document(dm_doc_id)
-    return doc_ref._document_path
+    doc_ref: DocumentReference = dm_cls._get_collection() / dm_doc_id
+    return doc_ref._document_path  # TODO: change
 
 
 class BPSchema(SchemaBase):

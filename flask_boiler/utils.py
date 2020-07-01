@@ -81,7 +81,10 @@ def snapshot_to_obj(
                              "Make sure that obj_type is a subclass of {}. "
                              .format(obj_type, super_cls))
 
-    obj = obj_cls.from_dict(d=d, **kwargs, doc_ref=snapshot.reference)
+    from flask_boiler.database.firestore import FirestoreReference
+    doc_ref = FirestoreReference.from_str(snapshot.reference.path)
+
+    obj = obj_cls.from_dict(d=d, **kwargs, doc_ref=doc_ref)
     return obj
 
 
