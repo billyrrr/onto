@@ -17,10 +17,9 @@ def _delete_all(CTX, collection_name=None, subcollection_name=None):
                         "Only app name containing testing is supported"
                         .format(app_name))
     if collection_name is not None:
-        collection: CollectionReference = CTX.db.collection(collection_name)
+        collection: CollectionReference = CTX.db._doc_ref_from_ref(CTX.db.ref/collection_name)
     elif subcollection_name is not None:
-        collection: CollectionReference = CTX.db.collection_group(
-            subcollection_name)
+        collection: CollectionReference = CTX.db._doc_ref_from_ref(CTX.db.ref/'**'/subcollection_name)
 
     warnings.warn("Deleting collection: {}, App Name: {}.".format(collection_name, app_name))
 

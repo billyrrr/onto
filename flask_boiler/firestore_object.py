@@ -1,11 +1,12 @@
 import warnings
 
-from google.cloud.firestore import DocumentReference
+# from google.cloud.firestore import DocumentReference
 from google.cloud.firestore import Transaction
-from google.cloud.firestore_v1 import WriteOption, LastUpdateOption
+# from google.cloud.firestore_v1 import WriteOption, LastUpdateOption
 
 from flask_boiler import fields
 from flask_boiler.common import _NA
+from flask_boiler.database import Snapshot, Reference
 from flask_boiler.helpers import RelationshipReference
 # from flask_boiler.view_model import ViewModel
 from flask_boiler.models.mixin import resolve_obj_cls
@@ -31,21 +32,15 @@ class FirestoreObjectMixin:
         self._store = _store
         super().__init__(*args, **kwargs)
 
-    def get_firestore_ref(self):
-        warnings.warn("Please use .doc_ref instead. ", DeprecationWarning)
-        return self.doc_ref
+    # def get_firestore_ref(self):
+    #     warnings.warn("Please use .doc_ref instead. ", DeprecationWarning)
+    #     return self.doc_ref
 
     @property
-    def doc_ref(self) -> DocumentReference:
+    def doc_ref(self) -> Reference:
         """ Returns the Document Reference of this object.
         """
         raise NotImplementedError
-
-    @property
-    def doc_ref_str(self) -> str:
-        """ Serializes to doc_ref field.
-        """
-        return self.doc_ref.path
 
     @classmethod
     def get(cls, *, doc_ref=None, transaction=_NA, **kwargs):
@@ -56,13 +51,7 @@ class FirestoreObjectMixin:
         :param kwargs: Keyword arguments to be forwarded to from_dict
         """
 
-        if transaction is _NA:
-            transaction = CTX.transaction_var.get()
-
-        if transaction is None:
-            snapshot = doc_ref.get()
-        else:
-            snapshot = doc_ref.get(transaction=transaction)
+        snapshot = CTX.db.get(ref=doc_ref, transaction=transaction)
         obj = snapshot_to_obj(
             snapshot=snapshot,
             super_cls=cls,
@@ -101,12 +90,8 @@ class FirestoreObjectMixin:
             doc_ref = self.doc_ref
 
         d = self._export_as_dict(transaction=transaction, _store=_store)
-
-        if transaction is None:
-            doc_ref.set(document_data=d)
-        else:
-            transaction.set(reference=doc_ref,
-                            document_data=d)
+        snapshot = Snapshot(d)
+        CTX.db.set(snapshot=snapshot, ref=doc_ref, transaction=transaction)
 
     def delete(self, transaction: Transaction = _NA) -> None:
         """ Deletes and object from Firestore.
@@ -117,10 +102,7 @@ class FirestoreObjectMixin:
         if transaction is _NA:
             transaction = CTX.transaction_var.get()
 
-        if transaction is None:
-            self.doc_ref.delete()
-        else:
-            transaction.delete(reference=self.doc_ref)
+        CTX.db.delete(ref=self.doc_ref, transaction=transaction)
 
 
 def _nest_relationship_import(rr, _store):

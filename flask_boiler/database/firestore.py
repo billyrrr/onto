@@ -5,11 +5,42 @@ from flask_boiler.context import Context as CTX
 from google.cloud import firestore
 
 
+# TODO: NOTE maximum of 1 firestore client allowed since we used a global var.
+
+
+class FirestoreReference(Reference):
+
+    def is_collection(self):
+        return len(self.params) % 2 == 1
+
+    def is_document(self):
+        return len(self.params) % 2 == 0
+
+    def is_collection_group(self):
+        return self.first == "**" and len(self.params) == 2
+
+
 class FirestoreDatabase(Database):
+
+    firestore_client = None
+
+    @classmethod
+    def transaction(cls):
+        return cls.firestore_client.transaction()
 
     @classmethod
     def _doc_ref_from_ref(cls, ref):
-        return CTX.db.document(ref)
+        if ref._is_empty:
+            # TODO: change this behavior
+            return cls.firestore_client
+        elif ref.is_collection_group():
+            return cls.firestore_client.collection_group(ref.last)
+        elif ref.is_collection():
+            return cls.firestore_client.collection(str(ref))
+        elif ref.is_document():
+            return cls.firestore_client.document(str(ref))
+        else:
+            raise ValueError
 
     @classmethod
     def set(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
@@ -61,6 +92,8 @@ class FirestoreDatabase(Database):
             doc_ref.delete()
         else:
             transaction.delete(reference=doc_ref)
+
+    ref = FirestoreReference()
 
 
 class FirestoreSnapshot(Snapshot):

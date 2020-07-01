@@ -42,37 +42,38 @@ class MeetingSessionPatch(ViewMediatorDeltaDAV):
             obj.propagate_change()
 
 
-class MeetingSessionGet(ViewMediatorDeltaDAV):
+class MeetingSessionGet:
 
-    def notify(self, obj):
-        for ref in obj._view_refs:
-            ref.set(
-                obj.to_dict()
+    from flask_boiler.source import Source
+    source = Source(query=Meeting.get_query())
+
+    @source.protocol.on_update
+    @source.protocol.on_create
+    def materialize_meeting_session(self, snapshot):
+        meeting = utils.snapshot_to_obj(snapshot)
+
+        assert isinstance(meeting, Meeting)
+
+        def notify(obj):
+            for ref in obj._view_refs:
+                ref.set(
+                    obj.to_dict()
             )
 
-    class Protocol(ProtocolBase):
+        _ = MeetingSession.get(
+            doc_id=meeting.doc_id,
+            once=False,
+            f_notify=notify
+        )
+        # mediator.notify(obj=obj)
 
-        @staticmethod
-        def on_create(snapshot, mediator):
-            meeting = utils.snapshot_to_obj(snapshot)
-
-            assert isinstance(meeting, Meeting)
-
-            obj = MeetingSession.get(
-                doc_id=meeting.doc_id,
-                once=False,
-                f_notify=mediator.notify
-            )
-            # mediator.notify(obj=obj)
-
-        on_update = on_create
+    def start(self):
+        self.source.start()
 
 
 def test_start(users, tickets, location, meeting):
 
-    mediator_get = MeetingSessionGet(query=
-                                 Query(parent=Meeting._get_collection())
-                                 )
+    mediator_get = MeetingSessionGet()
 
     mediator_get.start()
 
@@ -124,9 +125,7 @@ def test_mutate(users, tickets, location, meeting, delete_after):
     :param meeting:
     :return:
     """
-    mediator = MeetingSessionGet(
-        query=Query(parent=Meeting._get_collection())
-    )
+    mediator = MeetingSessionGet()
 
     mediator.start()
 
@@ -217,9 +216,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
     :param meeting:
     :return:
     """
-    mediator = MeetingSessionGet(
-        query=Query(parent=Meeting._get_collection())
-    )
+    mediator = MeetingSessionGet()
 
     mediator.start()
 

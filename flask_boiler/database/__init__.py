@@ -1,6 +1,8 @@
 import collections
 import abc
 
+from flask_boiler.common import _NA
+
 
 class Reference(collections.UserString):
     """
@@ -32,9 +34,13 @@ class Reference(collections.UserString):
     def last(self):
         return self.data.split('/')[-1]
 
-    # @property
-    # def params(self):
-    #     seq = self.data.split('/')
+    @property
+    def id(self):
+        return self.last
+
+    @property
+    def params(self):
+        return self.data.split('/')
 
     def __truediv__(self, other):
         """ Overload / operator.
@@ -62,28 +68,30 @@ class Database:
 
     @classmethod
     @abc.abstractmethod
-    def save(cls, ref: Reference, snapshot: Snapshot):
+    def set(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
         raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod
-    def get(cls, ref: Reference):
+    def get(cls, ref: Reference, transaction=_NA):
         raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod
-    def update(cls, ref: Reference, snapshot: Snapshot):
+    def update(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
         raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod
-    def create(cls, ref: Reference, snapshot: Snapshot):
+    def create(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
         raise NotImplementedError
 
     @classmethod
     @abc.abstractmethod
-    def delete(cls, ref: Reference):
+    def delete(cls, ref: Reference, transaction=_NA):
         raise NotImplementedError
+
+    ref = reference
 
     listener = None
 

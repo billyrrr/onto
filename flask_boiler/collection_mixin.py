@@ -1,14 +1,12 @@
 from flask_boiler.context import Context as CTX
 from google.cloud.firestore import CollectionReference
 
+from flask_boiler.database import Reference
+
 
 class CollectionMixin:
 
     # _collection_name = None
-
-    @classmethod
-    def _doc_ref_from_id(cls, doc_id):
-        return cls._get_collection().document(doc_id)
 
     @property
     def collection_name(self):
@@ -35,8 +33,8 @@ class CollectionMixin:
         return self._get_collection()
 
     @classmethod
-    def _get_collection(cls) -> CollectionReference:
-        return CTX.db.collection(cls._get_collection_name())
+    def _get_collection(cls) -> Reference:
+        return CTX.db.ref / cls._get_collection_name()
 
     @classmethod
     def ref_from_id(cls, doc_id):
@@ -44,4 +42,4 @@ class CollectionMixin:
 
         :param doc_id: Document ID
         """
-        return cls._get_collection().document(document_id=doc_id)
+        return cls._get_collection() / doc_id

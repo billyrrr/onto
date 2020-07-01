@@ -17,3 +17,12 @@ from .rest_api import ViewMediator as RestMediator
 """ WsMediator establishes websocket connection with client. 
 """
 from .websocket import ViewMediatorWebsocket as WsMediator
+
+
+class Mediator:
+
+    source = None
+    sink = None
+
+    def start(self):
+        self.source.start()

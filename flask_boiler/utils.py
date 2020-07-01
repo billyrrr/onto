@@ -107,5 +107,6 @@ def auto_property(attr_name, inner_attr):
 
     return property(fget=fget, fset=fset)
 
+
 def doc_ref_from_str(doc_ref_str):
-    return CTX.db.document(doc_ref_str)
+    return CTX.db.ref / doc_ref_str

@@ -11,6 +11,7 @@ Usage:
 """
 
 import logging
+import os
 
 import firebase_admin
 from firebase_admin import credentials
@@ -26,6 +27,7 @@ from .config import Config
 import logging
 
 from contextvars import ContextVar
+from flask_boiler.database import Database
 
 _transaction_var: ContextVar[firestore.Transaction] = \
     ContextVar('_transaction_var', default=None)
@@ -47,7 +49,7 @@ class Context:
 
     debug = None
     firebase_app: firebase_admin.App = None
-    db: firestore.Client = None
+    db: Database = None
     config: Config = None
     celery_app: Celery = None
     logger: logging.Logger = None
@@ -171,8 +173,6 @@ class Context:
         cls._reload_testing_flag(cls.config.TESTING)
         cls._reload_firebase_app()
         cls._reload_dbs(cls.config.database)
-        cls._reload_firestore_client(
-            certificate_path=cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
         cls._reload_celery_app()
 
         cls.logger.info(f"flask_boiler.Context has finished "
@@ -187,7 +187,10 @@ class Context:
         cls.dbs = Dbs()
         for db_name, db_config in database.items():
             db = cls.create_db(db_config)
-            setattr(cls.dbs, db_name, db)
+            if db_name == 'default':
+                setattr(cls, 'db', db)
+            else:
+                setattr(cls.dbs, db_name, db)
 
     @staticmethod
     def create_db(db_config):
@@ -214,6 +217,15 @@ class Context:
             ))
             bucket = cluster.bucket(db_config['bucket'])
             return bucket
+        elif db_config['type'] == 'firestore':
+            caller_module_path = os.path.curdir
+            cert_path = os.path.join(
+                caller_module_path, db_config['certificate_path']
+            )
+            client = firestore.Client.from_service_account_json(cert_path)
+            from flask_boiler.database.firestore import FirestoreDatabase
+            FirestoreDatabase.firestore_client = client
+            return FirestoreDatabase
 
     @classmethod
     def _reload_celery_app(cls):
@@ -252,12 +264,4 @@ class Context:
             })
         except Exception as e:
             logging.exception('Error initializing firebase_app')
-            raise e
-
-    @classmethod
-    def _reload_firestore_client(cls, certificate_path):
-        try:
-            cls.db = firestore.Client.from_service_account_json(certificate_path)
-        except Exception as e:
-            logging.exception('Error initializing firestore client from cls.firebase_app')
             raise e

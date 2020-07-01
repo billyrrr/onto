@@ -27,7 +27,7 @@ class TestObjectSchema(schema.Schema):
         # load_from="intB", dump_to="intB"
                        )
 
-primary_doc_ref = CTX.db.document('primary/test_document_0')
+primary_doc_ref = CTX.db.ref/'primary'/'test_document_0'
 
 class ContainsNestedchema(schema.Schema):
     inner = fields.Relationship(nested=True)
@@ -293,11 +293,11 @@ def test_relationship_not_nested():
         'doc_id': 'masterObjId1',
         'doc_ref': 'MasterObject/masterObjId1',
         'obj_type': 'MasterObject',
-        "nestedRef": CTX.db.document("TestObject/testObjId1")
+        "nestedRef": CTX.db.ref/"TestObject"/"testObjId1"
     }
 
     master_obj.delete()
-    CTX.db.document("TestObject/testObjId1").delete()
+    CTX.db.delete(reference=CTX.db.ref/"TestObject"/"testObjId1")
 
 
 def test_relationship_nested():
@@ -329,7 +329,7 @@ def test_relationship_nested():
 
     master_obj.save()
 
-    assert CTX.db.document("TestObject/testObjId3").get().to_dict() == \
+    assert CTX.db.ref/"TestObject"/"testObjId3".get().to_dict() == \
            {
                "intA": 1,
                "intB": 2,
@@ -339,7 +339,7 @@ def test_relationship_nested():
            }
 
     master_obj.delete()
-    CTX.db.document("TestObject/testObjId3").delete()
+    CTX.db.delete(reference=CTX.db.ref/"TestObject"/"testObjId3")
 
 
 def setup_object(doc_id):
