@@ -72,3 +72,12 @@ def test_serialize():
     ab = a.child('b')
     assert str(a) == 'a'
     assert str(ab) == 'a/b'
+
+
+def test_leancloud():
+    from flask_boiler.database.leancloud import LeancloudDatabase
+    from flask_boiler.database import Snapshot
+
+    ref = LeancloudDatabase.ref/'TODO'/'582570f38ac247004f39c24b'
+    snapshot = Snapshot(title='foo', priority='bar')
+    LeancloudDatabase.set(ref=ref, snapshot=snapshot)

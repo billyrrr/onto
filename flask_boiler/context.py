@@ -199,7 +199,7 @@ class Context:
             try:
                 import couchdb
             except ImportError as e:
-                raise TypeError('Couch server is configured, but '
+                raise TypeError('couchdb server is configured, but '
                                 'importing couchdb module has failed') from e
             return couchdb.Server(server)
         elif db_config['type'] == 'couchbase':
@@ -207,7 +207,7 @@ class Context:
                 from couchbase.cluster import Cluster, ClusterOptions
                 from couchbase_core.cluster import PasswordAuthenticator
             except ImportError as e:
-                raise TypeError('CouchBase server is configured, but '
+                raise TypeError('couchbase server is configured, but '
                                 'importing couchbase module has failed') from e
 
             cluster = Cluster(db_config['cluster'], ClusterOptions(
@@ -226,6 +226,18 @@ class Context:
             from flask_boiler.database.firestore import FirestoreDatabase
             FirestoreDatabase.firestore_client = client
             return FirestoreDatabase
+        elif db_config['type'] == 'leancloud':
+            try:
+                import leancloud
+            except ImportError as e:
+                raise TypeError('leancloud server is configured, but '
+                                'importing leancloud module has failed') from e
+            leancloud.init(
+                app_id=db_config['app_id'],
+                master_key=db_config['master_key']
+            )
+            from flask_boiler.database.leancloud import LeancloudDatabase
+            return LeancloudDatabase
 
     @classmethod
     def _reload_celery_app(cls):

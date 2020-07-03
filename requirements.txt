@@ -51,3 +51,6 @@ couchdb
 
 # Optional
 couchbase
+
+# Optional
+leancloud

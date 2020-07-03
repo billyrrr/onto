@@ -48,6 +48,9 @@ class Source:
         self.query = query
         self.protocol = Protocol()
 
+
+class FirestoreSource(Source):
+
     def _on_snapshot(self, snapshots, changes, timestamp):
         """ For use with
         Note that server reboot will result in some "Modified" objects

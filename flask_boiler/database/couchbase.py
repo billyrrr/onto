@@ -12,13 +12,22 @@ class CouchbaseDatabase(Database):
 
     @classmethod
     def set(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
+        cls.bucket().collection(collection_name=ref.first).upsert(
+            key=ref.last, value=snapshot.to_dict()
+        )
 
-        if transaction is not _NA:
-            raise ValueError
+    @classmethod
+    def create(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
+        cls.bucket().collection(collection_name=ref.first).insert(
+            key=ref.last, value=snapshot.to_dict()
+        )
 
-        # k = ref.first
-        _id = ref.last
+    @classmethod
+    def delete(cls, ref: Reference, transaction=_NA):
+        cls.bucket().collection(collection_name=ref.first).remove(
+            key='ref.last'
+        )
 
-        coll = cls.bucket().collection('default')
-        coll.upsert(_id, snapshot.to_dict())
-
+    @classmethod
+    def update(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
+        cls.set(ref, snapshot, transaction)
