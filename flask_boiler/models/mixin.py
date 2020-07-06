@@ -7,6 +7,7 @@ from flask_boiler.context import Context as CTX
 from flask_boiler.helpers import EmbeddedElement
 # from .base import BaseRegisteredModel, Serializable
 from ..common import _NA
+from ..database import Snapshot
 from ..registry import ModelRegistry
 
 
@@ -207,6 +208,9 @@ class Exportable:
 
     def to_dict(self):
         return self._export_as_dict()
+
+    def to_snapshot(self):
+        return Snapshot(**self._export_as_dict())
 
     # def to_view_dict(self):
     #     return self._export_as_view_dict()

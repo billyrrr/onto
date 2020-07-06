@@ -11,6 +11,7 @@ from functools import partial
 from google.cloud.firestore import DocumentSnapshot
 from inflection import camelize, underscore
 
+from flask_boiler.common import _NA
 from flask_boiler.context import Context as CTX
 from flask_boiler.registry import ModelRegistry
 
@@ -81,10 +82,7 @@ def snapshot_to_obj(
                              "Make sure that obj_type is a subclass of {}. "
                              .format(obj_type, super_cls))
 
-    from flask_boiler.database.firestore import FirestoreReference
-    doc_ref = FirestoreReference.from_str(snapshot.reference.path)
-
-    obj = obj_cls.from_dict(d=d, **kwargs, doc_ref=doc_ref)
+    obj = obj_cls.from_dict(d=d, **kwargs)
     return obj
 
 

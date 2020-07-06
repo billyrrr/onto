@@ -37,6 +37,14 @@ class Source:
         :return:
         """
         self.parent = weakref.ref(owner)
+        self._register()
+
+    def _register(self):
+        from flask_boiler.context import Context as CTX
+        CTX.listener.register( query=self.query, mediator_ref=self.parent)
+
+    def _call(self, ):
+        raise NotImplementedError
 
     def __init__(self, query):
         """ Initializes a ViewMediator to declare protocols that
@@ -47,6 +55,10 @@ class Source:
         """
         self.query = query
         self.protocol = Protocol()
+
+    @property
+    def triggers(self):
+        return self.protocol
 
 
 class FirestoreSource(Source):
@@ -70,21 +82,21 @@ class FirestoreSource(Source):
                     fname = self.protocol.fname_of('on_create')
                     func = getattr(self.parent(), fname)
                     func(
-                        self=self.parent,
+                        # self=self.parent(),
                         snapshot=snapshot,
                     )
                 elif change.type.name == 'MODIFIED':
                     fname = self.protocol.fname_of('on_update')
                     func = getattr(self.parent(), fname)
                     func(
-                        self=self.parent,
+                        # self=self.parent(),
                         snapshot=snapshot,
                     )
                 elif change.type.name == 'REMOVED':
                     fname = self.protocol.fname_of('on_delete')
                     func = getattr(self.parent(), fname)
                     func(
-                        self=self.parent,
+                        # self=self.parent(),
                         snapshot=snapshot,
                     )
             except Exception as e:

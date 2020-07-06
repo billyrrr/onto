@@ -28,6 +28,24 @@ class PrimaryObjectSchema(schema.Schema):
     )
 
 
+def _collect_query_schema(klass):
+    d = dict(klass.get_schema_obj().fields)
+    for child in klass._get_children():
+        for key, val in child.get_schema_obj().fields.items():
+            field_obj = val
+
+            if key in d and d[key] != field_obj:
+                warnings.warn(
+                    f"Conflict when resolving field for {key}. The "
+                    f"field is for querying database "
+                    f"from a parent PrimaryObject when "
+                    f"such base has no declared schema. ")
+            else:
+                d[key] = field_obj
+    tmp_schema = klass._schema_base.from_dict(d)
+    return tmp_schema
+
+
 class PrimaryObjectMeta(SerializableMeta):
 
     def __new__(mcs, name, bases, attrs):
@@ -52,30 +70,34 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
     _schema_base = PrimaryObjectSchema
 
     @classmethod
-    def get_schema_cls(cls):
-        """ Returns schema_cls or the union of all schemas of subclasses.
-                Should only be used on the root DomainModel. Does not
-                cache the result.
+    def _query_schema(cls):
+        return _collect_query_schema(cls)()
 
-        """
-        d = dict()
-        if super().get_schema_cls() is None:
-            for child in cls._get_children():
-                for key, val in child.get_schema_obj().fields.items():
-                    field_obj = val
-
-                    if key in d and d[key] != field_obj:
-                        warnings.warn(
-                            f"Conflict when resolving field for {key}. The "
-                            f"field is for querying database "
-                            f"from a parent PrimaryObject when "
-                            f"such base has no declared schema. ")
-                    else:
-                        d[key] = field_obj
-            tmp_schema = cls._schema_base.from_dict(d)
-            return tmp_schema
-        else:
-            return super().get_schema_cls()
+    # @classmethod
+    # def get_schema_cls(cls):
+    #     """ Returns schema_cls or the union of all schemas of subclasses.
+    #             Should only be used on the root DomainModel. Does not
+    #             cache the result.
+    #
+    #     """
+    #     d = dict()
+    #     if super().get_schema_cls() is None:
+    #         for child in cls._get_children():
+    #             for key, val in child.get_schema_obj().fields.items():
+    #                 field_obj = val
+    #
+    #                 if key in d and d[key] != field_obj:
+    #                     warnings.warn(
+    #                         f"Conflict when resolving field for {key}. The "
+    #                         f"field is for querying database "
+    #                         f"from a parent PrimaryObject when "
+    #                         f"such base has no declared schema. ")
+    #                 else:
+    #                     d[key] = field_obj
+    #         tmp_schema = cls._schema_base.from_dict(d)
+    #         return tmp_schema
+    #     else:
+    #         return super().get_schema_cls()
 
     def __init__(self, doc_id=None, doc_ref=None, **kwargs):
         if doc_ref is None:

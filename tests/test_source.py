@@ -12,5 +12,3 @@ def test_register():
 
     assert protocol.mapping['on_create'] == 'foo'
     assert protocol.mapping['on_update'] == 'foo'
-
-    assert False

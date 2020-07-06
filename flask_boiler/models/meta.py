@@ -22,7 +22,6 @@ class SerializableMeta(ModelRegistry):
         if hasattr(meta, "schema_cls"):
             klass._schema_cls = meta.schema_cls
 
-
             # if hasattr(meta, "default_fields"):
             #     default_fields = meta.default_fields
             #     if default_fields > DEFAULT_FIELDS:

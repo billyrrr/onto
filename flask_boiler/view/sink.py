@@ -47,9 +47,10 @@ class Websocket(Sink):
         self._namespace.emit("updated", obj.to_view_dict())
 
 
+from flask_boiler.context import Context as CTX
+
+
 class FirestoreSink(Sink):
 
-    def emit(self, snapshot, reference):
-
-        pass
-
+    def emit(self, reference, snapshot):
+        CTX.db.set(ref=reference, snapshot=snapshot)

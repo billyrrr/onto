@@ -43,8 +43,16 @@ class Reference(collections.UserString):
         return self.data.split('/')
 
     @property
-    def path(self):
+    def to_str(self):
         return str(self)
+
+    @property
+    def path(self) -> tuple:
+        return tuple(self.params)
+
+    @property
+    def collection(self):
+        raise NotImplementedError
 
     def __truediv__(self, other):
         """ Overload / operator.
@@ -63,6 +71,21 @@ reference = Reference()
 
 
 class Snapshot(collections.UserDict):
+
+    def __init__(self, *args, __flask_boiler_meta__=None, **kwargs):
+        """
+        TODO: note that in extreme conditions, a document with randomly
+        TODO:   generated string key may take on the value of
+        TODO:   '__flask_boiler_meta__' and thus cause error
+
+        :param args:
+        :param __flask_boiler_meta__:
+        :param kwargs:
+        """
+        super().__init__(*args, **kwargs)
+        if __flask_boiler_meta__ is not None:
+            for key, val in __flask_boiler_meta__.items():
+                setattr(self, key, val)
 
     def to_dict(self):
         return self.data.copy()
@@ -95,6 +118,11 @@ class Database:
     def delete(cls, ref: Reference, transaction=_NA):
         raise NotImplementedError
 
+    @classmethod
+    @abc.abstractmethod
+    def query(cls, q):
+        raise NotImplementedError
+
     ref = reference
 
     listener = None
@@ -102,5 +130,12 @@ class Database:
 
 class Listener:
 
-    def on_write(self):
+    _registry = dict()
+
+    @classmethod
+    def from_query(cls):
+        pass
+
+    @classmethod
+    def from_refs(cls):
         pass

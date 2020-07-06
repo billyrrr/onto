@@ -1,6 +1,7 @@
 import functools
 import typing
 import warnings
+from collections import namedtuple
 
 import iso8601
 import pytz
@@ -26,6 +27,8 @@ _POS_INF_APPROX = 2 ** 63 - 1
 _NEGATIVE_INF_APPROX = -2 ** 63
 
 allow_missing = fields.missing_
+
+OBJ_TYPE_ATTR_NAME = "obj_type"
 
 
 class Field(fields.Field):
@@ -183,6 +186,9 @@ class DocRefField(fields.String, Field):
         return str(value)
 
 
+argument = namedtuple('argument', ['key', 'comparator', 'val'])
+
+
 class ObjectTypeField(fields.Function, Field):
 
     @staticmethod
@@ -225,6 +231,16 @@ class ObjectTypeField(fields.Function, Field):
             return None
         else:
             return self.data_key
+
+    def get_obj_type_condition(self, obj_cls) -> typing.Optional[typing.Tuple]:
+        data_key = self.get_obj_type_data_key()
+        if data_key is None:
+            return None
+        else:
+            return argument(
+                key=data_key,
+                comparator="in",
+                val=obj_cls._get_subclasses_str())
 
     def __init__(self, *args, serialize=_NA, data_key="obj_type",
                  deserialize=_NA,

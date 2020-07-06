@@ -4,11 +4,10 @@ from flask_boiler.attrs.attribute import RelationshipAttribute
 from flask_boiler.common import _NA
 from typing import Tuple
 
-from google.cloud.firestore import DocumentReference
-
 from flask_boiler.fields import StructuralRef
 from flask_boiler.schema import SchemaBase
 from flask_boiler.utils import snapshot_to_obj
+from flask_boiler.context import Context as CTX
 
 
 def to_ref(dm_cls, dm_doc_id):
@@ -19,8 +18,11 @@ def to_ref(dm_cls, dm_doc_id):
     :param val:
     :return:
     """
-    doc_ref: DocumentReference = dm_cls._get_collection() / dm_doc_id
-    return doc_ref._document_path  # TODO: change
+    from flask_boiler.database.firestore import FirestoreReference
+
+    doc_ref: FirestoreReference = dm_cls._get_collection() / dm_doc_id
+
+    return CTX.db.make_document_path(doc_ref)
 
 
 class BPSchema(SchemaBase):

@@ -18,37 +18,48 @@ from .fixtures import users, tickets, location, meeting
 
 
 class MeetingSessionPatch(ViewMediatorDeltaDAV):
-    class Protocol(ProtocolBase):
+    from flask_boiler.source import Source
+    from flask_boiler.view.sink import FirestoreSink
 
-        @staticmethod
-        def on_create(snapshot, mediator):
-            d = snapshot.to_dict()
-            meeting_id = d["target_meeting_id"]
+    source = Source(
+        query=Context.db.collection_group(
+            "{}_PATCH".format(MeetingSession.__name__)
+        )
+    )
+    sink = FirestoreSink()
 
-            d = {
-                Meeting.get_schema_cls().g(key): val
-                for key, val in d.items() if key in {"inSession"}
-            }
+    @source.triggers.on_create
+    def patch_meeting(self, reference, snapshot, transaction):
+        d = snapshot.to_dict()
+        meeting_id = d["target_meeting_id"]
 
-            ref = snapshot.reference
-            user_id = ref.parent.parent.id
+        d = {
+            Meeting.get_schema_cls().g(key): val
+            for key, val in d.items() if key in {"inSession",}
+        }
 
-            obj = MeetingSession.get(
-                doc_id=meeting_id,
-                once=True,
-            )
-            obj.update_vals(user_id=user_id, with_dict=d)
-            # TODO: switch to notify
-            obj.propagate_change()
+        ref = snapshot.reference
+        user_id = ref.parent.parent.id
+
+        obj = MeetingSession.get(
+            doc_id=meeting_id,
+            once=True,
+        )
+        obj.update_vals(user_id=user_id, with_dict=d)
+        # TODO: switch to notify
+        obj.propagate_change()
 
 
 class MeetingSessionGet:
 
     from flask_boiler.source import Source
-    source = Source(query=Meeting.get_query())
+    from flask_boiler.view.sink import FirestoreSink
 
-    @source.protocol.on_update
-    @source.protocol.on_create
+    source = Source(query=Meeting.get_query())
+    sink = FirestoreSink()
+
+    @source.triggers.on_update
+    @source.triggers.on_create
     def materialize_meeting_session(self, snapshot):
         meeting = utils.snapshot_to_obj(snapshot)
 
@@ -56,9 +67,7 @@ class MeetingSessionGet:
 
         def notify(obj):
             for ref in obj._view_refs:
-                ref.set(
-                    obj.to_dict()
-            )
+                self.sink.emit(reference=ref, snapshot=obj.to_snapshot())
 
         _ = MeetingSession.get(
             doc_id=meeting.doc_id,
@@ -129,11 +138,9 @@ def test_mutate(users, tickets, location, meeting, delete_after):
 
     mediator.start()
 
-    patch_collection_name = "{}_PATCH".format(MeetingSession.__name__)
+    # patch_collection_name =
 
-    patch_mediator = MeetingSessionPatch(
-        query=Context.db.collection_group(patch_collection_name)
-    )
+    patch_mediator = MeetingSessionPatch()
 
     patch_mediator.start()
 

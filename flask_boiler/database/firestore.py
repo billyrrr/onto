@@ -1,11 +1,14 @@
 from flask_boiler.common import _NA
-from flask_boiler.database import Database, Reference, Snapshot
+from flask_boiler.database import Database, Reference, Snapshot, Listener
 from flask_boiler.context import Context as CTX
 
 from google.cloud import firestore
-
+from google.cloud.firestore_v1.document import _get_document_path, \
+    DocumentReference, DocumentSnapshot
 
 # TODO: NOTE maximum of 1 firestore client allowed since we used a global var.
+from flask_boiler.query.query import Query
+from flask_boiler.snapshot_container import SnapshotContainer
 
 
 class FirestoreReference(Reference):
@@ -13,16 +16,52 @@ class FirestoreReference(Reference):
     def is_collection(self):
         return len(self.params) % 2 == 1
 
+    @property
+    def collection(self):
+        return self.first
+
     def is_document(self):
         return len(self.params) % 2 == 0
 
     def is_collection_group(self):
         return self.first == "**" and len(self.params) == 2
 
+    @classmethod
+    def from__document_name(cls, document_name: str):
+        return cls.from_str(document_name)
+
+    @classmethod
+    def from_document_reference(cls, ref: DocumentReference):
+        return cls(_s=ref.path)
+
 
 class FirestoreDatabase(Database):
 
     firestore_client = None
+
+    @classmethod
+    def make_document_path(cls, ref: FirestoreReference):
+        """Create and cache the full path for this document.
+
+        Migrated from google.cloud.DocumentReference.document:
+            - changed to read document name from ref.path or str(ref)
+
+        Of the form:
+
+            ``projects/{project_id}/databases/{database_id}/...
+                  documents/{document_path}``
+
+        Returns:
+            str: The full document path.
+
+        Raises:
+            ValueError: If the current document reference has no ``client``.
+        """
+        _document_path_internal = _get_document_path(
+            cls.firestore_client,
+            ref.path
+        )
+        return _document_path_internal
 
     @classmethod
     def transaction(cls):
@@ -74,13 +113,8 @@ class FirestoreDatabase(Database):
         return FirestoreSnapshot.from_document_snapshot(
             document_snapshot=document_snapshot)
 
-    @classmethod
-    def update(cls, ref: Reference, snapshot: Snapshot):
-        pass
-
-    @classmethod
-    def create(cls, ref: Reference, snapshot: Snapshot):
-        pass
+    update = set
+    create = set
 
     @classmethod
     def delete(cls, ref: Reference, transaction=_NA):
@@ -93,6 +127,14 @@ class FirestoreDatabase(Database):
         else:
             transaction.delete(reference=doc_ref)
 
+    @classmethod
+    def query(cls, q: Query):
+        for document in q._to_firestore_query().stream():
+            assert isinstance(document, DocumentSnapshot)
+            ref = FirestoreReference.from_document_reference(document.reference)
+            snapshot = FirestoreSnapshot.from_document_snapshot(document)
+            yield (ref, snapshot)
+
     ref = FirestoreReference()
 
 
@@ -104,3 +146,288 @@ class FirestoreSnapshot(Snapshot):
         return cls(
             document_snapshot.to_dict()
         )
+
+    @classmethod
+    def from_data_and_meta(
+            cls, **kwargs):
+        """ Usage: snapshot = FirestoreSnapshot.from_data_and_meta(
+                    # reference=document_ref,
+                    data=data,
+                    exists=True,
+                    read_time=None,
+                    create_time=document.create_time,
+                    update_time=document.update_time,
+                )
+
+        :param kwargs:
+        :return:
+        """
+        DATA_KEYWORD = 'data'
+        if DATA_KEYWORD not in kwargs:
+            raise ValueError
+        else:
+            data = kwargs[DATA_KEYWORD]
+            __flask_boiler_meta__ = {
+                key: val
+                for key, val in kwargs.items()
+                if key != DATA_KEYWORD
+            }
+            return cls(**data, __flask_boiler_meta__=__flask_boiler_meta__)
+
+
+from threading import Lock, Condition
+import heapq
+
+
+TARGET_ID_RANGE = (32, 64)
+
+
+class TargetIdAssigner:
+    """
+    For now, we allow 32 concurrent targets to test that overflow is handled.
+    """
+
+    def __init__(self):
+        self.lock = Lock()
+        self.sold_out = Condition()
+        with self.lock, self.sold_out:
+            self._heap = list(range(*TARGET_ID_RANGE))
+            heapq.heapify(self._heap)
+
+    def assign_id(self):
+        with self.lock, self.sold_out:
+            while not len(self._heap) > 0:
+                self.sold_out.wait()
+            item = heapq.heappop(self._heap)
+            return item
+
+    def release_id(self, _id):
+        with self.lock, self.sold_out:
+            heapq.heappush(self._heap, _id)
+            self.sold_out.notify(n=1)
+
+
+_LOGGER = CTX.logger
+
+
+from _collections import defaultdict
+
+
+class FirestoreListener(Listener):
+
+    _watch = None
+    _containers = defaultdict(SnapshotContainer)
+
+    @classmethod
+    def _get_watch(cls):
+
+        from flask_boiler.context import Context as CTX
+        from flask_boiler.watch import _Watch
+
+        cls._watch = _Watch(
+            # document_reference=None,
+            firestore=CTX.db.firestore_client,
+            comparator=lambda d1, d2: 1,
+            document_snapshot_cls=DocumentSnapshot,
+            document_reference_cls=DocumentReference,
+        )
+
+        while not cls._watch._rpc.is_active:
+            # TODO: change; This is a temporary impl; wait may never stop
+            import time
+            time.sleep(0.020)
+
+        return cls._watch
+
+    _assigner = TargetIdAssigner()
+
+    @classmethod
+    def register(cls, query, mediator_ref):
+        def callback(*args, **kwargs):
+            mediator = mediator_ref()
+            mediator._call(*args, **kwargs)
+        target_id = cls.for_query(query=query, callback=callback)
+        cls._registry[target_id] = mediator_ref
+
+    @classmethod
+    def deregister(cls):
+        raise NotImplementedError
+
+    @classmethod
+    def _process_proto(cls, target_id, proto):
+        """
+
+        This method is ported from from google.cloud.firestore_v1.watch
+
+        Copy of the license of google.cloud.firestore_v1.watch:
+        # Copyright 2017 Google LLC All rights reserved.
+        #
+        # Licensed under the Apache License, Version 2.0 (the "License");
+        # you may not use this file except in compliance with the License.
+        # You may obtain a copy of the License at
+        #
+        #     http://www.apache.org/licenses/LICENSE-2.0
+        #
+        # Unless required by applicable law or agreed to in writing, software
+        # distributed under the License is distributed on an "AS IS" BASIS,
+        # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        # See the License for the specific language governing permissions and
+        # limitations under the License.
+
+        Difference from source code: the way document_change is stored
+
+        :param proto:
+        :param target_id:
+        :return:
+        """
+
+        container = cls._containers[target_id]
+
+        _firestore = CTX.db.firestore_client
+
+        document_change = getattr(proto, "document_change", "")
+        document_delete = getattr(proto, "document_delete", "")
+        document_remove = getattr(proto, "document_remove", "")
+        filter_ = getattr(proto, "filter", "")
+
+        if str(document_change):
+            _LOGGER.debug("on_snapshot: document change")
+
+            # No other target_ids can show up here, but we still need to see
+            # if the targetId was in the added list or removed list.
+            target_ids = document_change.target_ids or []
+            removed_target_ids = document_change.removed_target_ids or []
+            changed = False
+            removed = False
+
+            if target_id in target_ids:
+                changed = True
+
+            if target_id in removed_target_ids:
+                removed = True
+
+            if changed:
+                _LOGGER.debug("on_snapshot: document change: CHANGED")
+
+                # google.cloud.firestore_v1.types.Document
+                document = document_change.document
+                # TODO: change
+                from google.cloud.firestore_v1 import _helpers
+                data = _helpers.decode_dict(document.fields, _firestore)
+
+                # Create a snapshot. As Document and Query objects can be
+                # passed we need to get a Document Reference in a more manual
+                # fashion than self._document_reference
+                document_name = document.name
+
+                document_name = cls._trim_document_name(_firestore,
+                                                       document_name)
+
+                ref = FirestoreReference.from__document_name(document_name)
+
+                snapshot = FirestoreSnapshot.from_data_and_meta(
+                    # reference=document_ref,
+                    data=data,
+                    exists=True,
+                    read_time=None,
+                    create_time=document.create_time,
+                    update_time=document.update_time,
+                )
+
+                def timestamp_key(t) -> tuple:
+                    return (t.seconds, t.nanos)
+
+                container.set(
+                    key=ref,
+                    val=snapshot,
+                    timestamp=timestamp_key(document.update_time)
+                )
+
+            elif removed:
+                _LOGGER.debug("on_snapshot: document change: REMOVED")
+                document = document_change.document  # should be a str
+
+                document_name = cls._trim_document_name(_firestore,
+                                                       document)
+                ref = FirestoreReference.from__document_name(document_name)
+
+                from google.cloud.firestore_v1.watch import ChangeType
+                container.set(key=ref, val=ChangeType.REMOVED)
+
+        # NB: document_delete and document_remove (as far as we, the client,
+        # are concerned) are functionally equivalent
+
+        elif str(document_delete):
+            _LOGGER.debug("on_snapshot: document change: DELETE")
+            name = document_delete.document  # should be a str
+
+            document_name = cls._trim_document_name(_firestore, name)
+            ref = FirestoreReference.from__document_name(document_name)
+            from google.cloud.firestore_v1.watch import ChangeType
+
+            container.set(ref, ChangeType.REMOVED)
+
+        elif str(document_remove):
+            _LOGGER.debug("on_snapshot: document change: REMOVE")
+            name = document_remove.document
+            document_name = cls._trim_document_name(_firestore, name)
+            ref = FirestoreReference.from__document_name(document_name)
+            from google.cloud.firestore_v1.watch import ChangeType
+            container.set(ref, ChangeType.REMOVED)
+
+        elif filter_:
+            #  # original implementation as commented out below
+            # _LOGGER.debug("on_snapshot: filter update")
+            # if filter_.count != self._current_size():
+            #     # We need to remove all the current results.
+            #     self._reset_docs()
+            #     # The filter didn't match, so re-issue the query.
+            #     # TODO: reset stream method?
+            #     # self._reset_stream();
+            raise ValueError  # TODO: implement
+        elif proto is None:
+            #  # original implementation as commented out below
+            # self.close()
+            raise ValueError  # TODO: implement
+        else:
+            #  # original implementation as commented out below
+            # _LOGGER.debug("UNKNOWN TYPE. UHOH")
+            # self.close(
+            #     reason=ValueError("Unknown listen response type: %s" % proto))
+            raise ValueError  # TODO: implement
+
+    @classmethod
+    def _trim_document_name(cls, _firestore, document_name):
+        db_str = _firestore._database_string
+        db_str_documents = db_str + "/documents/"
+        if document_name.startswith(db_str_documents):
+            document_name = document_name[len(db_str_documents):]
+        return document_name
+
+    @classmethod
+    def for_query(cls, query: Query, cb):
+        query = query._to_firestore_query()
+        parent_path, _ = query._parent._parent_info()
+        from google.cloud.firestore_v1.proto import firestore_pb2
+        query_target = firestore_pb2.Target.QueryTarget(
+            parent=parent_path, structured_query=query._to_protobuf()
+        )
+
+        def callback(target_id, protos):
+            container = cls._containers[target_id]
+            with container.lock:
+                for proto in protos:
+                    cls._process_proto(target_id, proto)
+
+        target_id = cls._assigner.assign_id()
+        target = {
+            "query": query_target,
+            "target_id": target_id
+        }
+        cls._get_watch().add_target(target, callback)
+
+        return target_id
+
+    @classmethod
+    def release_target(cls, target_id):
+        cls._watch.remove_target(target_id)
