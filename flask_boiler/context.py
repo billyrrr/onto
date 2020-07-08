@@ -27,7 +27,7 @@ from .config import Config
 import logging
 
 from contextvars import ContextVar
-from flask_boiler.database import Database
+from flask_boiler.database import Database, Listener
 
 _transaction_var: ContextVar[firestore.Transaction] = \
     ContextVar('_transaction_var', default=None)
@@ -53,6 +53,7 @@ class Context:
     config: Config = None
     celery_app: Celery = None
     logger: logging.Logger = None
+    listener: Listener = None
 
     transaction_var = _transaction_var
 
@@ -174,6 +175,8 @@ class Context:
         cls._reload_firebase_app()
         cls._reload_dbs(cls.config.database)
         cls._reload_celery_app()
+        from flask_boiler.database.firestore import FirestoreListener
+        cls.listener = FirestoreListener
 
         cls.logger.info(f"flask_boiler.Context has finished "
                         f"loading config: {vars(config)}")

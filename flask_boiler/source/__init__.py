@@ -41,10 +41,12 @@ class Source:
 
     def _register(self):
         from flask_boiler.context import Context as CTX
-        CTX.listener.register( query=self.query, mediator_ref=self.parent)
+        CTX.listener.register(query=self.query, source=self)
 
-    def _call(self, ):
-        raise NotImplementedError
+    def _call(self, func_name, ref, snapshot):
+        fname = self.protocol.fname_of(func_name)
+        f = getattr(self.parent(), fname)
+        f(ref, snapshot)
 
     def __init__(self, query):
         """ Initializes a ViewMediator to declare protocols that

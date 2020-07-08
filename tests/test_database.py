@@ -146,16 +146,24 @@ def test_listener():
         class Meta:
             collection_name = 'S'
 
-    S.new(foo='bar').save()
+    S.new(doc_id='T', foo='bar').save()
 
     query = Query(parent=S, arguments=[])
 
-    def callback(*args, **kwargs):
-        print(f"{args} {kwargs}")
+    from flask_boiler.source import Source
+    class M:
+        source = Source(query=query)
 
-    FirestoreListener.for_query(query, cb=callback)
+        @staticmethod
+        @source.triggers.on_create
+        def add_t(ref, snapshot):
+            print(f"{ref} {snapshot}")
+
+    _ = M()
 
     from flask_boiler import testing_utils
+    testing_utils._wait()
+
     testing_utils._wait()
 
 

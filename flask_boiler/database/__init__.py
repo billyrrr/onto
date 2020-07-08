@@ -72,6 +72,9 @@ reference = Reference()
 
 class Snapshot(collections.UserDict):
 
+    next = property()
+    prev = property()
+
     def __init__(self, *args, __flask_boiler_meta__=None, **kwargs):
         """
         TODO: note that in extreme conditions, a document with randomly
@@ -86,6 +89,22 @@ class Snapshot(collections.UserDict):
         if __flask_boiler_meta__ is not None:
             for key, val in __flask_boiler_meta__.items():
                 setattr(self, key, val)
+
+    @next.getter
+    def next(self):
+        return self._flask_boiler_next
+
+    @next.setter
+    def next(self, _flask_boiler_next):
+        self._flask_boiler_next = _flask_boiler_next
+
+    @prev.getter
+    def prev(self):
+        return self._flask_boiler_prev
+
+    @prev.setter
+    def prev(self, _flask_boiler_prev):
+        self._flask_boiler_prev = _flask_boiler_prev
 
     def to_dict(self):
         return self.data.copy()

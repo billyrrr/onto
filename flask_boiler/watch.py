@@ -508,6 +508,7 @@ class _Watch(object):
             listen_response(`google.cloud.firestore_v1.types.ListenResponse`):
                 Callback method that receives a object to
         """
+        _LOGGER.info(proto)
         TargetChange = firestore_pb2.TargetChange
 
         target_changetype_dispatch = {
@@ -614,7 +615,7 @@ class _Watch(object):
                 if target_id not in self._target_callbacks:
                     continue
                 callback = self._target_callbacks[target_id]
-                callback(target_id, changes)
+                callback(target_id, changes, read_time)
             self.has_pushed = True
         #
         # self.doc_tree = updated_tree

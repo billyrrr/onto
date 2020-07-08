@@ -9,7 +9,7 @@ from google.cloud.firestore_v1.document import _get_document_path, \
 # TODO: NOTE maximum of 1 firestore client allowed since we used a global var.
 from flask_boiler.query.query import Query
 from flask_boiler.snapshot_container import SnapshotContainer
-
+from math import inf
 
 class FirestoreReference(Reference):
 
@@ -174,6 +174,14 @@ class FirestoreSnapshot(Snapshot):
             }
             return cls(**data, __flask_boiler_meta__=__flask_boiler_meta__)
 
+    @classmethod
+    def empty(cls, **kwargs):
+        return cls.from_data_and_meta(
+            data=dict(),
+            exists=False,
+            **kwargs
+        )
+
 
 from threading import Lock, Condition
 import heapq
@@ -213,6 +221,46 @@ _LOGGER = CTX.logger
 from _collections import defaultdict
 
 
+"""
+5 changes:
+- Just tracked (previously may exist or not have existed in the datastore)
+- Just created (previously did not exist in the datastore) 
+- Just removed (conditions does not meet query, but was tracked)
+- Just deleted (previously tracked and now deleted)
+- Just changed (previously tracked and now updated) 
+
+Each listener acts like an airport surveillance radar.
+Each aircraft is like a snapshot with its states. 
+ 
+When the flight enters the area, it is first observed by the listener 
+    1. the flight may have departed a long time ago and was just observed when 
+    passing through the area ("just tracked"), 
+        - State of last snapshot is unknown 
+    2. or it could have just taken off, and we need to register the flight 
+    as a recently departed flight ("just created")
+        - State of last snapshot does not exist 
+When the flight is no longer observed by the radar, 
+    1. the flight may have just landed, in which case, we need to register 
+    the flight as landed ("just deleted")
+        - New state does not exist 
+    2. the flight may have left the area of observation ("just removed")
+        - New state is unknown 
+When the flight was already observed by the radar (made initial appearance), 
+    1. the flight has changed altitude, in which case, we want to run checking 
+    to see if the altitude is safe ("just changed")
+        - Previous and new state exist 
+    
+Depending on the time that the radar was turned on, we may observe the same 
+signal as "just created" or "just tracked". We are able to see if the flight 
+was just created by checking its create and update timestamp. 
+
+"""
+
+
+def timestamp_key(t) -> tuple:
+    return (t.seconds, t.nanos)
+
+
 class FirestoreListener(Listener):
 
     _watch = None
@@ -242,12 +290,11 @@ class FirestoreListener(Listener):
     _assigner = TargetIdAssigner()
 
     @classmethod
-    def register(cls, query, mediator_ref):
+    def register(cls, query, source):
         def callback(*args, **kwargs):
-            mediator = mediator_ref()
-            mediator._call(*args, **kwargs)
-        target_id = cls.for_query(query=query, callback=callback)
-        cls._registry[target_id] = mediator_ref
+            source._call(*args, **kwargs)
+        target_id = cls.for_query(query=query, cb=callback)
+        cls._registry[target_id] = source
 
     @classmethod
     def deregister(cls):
@@ -287,8 +334,8 @@ class FirestoreListener(Listener):
 
         document_change = getattr(proto, "document_change", "")
         document_delete = getattr(proto, "document_delete", "")
-        document_remove = getattr(proto, "document_remove", "")
-        filter_ = getattr(proto, "filter", "")
+        # document_remove = getattr(proto, "document_remove", "")
+        # filter_ = getattr(proto, "filter", "")
 
         if str(document_change):
             _LOGGER.debug("on_snapshot: document change")
@@ -334,8 +381,21 @@ class FirestoreListener(Listener):
                     update_time=document.update_time,
                 )
 
-                def timestamp_key(t) -> tuple:
-                    return (t.seconds, t.nanos)
+                # TODO: apply lock
+                if not container.has_previous(ref):
+                    container.set(
+                        key=ref,
+                        val=FirestoreSnapshot.empty(
+                            create_time=-inf,
+                            update_time=-inf,
+                            read_time=-inf
+                        ),
+                        timestamp=(-inf, -inf)
+                    )
+
+                prev = container.previous(ref)
+                prev.next = snapshot
+                snapshot.prev = prev
 
                 container.set(
                     key=ref,
@@ -344,18 +404,7 @@ class FirestoreListener(Listener):
                 )
 
             elif removed:
-                _LOGGER.debug("on_snapshot: document change: REMOVED")
-                document = document_change.document  # should be a str
-
-                document_name = cls._trim_document_name(_firestore,
-                                                       document)
-                ref = FirestoreReference.from__document_name(document_name)
-
-                from google.cloud.firestore_v1.watch import ChangeType
-                container.set(key=ref, val=ChangeType.REMOVED)
-
-        # NB: document_delete and document_remove (as far as we, the client,
-        # are concerned) are functionally equivalent
+                raise NotImplementedError
 
         elif str(document_delete):
             _LOGGER.debug("on_snapshot: document change: DELETE")
@@ -363,37 +412,23 @@ class FirestoreListener(Listener):
 
             document_name = cls._trim_document_name(_firestore, name)
             ref = FirestoreReference.from__document_name(document_name)
-            from google.cloud.firestore_v1.watch import ChangeType
 
-            container.set(ref, ChangeType.REMOVED)
+            snapshot = FirestoreSnapshot.empty(
+                    create_time=None,
+                    update_time=None,
+                    read_time=document_change.read_time
+            )
 
-        elif str(document_remove):
-            _LOGGER.debug("on_snapshot: document change: REMOVE")
-            name = document_remove.document
-            document_name = cls._trim_document_name(_firestore, name)
-            ref = FirestoreReference.from__document_name(document_name)
-            from google.cloud.firestore_v1.watch import ChangeType
-            container.set(ref, ChangeType.REMOVED)
+            prev = container.previous(ref)
+            prev.next = snapshot
+            snapshot.prev = prev
 
-        elif filter_:
-            #  # original implementation as commented out below
-            # _LOGGER.debug("on_snapshot: filter update")
-            # if filter_.count != self._current_size():
-            #     # We need to remove all the current results.
-            #     self._reset_docs()
-            #     # The filter didn't match, so re-issue the query.
-            #     # TODO: reset stream method?
-            #     # self._reset_stream();
-            raise ValueError  # TODO: implement
-        elif proto is None:
-            #  # original implementation as commented out below
-            # self.close()
-            raise ValueError  # TODO: implement
+            container.set(
+                key=ref,
+                val=snapshot,
+                timestamp=timestamp_key(document_delete.read_time)
+            )
         else:
-            #  # original implementation as commented out below
-            # _LOGGER.debug("UNKNOWN TYPE. UHOH")
-            # self.close(
-            #     reason=ValueError("Unknown listen response type: %s" % proto))
             raise ValueError  # TODO: implement
 
     @classmethod
@@ -413,11 +448,17 @@ class FirestoreListener(Listener):
             parent=parent_path, structured_query=query._to_protobuf()
         )
 
-        def callback(target_id, protos):
+        def callback(target_id, protos, read_time):
             container = cls._containers[target_id]
             with container.lock:
                 for proto in protos:
                     cls._process_proto(target_id, proto)
+                container._read_times.append(
+                    (read_time.seconds, read_time.nanos)
+                )
+                for item in cls.delta(container):
+                    cb(*item)
+
 
         target_id = cls._assigner.assign_id()
         target = {
@@ -427,6 +468,19 @@ class FirestoreListener(Listener):
         cls._get_watch().add_target(target, callback)
 
         return target_id
+
+    @classmethod
+    def delta(cls, container):
+        start = container._read_times[-2]
+        end = container._read_times[-1]
+        for key in container.d.keys():
+            for snapshot in container.get_with_range(key, start, end):
+                prev: Snapshot = snapshot.prev
+                cur: Snapshot = snapshot
+                if not prev.exists:
+                    yield ("on_create", key, cur)
+                else:
+                    yield ("on_update", key, cur)
 
     @classmethod
     def release_target(cls, target_id):
