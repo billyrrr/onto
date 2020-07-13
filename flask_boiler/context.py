@@ -183,6 +183,16 @@ class Context:
         cls._ready = True
 
     @classmethod
+    def _reload_services(cls, services: dict):
+        class Services:
+            pass
+
+        cls.services = Services()
+        for svc_name, svc_config in services.items():
+            svc = cls.create_service(svc_config)
+            setattr(cls.services, svc_name, svc)
+
+    @classmethod
     def _reload_dbs(cls, database: dict):
         class Dbs:
             pass
@@ -241,6 +251,21 @@ class Context:
             )
             from flask_boiler.database.leancloud import LeancloudDatabase
             return LeancloudDatabase
+        else:
+            raise ValueError
+
+    @staticmethod
+    def create_service(svc_config):
+        if svc_config['type'] == 'engine':
+            try:
+                import leancloud
+            except ImportError as e:
+                raise TypeError('leancloud server is configured, but '
+                                'importing leancloud module has failed') from e
+            engine = leancloud.Engine()
+            return engine
+        else:
+            raise ValueError
 
     @classmethod
     def _reload_celery_app(cls):

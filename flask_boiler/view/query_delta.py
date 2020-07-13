@@ -7,7 +7,7 @@ from typing import Optional, Awaitable
 from google.cloud.firestore_v1 import DocumentSnapshot, Watch, \
     DocumentReference
 
-from flask_boiler.view.sink import Sink
+from flask_boiler import sink
 from flask_boiler.watch import DocumentChange
 
 from flask_boiler.context import Context as CTX
@@ -30,7 +30,7 @@ EVENT_TYPE_MAPPING = dict(
 )
 
 
-class DeltaSink(Sink):
+class DeltaSink(sink.firestore):
 
     def emit(self, doc_ref, obj):
         doc_ref.save(obj.to_dict())

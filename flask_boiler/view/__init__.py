@@ -24,5 +24,6 @@ class Mediator:
     source = None
     sink = None
 
-    def start(self):
-        self.source.start()
+    @classmethod
+    def start(cls):
+        cls.source.start()

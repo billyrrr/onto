@@ -101,3 +101,24 @@ def test_initializer_not_called():
     e.i = 2
     assert e.i == 2
     E.i.finit.assert_not_called()
+
+
+def test_copy():
+
+    a = E.i
+    b = E.i.copy()
+    assert a is not b
+
+
+def test_import_only():
+
+    class K(Serializable):
+        class Meta:
+            import_only = True
+
+        i = PropertyAttribute(initialize=False)
+
+        i.init(mock.Mock(return_value=None))
+
+    k = K.new(i=1)
+    assert 'i' not in k.to_dict()

@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 from .attribute import AttributeBase, \
     PropertyAttribute as bproperty, \
     RelationshipAttribute as relation, \

@@ -33,3 +33,4 @@ class SerializableMeta(ModelRegistry):
             #     klass._default_fields = default_fields
 
         return klass
+

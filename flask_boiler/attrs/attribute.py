@@ -25,6 +25,10 @@ class AttributeBase:
         self.parent = owner
         self.name = name
 
+    def copy(self):
+        from copy import deepcopy
+        return deepcopy(self)
+
     def __get__(self, instance, owner):
         """ Only allow attribute object to be invoked "get" on
                 a class, and not an instance.
@@ -299,18 +303,22 @@ class PropertyAttribute(AttributeBase):
         self.fdel(instance)
 
     def getter(self, fget):
+        # _self = self.copy()
         self.fget = fget
         return self
 
     def setter(self, fset):
+        # _self = self.copy()
         self.fset = fset
         return self
 
     def deleter(self, fdel):
+        # _self = self.copy()
         self.fdel = fdel
         return self
 
     def init(self, finit):
+        # self = self.copy()
         self.finit = finit
         return self
 

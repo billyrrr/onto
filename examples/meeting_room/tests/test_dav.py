@@ -4,11 +4,13 @@ from google.cloud.firestore_v1 import CollectionReference
 from examples.meeting_room.domain_models import Meeting, User
 from examples.meeting_room.view_models.meeting_session import MeetingSession
 from examples.meeting_room.view_models.user_view import UserViewMixin
-from flask_boiler.database import Reference
+from flask_boiler.database import Reference, Snapshot
 from flask_boiler.database.firestore import FirestoreReference
 from flask_boiler.errors import UnauthorizedError
 from flask_boiler.mutation import PatchMutation
 from flask_boiler.query.query import Query, ViewModelQuery
+from flask_boiler.source import FirestoreSource
+from flask_boiler.view import Mediator
 from flask_boiler.view.document import \
     ViewMediatorDAV
 from flask_boiler.view.query_delta import ViewMediatorDeltaDAV, ProtocolBase
@@ -18,16 +20,16 @@ from flask_boiler import utils, testing_utils
 from flask_boiler.context import Context
 from tests.fixtures import CTX, setup_app
 from .fixtures import users, tickets, location, meeting
+from flask_boiler import sink
 
 
-class MeetingSessionPatch(ViewMediatorDeltaDAV):
+class MeetingSessionPatch(Mediator):
     from flask_boiler.source import Source
-    from flask_boiler.view.sink import FirestoreSink
 
-    source = Source(
+    source = FirestoreSource(
         query=ViewModelQuery.patch_query(parent=MeetingSession)
     )
-    sink = FirestoreSink()
+    sink = sink.firestore()
 
     @source.triggers.on_create
     def patch_meeting(self, reference, snapshot, transaction):
@@ -51,18 +53,15 @@ class MeetingSessionPatch(ViewMediatorDeltaDAV):
         obj.propagate_change()
 
 
-class MeetingSessionGet:
+class MeetingSessionGet(Mediator):
 
-    from flask_boiler.source import Source
-    from flask_boiler.view.sink import FirestoreSink
-
-    source = Source(query=Meeting.get_query())
-    sink = FirestoreSink()
+    source = FirestoreSource(query=Meeting.get_query())
+    sink = sink.firestore()
 
     @source.triggers.on_update
     @source.triggers.on_create
     def materialize_meeting_session(self, ref, snapshot):
-        meeting = utils.snapshot_to_obj(snapshot, reference=ref)
+        meeting = utils.snapshot_to_obj(super_cls=Meeting, snapshot=snapshot, reference=ref)
 
         assert isinstance(meeting, Meeting)
 
@@ -120,7 +119,7 @@ def delete_after(request):
     request.addfinalizer(finalizer=fin)
 
 
-def test_mutate(users, tickets, location, meeting, delete_after):
+def test_mutate(users, tickets, location, meeting, delete_after, CTX):
     """
     Tests that mutate actions affect domain model and view model.
 
@@ -130,15 +129,10 @@ def test_mutate(users, tickets, location, meeting, delete_after):
     :param meeting:
     :return:
     """
-    mediator = MeetingSessionGet()
+    # mediator = MeetingSessionGet()
+    # mediator.start()
 
-    mediator.start()
-
-    # patch_collection_name =
-
-    patch_mediator = MeetingSessionPatch()
-
-    patch_mediator.start()
+    MeetingSessionPatch.start()
 
     testing_utils._wait(factor=.7)
 
@@ -147,9 +141,8 @@ def test_mutate(users, tickets, location, meeting, delete_after):
     """
     Tests that MeetingSessionGet works 
     """
-    ref = Context.db.collection("users").document(users[0].doc_id) \
-        .collection(MeetingSession.__name__).document(meeting.doc_id)
-    assert ref.get().to_dict() == {'latitude': 32.880361,
+    ref = Context.db.ref/"users"/users[0].doc_id/MeetingSession.__name__/meeting.doc_id
+    assert CTX.db.get(ref).to_dict() == {'latitude': 32.880361,
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -171,11 +164,11 @@ def test_mutate(users, tickets, location, meeting, delete_after):
     """
     Tests that MeetingSessionPatch works 
     """
-    ref: CollectionReference = Context.db.collection(
-        f'users/tijuana/{patch_collection_name}'
-    )
-    ref.add(
-        dict(
+    patch_ref = Context.db.ref/\
+          f'users/tijuana/{ViewModelQuery.patch_query(parent=MeetingSession)}/patch_1'
+    CTX.db.set(
+        ref=patch_ref,
+        snapshot=Snapshot(
             target_meeting_id="meeting_1",
             inSession=False
         )
@@ -185,10 +178,10 @@ def test_mutate(users, tickets, location, meeting, delete_after):
 
     m = Meeting.get(doc_id="meeting_1")
     assert m.status == "closed"
-
-    ref = Context.db.collection("users").document(users[0].doc_id) \
-        .collection(MeetingSession.__name__).document(meeting.doc_id)
-    assert ref.get().to_dict() == {'latitude': 32.880361,
+    #
+    # ref = Context.db.collection("users").document(users[0].doc_id) \
+    #     .collection(MeetingSession.__name__).document(meeting.doc_id)
+    assert CTX.db.get(ref=ref).to_dict() == {'latitude': 32.880361,
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -205,9 +198,8 @@ def test_mutate(users, tickets, location, meeting, delete_after):
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
 
     for user in users:
-        Context.db.collection("users").document(user.doc_id) \
-            .collection(MeetingSession.__name__).document(meeting.doc_id) \
-            .delete()
+        reference = CTX.db.ref/"users"/user.doc_id/MeetingSession.__name__/meeting.doc_id
+        CTX.db.delete(reference)
 
 
 def test_domain_model_changes(users, tickets, location, meeting):
