@@ -1,4 +1,4 @@
-from flask_boiler.source import Source
+from flask_boiler.source.base import Source
 from flask_boiler.context import Context as CTX
 
 

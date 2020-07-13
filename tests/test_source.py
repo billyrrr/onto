@@ -1,4 +1,4 @@
-from flask_boiler.source import Protocol
+from flask_boiler.source.protocol import Protocol
 
 
 def test_register():

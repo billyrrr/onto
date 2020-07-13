@@ -9,7 +9,7 @@ from flask_boiler.database.firestore import FirestoreReference
 from flask_boiler.errors import UnauthorizedError
 from flask_boiler.mutation import PatchMutation
 from flask_boiler.query.query import Query, ViewModelQuery
-from flask_boiler.source import FirestoreSource
+from flask_boiler.source.firestore import FirestoreSource
 from flask_boiler.view import Mediator
 from flask_boiler.view.document import \
     ViewMediatorDAV
@@ -24,7 +24,7 @@ from flask_boiler import sink
 
 
 class MeetingSessionPatch(Mediator):
-    from flask_boiler.source import Source
+    from flask_boiler.source.base import Source
 
     source = FirestoreSource(
         query=ViewModelQuery.patch_query(parent=MeetingSession)
@@ -55,14 +55,15 @@ class MeetingSessionPatch(Mediator):
 
 class MeetingSessionGet(Mediator):
 
-    source = FirestoreSource(query=Meeting.get_query())
+    from flask_boiler import source
+
+    source = source.domain_model(Meeting)
     sink = sink.firestore()
 
     @source.triggers.on_update
     @source.triggers.on_create
-    def materialize_meeting_session(self, ref, snapshot):
-        meeting = utils.snapshot_to_obj(super_cls=Meeting, snapshot=snapshot, reference=ref)
-
+    def materialize_meeting_session(self, obj):
+        meeting = obj
         assert isinstance(meeting, Meeting)
 
         def notify(obj):

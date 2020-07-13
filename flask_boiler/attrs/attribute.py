@@ -233,6 +233,9 @@ class PropertyAttribute(AttributeBase):
     Ref: https://blog.csdn.net/weixin_43265804/article/details/82863984
         content under CC 4.0
 
+    TODO: note that later definition of a getter/setter may override earlier
+    TODO:   definitions. (this may happen when you subclass a class)
+
     TODO: check for memory leak
     """
 

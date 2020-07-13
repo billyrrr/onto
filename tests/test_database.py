@@ -151,7 +151,7 @@ def test_listener():
 
     query = DomainModelQuery(parent=S, arguments=[])
 
-    from flask_boiler.source import Source
+    from flask_boiler.source.base import Source
     class M:
         source = Source(query=query)
 

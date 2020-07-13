@@ -1,4 +1,4 @@
-from . import Source
+from .base import Source
 
 
 class CouchbaseSource(Source):
