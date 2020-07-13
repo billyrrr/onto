@@ -1,3 +1,5 @@
+import functools
+
 from flask_boiler.common import _NA
 from flask_boiler.database import Database, Reference, Snapshot, Listener
 from flask_boiler.context import Context as CTX
@@ -7,6 +9,7 @@ from google.cloud.firestore_v1.document import _get_document_path, \
     DocumentReference, DocumentSnapshot
 
 # TODO: NOTE maximum of 1 firestore client allowed since we used a global var.
+from typing import List
 from flask_boiler.query.query import Query
 from flask_boiler.snapshot_container import SnapshotContainer
 from math import inf
@@ -112,6 +115,24 @@ class FirestoreDatabase(Database):
 
         return FirestoreSnapshot.from_document_snapshot(
             document_snapshot=document_snapshot)
+
+    @classmethod
+    def get_many(cls, refs: [Reference], transaction=_NA):
+        if transaction is _NA:
+            transaction = CTX.transaction_var.get()
+
+        doc_refs = [cls._doc_ref_from_ref(ref) for ref in refs]
+
+        if transaction is None:
+            document_snapshots = cls.firestore_client.get_all(doc_refs)
+        else:
+            document_snapshots = cls.firestore_client.get_all(
+                doc_refs, transaction=transaction)
+
+        for document_snapshot in document_snapshots:
+            yield FirestoreReference.from_document_reference(document_snapshot.reference),\
+                  FirestoreSnapshot.from_document_snapshot(
+                document_snapshot=document_snapshot)
 
     update = set
     create = set
@@ -292,7 +313,8 @@ class FirestoreListener(Listener):
     @classmethod
     def register(cls, query, source):
         def callback(*args, **kwargs):
-            source._call(*args, **kwargs)
+            f = functools.partial(source._call, *args, **kwargs)
+            cls._coordinator._add_awaitable(f)
         target_id = cls.for_query(query=query, cb=callback)
         cls._registry[target_id] = source
 
@@ -416,7 +438,7 @@ class FirestoreListener(Listener):
             snapshot = FirestoreSnapshot.empty(
                     create_time=None,
                     update_time=None,
-                    read_time=document_change.read_time
+                    read_time=document_delete.read_time
             )
 
             prev = container.previous(ref)
@@ -440,6 +462,17 @@ class FirestoreListener(Listener):
         return document_name
 
     @classmethod
+    def callback(cls, target_id, protos, read_time, *, cb):
+        container = cls._containers[target_id]
+        with container.lock:
+            for proto in protos:
+                cls._process_proto(target_id, proto)
+            container._read_times.append(
+                (read_time.seconds, read_time.nanos)
+            )
+            cb(container)
+
+    @classmethod
     def for_query(cls, query: Query, cb):
         query = query._to_firestore_query()
         parent_path, _ = query._parent._parent_info()
@@ -448,39 +481,31 @@ class FirestoreListener(Listener):
             parent=parent_path, structured_query=query._to_protobuf()
         )
 
-        def callback(target_id, protos, read_time):
-            container = cls._containers[target_id]
-            with container.lock:
-                for proto in protos:
-                    cls._process_proto(target_id, proto)
-                container._read_times.append(
-                    (read_time.seconds, read_time.nanos)
-                )
-                for item in cls.delta(container):
-                    cb(*item)
-
-
         target_id = cls._assigner.assign_id()
         target = {
             "query": query_target,
             "target_id": target_id
         }
-        cls._get_watch().add_target(target, callback)
+        import functools
+        cls._get_watch().add_target(
+            target, functools.partial(cls.callback, cb=cb)
+        )
 
         return target_id
 
     @classmethod
-    def delta(cls, container):
-        start = container._read_times[-2]
-        end = container._read_times[-1]
-        for key in container.d.keys():
-            for snapshot in container.get_with_range(key, start, end):
-                prev: Snapshot = snapshot.prev
-                cur: Snapshot = snapshot
-                if not prev.exists:
-                    yield ("on_create", key, cur)
-                else:
-                    yield ("on_update", key, cur)
+    def for_refs(cls, refs: List[FirestoreReference], cb):
+        documents = [FirestoreDatabase.make_document_path(ref) for ref in refs]
+        target_id = cls._assigner.assign_id()
+        target = {
+            "documents": {"documents": documents},
+            "target_id": target_id,
+        }
+        import functools
+        cls._get_watch().add_target(
+            target, functools.partial(cls.callback, cb=cb)
+        )
+        return target_id
 
     @classmethod
     def release_target(cls, target_id):

@@ -13,6 +13,7 @@ from inflection import camelize, underscore
 
 from flask_boiler.common import _NA
 from flask_boiler.context import Context as CTX
+from flask_boiler.database import Reference
 from flask_boiler.registry import ModelRegistry
 
 
@@ -58,7 +59,7 @@ T = TypeVar('T', covariant=True)
 
 
 def snapshot_to_obj(
-        snapshot: DocumentSnapshot,
+        snapshot: DocumentSnapshot, reference: Reference,
         super_cls: T = None, **kwargs) -> T:
     """ Converts a firestore document snapshot to FirestoreObject
 
@@ -67,8 +68,8 @@ def snapshot_to_obj(
     :return:
     """
 
-    if not snapshot.exists:
-        return None
+    # if not snapshot.exists:
+    #     return None
 
     d = snapshot.to_dict()
     obj_cls = super_cls
@@ -82,7 +83,7 @@ def snapshot_to_obj(
                              "Make sure that obj_type is a subclass of {}. "
                              .format(obj_type, super_cls))
 
-    obj = obj_cls.from_dict(d=d, **kwargs)
+    obj = obj_cls.from_dict(d=d, doc_ref=reference, **kwargs)
     return obj
 
 

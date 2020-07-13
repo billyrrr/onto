@@ -1,4 +1,5 @@
 from flask_boiler.database.firestore import TargetIdAssigner
+from flask_boiler.query.query import DomainModelQuery
 
 
 def test_reference():
@@ -148,7 +149,7 @@ def test_listener():
 
     S.new(doc_id='T', foo='bar').save()
 
-    query = Query(parent=S, arguments=[])
+    query = DomainModelQuery(parent=S, arguments=[])
 
     from flask_boiler.source import Source
     class M:
@@ -159,7 +160,11 @@ def test_listener():
         def add_t(ref, snapshot):
             print(f"{ref} {snapshot}")
 
-    _ = M()
+        @classmethod
+        def start(cls):
+            cls.source.start()
+
+    M.start()
 
     from flask_boiler import testing_utils
     testing_utils._wait()

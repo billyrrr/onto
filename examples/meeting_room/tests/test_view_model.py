@@ -14,7 +14,7 @@ from .fixtures import users, tickets, location, meeting
 
 def test_view_model(users, tickets, location, meeting):
     meeting_session = view_models.MeetingSession \
-        .new(doc_id=meeting.doc_id, once=True)
+        .get(doc_id=meeting.doc_id, once=True)
 
     assert meeting_session.to_dict() == \
            {'inSession': True,

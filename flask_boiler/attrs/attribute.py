@@ -413,7 +413,7 @@ class ReferenceAttribute(PropertyAttribute):
         if dm_cls == _NA:
             dm_cls = None
         self.dm_cls = dm_cls
-        self._field_kwargs["dm_cls"] = self.dm_cls
+        self._field_kwargs["obj_type"] = self.dm_cls
 
 
 class EmbeddedAttribute(PropertyAttribute):
@@ -435,7 +435,7 @@ class EmbeddedAttribute(PropertyAttribute):
         if obj_cls == _NA:
             obj_cls = None
         self.dm_cls = obj_cls
-        self._field_kwargs["obj_cls"] = self.dm_cls
+        self._field_kwargs["obj_type"] = self.dm_cls
 
 
 class ObjectTypeAttribute(PropertyAttribute):

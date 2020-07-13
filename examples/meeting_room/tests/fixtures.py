@@ -40,19 +40,19 @@ def users(request, CTX):
 def tickets(users, request, CTX):
     tj_t = domain_models.Ticket.new(doc_id="tj_t")
     tj_t.role = "Participant"
-    tj_t.user = domain_models.User._get_collection().document("tijuana")
+    tj_t.user = domain_models.User._get_collection().child("tijuana")
     tj_t.attendance = True
     tj_t.save()
 
     ts_t = domain_models.Ticket.new(doc_id="ts_t")
     ts_t.role = "Organizer"
-    ts_t.user = domain_models.User._get_collection().document("thomasina")
+    ts_t.user = domain_models.User._get_collection().child("thomasina")
     ts_t.attendance = True
     ts_t.save()
 
     js_t = domain_models.Ticket.new(doc_id="js_t")
     js_t.role = "Participant"
-    js_t.user = domain_models.User._get_collection().document("joshua")
+    js_t.user = domain_models.User._get_collection().child("joshua")
     js_t.attendance = True
     js_t.save()
 

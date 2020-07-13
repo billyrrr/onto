@@ -8,15 +8,16 @@ from flask_boiler.common import _NA
 from flask_boiler.business_property_store import BPSchema
 from flask_boiler.errors import UnauthorizedError
 from flask_boiler.mutation import Mutation, PatchMutation
+from flask_boiler.store import Store, reference
 from flask_boiler.struct import Struct
 from flask_boiler.view_model import ViewModelMixin
 
 
-class MeetingSessionBpss(BPSchema):
-    tickets = fields.StructuralRef(dm_cls=Ticket, many=True)
-    users = fields.StructuralRef(dm_cls=User, many=True)
-    meeting = fields.StructuralRef(dm_cls=Meeting)
-    location = fields.StructuralRef(dm_cls=Location)
+class MeetingSessionStore(Store):
+    tickets = reference(dm_cls=Ticket, many=True)
+    users = reference(dm_cls=User, many=True)
+    meeting = reference(dm_cls=Meeting)
+    location = reference(dm_cls=Location)
 
 
 class MeetingSession(view_model.ViewModel):
@@ -53,9 +54,7 @@ class MeetingSession(view_model.ViewModel):
     @property
     def _view_refs(self):
         for user_id, user in self.store.users.items():
-            doc_ref = user.doc_ref\
-                .collection(self.__class__.__name__)\
-                .document(self.store.meeting.doc_id)
+            doc_ref = user.doc_ref / self.__class__.__name__ / self.store.meeting.doc_id
             yield doc_ref
 
     @in_session.getter
@@ -133,22 +132,26 @@ class MeetingSession(view_model.ViewModel):
         else:
             m = meeting
 
-        struct = Struct(schema_obj=MeetingSessionBpss())
+        struct = dict()
 
-        struct["meeting"] = (Meeting, m.doc_ref.id)
+        struct["meeting"] = (Meeting, m.doc_id)
 
+        struct['users'] = dict()
         for user_ref in m.users:
             obj_type = User
             user_id = user_ref.id
             struct["users"][user_id] = (obj_type, user_ref.id)
 
+        struct['tickets'] = dict()
         for user_id, ticket_ref in m.tickets.items():
             obj_type = Ticket
             struct["tickets"][user_id] = (obj_type, ticket_ref.id)
 
         struct["location"] = (Location, m.location.id)
 
-        obj = super().get(struct_d=struct, once=once,
+        store = MeetingSessionStore.from_struct(struct)
+
+        obj = super().get(store=store, once=once,
                           **kwargs)  # TODO: fix super() behavior
         # time.sleep(2)  # TODO: delete after implementing sync
 

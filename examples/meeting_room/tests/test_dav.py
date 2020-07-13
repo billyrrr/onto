@@ -1,11 +1,14 @@
 import pytest
-from google.cloud.firestore_v1 import Query, CollectionReference
+from google.cloud.firestore_v1 import CollectionReference
 
 from examples.meeting_room.domain_models import Meeting, User
 from examples.meeting_room.view_models.meeting_session import MeetingSession
 from examples.meeting_room.view_models.user_view import UserViewMixin
+from flask_boiler.database import Reference
+from flask_boiler.database.firestore import FirestoreReference
 from flask_boiler.errors import UnauthorizedError
 from flask_boiler.mutation import PatchMutation
+from flask_boiler.query.query import Query, ViewModelQuery
 from flask_boiler.view.document import \
     ViewMediatorDAV
 from flask_boiler.view.query_delta import ViewMediatorDeltaDAV, ProtocolBase
@@ -22,9 +25,7 @@ class MeetingSessionPatch(ViewMediatorDeltaDAV):
     from flask_boiler.view.sink import FirestoreSink
 
     source = Source(
-        query=Context.db.collection_group(
-            "{}_PATCH".format(MeetingSession.__name__)
-        )
+        query=ViewModelQuery.patch_query(parent=MeetingSession)
     )
     sink = FirestoreSink()
 
@@ -60,8 +61,8 @@ class MeetingSessionGet:
 
     @source.triggers.on_update
     @source.triggers.on_create
-    def materialize_meeting_session(self, snapshot):
-        meeting = utils.snapshot_to_obj(snapshot)
+    def materialize_meeting_session(self, ref, snapshot):
+        meeting = utils.snapshot_to_obj(snapshot, reference=ref)
 
         assert isinstance(meeting, Meeting)
 
@@ -76,21 +77,19 @@ class MeetingSessionGet:
         )
         # mediator.notify(obj=obj)
 
-    def start(self):
-        self.source.start()
+    @classmethod
+    def start(cls):
+        cls.source.start()
 
 
-def test_start(users, tickets, location, meeting):
+def test_start(users, tickets, location, meeting, CTX):
 
-    mediator_get = MeetingSessionGet()
+    MeetingSessionGet.start()
 
-    mediator_get.start()
+    testing_utils._wait()
 
-    testing_utils._wait(factor=.7)
-
-    ref = Context.db.collection("users").document(users[0].doc_id) \
-        .collection(MeetingSession.__name__).document(meeting.doc_id)
-    assert ref.get().to_dict() == {'latitude': 32.880361,
+    ref = Context.db.ref / "users" / users[0].doc_id / MeetingSession.__name__ / meeting.doc_id
+    assert CTX.db.get(ref).to_dict() == {'latitude': 32.880361,
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -107,10 +106,7 @@ def test_start(users, tickets, location, meeting):
                                    'inSession': True,
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
 
-    for user in users:
-        Context.db.collection("users").document(user.doc_id) \
-            .collection(MeetingSession.__name__).document(meeting.doc_id) \
-            .delete()
+    CTX.db.delete(ref=ref)
 
 
 @pytest.fixture

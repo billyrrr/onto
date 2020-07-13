@@ -124,6 +124,11 @@ class Database:
 
     @classmethod
     @abc.abstractmethod
+    def get_many(cls, refs: [Reference], transaction=_NA):
+        raise NotImplementedError
+
+    @classmethod
+    @abc.abstractmethod
     def update(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
         raise NotImplementedError
 
@@ -150,11 +155,13 @@ class Database:
 class Listener:
 
     _registry = dict()
+    from ..coordinator import Coordinator
+    _coordinator = Coordinator()
 
     @classmethod
-    def from_query(cls):
+    def for_query(cls):
         pass
 
     @classmethod
-    def from_refs(cls):
+    def for_refs(cls):
         pass

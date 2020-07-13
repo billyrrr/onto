@@ -44,7 +44,9 @@ def convert_query(func):
         q = func(cls, *args, **kwargs)
         for ref, snapshot in CTX.db.query(q):
             yield snapshot_to_obj(
-                snapshot=snapshot, doc_ref=ref, super_cls=cls)
+                reference=ref,
+                snapshot=snapshot,
+                super_cls=cls)
     return call
 
 
@@ -79,8 +81,8 @@ class QueryMixin:
                 limits to obj_type of subclass of cls.
         """
 
-        from flask_boiler.query.query import Query
-        return Query(parent=cls)
+        from flask_boiler.query.query import DomainModelQuery
+        return DomainModelQuery(parent=cls)
 
     # @classmethod
     # @convert_query_ref

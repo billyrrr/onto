@@ -20,7 +20,7 @@ from flask_boiler.factory import ClsFactory
 
 class FirestoreObjectMixin:
 
-    def __init__(self, *args, doc_ref=None, transaction=_NA, _store=None, **kwargs):
+    def __init__(self, *args, doc_ref=_NA, transaction=_NA, _store=None, **kwargs):
 
         if transaction is _NA:
             transaction = CTX.transaction_var.get()
@@ -28,7 +28,8 @@ class FirestoreObjectMixin:
         self._doc_ref = doc_ref
         self.transaction = transaction
         if _store is None:
-            _store = RelationshipStore()
+            from flask_boiler.store import Gallery
+            _store = Gallery()
         self._store = _store
         super().__init__(*args, **kwargs)
 
@@ -40,7 +41,7 @@ class FirestoreObjectMixin:
     def doc_ref(self) -> Reference:
         """ Returns the Document Reference of this object.
         """
-        raise NotImplementedError
+        return self._doc_ref
 
     @classmethod
     def get(cls, *, doc_ref=None, transaction=_NA, **kwargs):
@@ -54,20 +55,21 @@ class FirestoreObjectMixin:
         snapshot = CTX.db.get(ref=doc_ref, transaction=transaction)
         obj = snapshot_to_obj(
             snapshot=snapshot,
+            reference=doc_ref,
             super_cls=cls,
             transaction=transaction)
         return obj
 
     @classmethod
-    def from_snapshot(cls, snapshot=None):
+    def from_snapshot(cls, ref, snapshot=None):
         """ Deserializes an object from a Document Snapshot.
 
         :param snapshot: Firestore Snapshot
         """
-        if not snapshot.exists:
-            return None
+        # if not snapshot.exists:
+        #     return None
 
-        obj = cls.from_dict(d=snapshot.to_dict(), doc_ref=snapshot.reference)
+        obj = cls.from_dict(d=snapshot.to_dict(), doc_ref=ref)
         return obj
 
     def save(self,
@@ -147,7 +149,7 @@ def _get_snapshots(transaction, **kwargs):
     :param kwargs:
     :return:
     """
-    return CTX.db.get_all(transaction=transaction, **kwargs)
+    return CTX.db.get_many(transaction=transaction, **kwargs)
 
 
 class RelationshipStore:
@@ -179,13 +181,13 @@ class RelationshipStore:
             for doc_ref in self.tasks:
                 refs.append(doc_ref)
 
-            res = get_snapshots(references=refs, transaction=transaction)
-            for doc in res:
-                self.container.set(key=doc.reference._document_path, val=doc)
+            res = get_snapshots(refs=refs, transaction=transaction)
+            for ref, doc in res:
+                self.container.set(key=ref, val=doc)
 
             # for doc in res:
-                obj_type = self.tasks[doc.reference]
-                del self.tasks[doc.reference]
+                obj_type = self.tasks[ref]
+                del self.tasks[ref]
 
                 d = doc.to_dict()
                 obj_cls = resolve_obj_cls(cls=obj_type, d=d)
@@ -195,11 +197,11 @@ class RelationshipStore:
                 d = obj_cls._import_from_dict(d, transaction=transaction, _store=self)
 
                 instance = obj_cls.new(**d, transaction=transaction)
-                self.object_container[doc.reference] = instance
+                self.object_container[ref] = instance
 
     def retrieve(self, *, doc_ref, obj_type):
-        snapshot = self.container.get(key=doc_ref._document_path)
-        return obj_type.from_snapshot(snapshot=snapshot)
+        snapshot = self.container.get(key=doc_ref)
+        return obj_type.from_snapshot(ref=doc_ref, snapshot=snapshot)
 
 
 class FirestoreObjectValMixin:
@@ -221,7 +223,7 @@ class FirestoreObjectValMixin:
                 _save()
             elif _store is None:
                 _save()
-            return obj.doc_ref
+            return str(obj.doc_ref)
 
         if isinstance(val, RelationshipReference):
             if val.nested and val.obj is not None:
@@ -300,7 +302,8 @@ class FirestoreObjectValMixin:
     @classmethod
     def _import_from_dict(cls, d, transaction=None, _store=_NA, **kwargs):
         if _store is _NA:
-            _store = RelationshipStore()
+            from flask_boiler.store import Gallery
+            _store = Gallery()
             res = cls._import_val(d, transaction=transaction, _store=_store, **kwargs)
             _store.refresh(transaction=transaction)
         else:

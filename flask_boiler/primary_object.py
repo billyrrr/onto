@@ -99,9 +99,7 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
     #     else:
     #         return super().get_schema_cls()
 
-    def __init__(self, doc_id=None, doc_ref=None, **kwargs):
-        if doc_ref is None:
-            doc_ref = self.ref_from_id(doc_id=doc_id)
+    def __init__(self, doc_ref=None, **kwargs):
         super().__init__(doc_ref=doc_ref, **kwargs)
 
     @property
@@ -109,14 +107,12 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
         """ Returns Document ID
         """
         return self.doc_ref.id
-
-    @property
-    def doc_ref(self):
-        """ Returns Document Reference
-        """
-        if self._doc_ref is None:
-            self._doc_ref = self.collection / random_id()
-        return self._doc_ref
+    #
+    # @property
+    # def doc_ref(self):
+    #     """ Returns Document Reference
+    #     """
+    #     return self._doc_ref
 
     random_id = random_id
 

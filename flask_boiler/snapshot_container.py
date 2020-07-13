@@ -47,6 +47,9 @@ class SnapshotContainer:
         return self.store[(ts, key)]
 
     def get(self, key: str, timestamp: tuple=None):
+        if timestamp is None:
+            return self.store[(timestamp, key)]
+
         idx = bisect.bisect_right(self.d[key], timestamp)
         if idx == 0:
             raise AttributeError

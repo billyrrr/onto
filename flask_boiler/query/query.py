@@ -9,10 +9,13 @@ from . import cmp
 import weakref
 
 
-class Query:
+class QueryBase:
 
-    def __init__(self, parent=None, arguments=None):
-        self.parent = parent
+    def __init__(self, ref=None, path=None, arguments=None):
+        if path is not None:
+            from flask_boiler.database import Reference
+            ref = Reference.from_str(path)
+        self.ref = ref
         if arguments is None:
             arguments = list()
         self.arguments = arguments
@@ -79,6 +82,9 @@ class Query:
 
         return cur_arguments
 
+    def make_copy(self, arguments):
+        return self.__class__(ref=self.ref, arguments=arguments)
+
     def where(self, *args, **kwargs):
         cmp_args = [arg for arg in args if isinstance(arg, cmp.Condition)]
         remaining_args = [arg for arg in args
@@ -90,7 +96,42 @@ class Query:
             *remaining_args, cur_arguments=arguments)
         arguments = self._append_new_style(
             **kwargs, cur_arguments=arguments)
-        return self.__class__(parent=self.parent, arguments=arguments)
+        return self.make_copy(arguments=arguments)
+
+
+class Query(QueryBase):
+    pass
+
+
+class ViewModelQuery(QueryBase):
+
+    @classmethod
+    def patch_query(cls, parent):
+        path = "**/{}_PATCH".format(parent.__name__)
+        return cls(parent=parent, path=path)
+
+    def __init__(self, parent=None, **kwargs):
+        self.parent = parent
+        super().__init__( **kwargs)
+
+    def _to_firestore_query(self):
+        """ Returns a query with parent=cls._get_collection(), and
+                limits to obj_type of subclass of cls.
+        """
+        from flask_boiler.database.firestore import FirestoreDatabase
+
+        db: FirestoreDatabase = CTX.db
+        if self.ref.first == '**':
+            cur_where = db.firestore_client.collection_group(self.ref.last)
+        else:
+            q = db._doc_ref_from_ref(self.ref)
+            cur_where = firestore.Query(parent=q)
+        if len(self.arguments) != 0:
+            raise ValueError
+        return cur_where
+
+
+class DomainModelQuery(QueryBase):
 
     # def get_query(self):
     #     """ Returns a query with parent=cls._get_collection(), and
@@ -107,6 +148,16 @@ class Query:
     #         cur_where = cur_where.where(*condition)
     #     return cur_where
 
+    def __init__(self, parent=None, ref=None, **kwargs):
+        self.parent = parent
+        if ref is None:
+            ref = self.parent._get_collection()
+        super().__init__(ref=ref, **kwargs)
+
+    def make_copy(self, arguments):
+        return self.__class__(
+            ref=self.ref, parent=self.parent, arguments=arguments)
+
     def _to_firestore_query(self):
         """ Returns a query with parent=cls._get_collection(), and
                 limits to obj_type of subclass of cls.
@@ -114,9 +165,11 @@ class Query:
         from flask_boiler.database.firestore import FirestoreDatabase
 
         db: FirestoreDatabase = CTX.db
-        cur_where = firestore.Query(
-            parent=db._doc_ref_from_ref(self.parent._get_collection())
-        )
+        if self.ref.first == '**':
+            cur_where = db.firestore_client.collection_group(self.ref.last)
+        else:
+            cur_where = db._doc_ref_from_ref(self.ref)
+        # cur_where = firestore.Query(parent=q)
         condition = self.parent.get_obj_type_condition()
         if condition is not None:
             arguments = self.arguments + [condition]

@@ -189,6 +189,23 @@ class DocRefField(fields.String, Field):
 argument = namedtuple('argument', ['key', 'comparator', 'val'])
 
 
+class ObjClsMixin:
+
+    def __init__(self, *args, obj_type=_NA, **kwargs):
+        if obj_type is _NA:
+            from flask_boiler.firestore_object import FirestoreObject
+            obj_type = FirestoreObject
+        self._obj_cls = obj_type
+        super().__init__(*args, **kwargs)
+
+    @property
+    def obj_cls(self):
+        _obj_cls = self._obj_cls
+        if isinstance(self._obj_cls, str):
+            _obj_cls = ModelRegistry.get_cls_from_name(obj_type_str=_obj_cls)
+        return _obj_cls
+
+
 class ObjectTypeField(fields.Function, Field):
 
     @staticmethod
@@ -283,14 +300,14 @@ class _MissingNotSpecified:
     pass
 
 
-class Relationship(fields.Str, Field):
+class Relationship(ObjClsMixin, fields.Str, Field):
     """
     Field that describes a relationship in reference to another document
         in the Firestore.
     """
 
     def __init__(self, *args, missing=_MissingNotSpecified, nested=False,
-                 many=False, obj_type=_NA, **kwargs):
+                 many=False, **kwargs):
         """ Initializes a relationship. A field of the master object
                 to describe relationship to another object or document
                 being referenced. Set missing=dict if many=True and
@@ -309,10 +326,6 @@ class Relationship(fields.Str, Field):
         if missing == _MissingNotSpecified:
             missing = list if many else None
         super().__init__(*args, missing=missing, **kwargs)
-        if obj_type is _NA:
-            from flask_boiler.firestore_object import FirestoreObject
-            obj_type = FirestoreObject
-        self.obj_type = obj_type
         self.nested = nested
         self.many = many
 
@@ -329,9 +342,9 @@ class Relationship(fields.Str, Field):
                 val_d[k] = self._serialize(v, *args, **kwargs)
             return val_d
 
-        if isinstance(value, DocumentReference):
+        if not self.nested:
             # Note that AssertionError is not always thrown
-            return RelationshipReference(doc_ref=value, nested=self.nested)
+            return RelationshipReference(doc_ref=str(value), nested=self.nested)
         else:
             return RelationshipReference(obj=value, nested=self.nested)
 
@@ -348,18 +361,20 @@ class Relationship(fields.Str, Field):
                 val_d[k] = self._deserialize(v, *args, **kwargs)
             return val_d
 
-        assert isinstance(value, DocumentReference)
+        # assert isinstance(value, DocumentReference)
+        from flask_boiler.database.firestore import FirestoreReference
+        # TODO: change
         return RelationshipReference(
-            doc_ref=value,
+            doc_ref=FirestoreReference.from_str(value),
             nested=self.nested,
-            obj_type=self.obj_type
+            obj_type=self.obj_cls
         )
 
 
-class StructuralRef(fields.Str, Field):
+class StructuralRef(ObjClsMixin, fields.Str, Field):
 
     def __init__(self, *args, missing=_MissingNotSpecified,
-                 many=False, dm_cls=None, **kwargs):
+                 many=False, **kwargs):
         """ Initializes a relationship. A field of the master object
                 to describe relationship to another object or document
                 being referenced.
@@ -373,17 +388,56 @@ class StructuralRef(fields.Str, Field):
             missing = dict if many else None
         super().__init__(*args, missing=missing, **kwargs)
         self.many = many
-        self.dm_cls = dm_cls
+
+    # def _serialize(self, value, *args, **kwargs):
+    #     if value is None:
+    #         return None
+    #         # raise ValueError
+    #
+    #     if isinstance(value, list) and self.many:
+    #         return [self._serialize(val, *args, **kwargs) for val in value]
+    #     elif isinstance(value, dict) and self.many:
+    #         val_d = dict()
+    #         for k, v in value.items():
+    #             val_d[k] = self._serialize(v, *args, **kwargs)
+    #         return val_d
+    #
+    #     if isinstance(value, DocumentReference):
+    #         # Note that AssertionError is not always thrown
+    #         return RelationshipReference(doc_ref=value, nested=True)
+    #     else:
+    #         return RelationshipReference(obj=value, nested=True)
+
+    def _deserialize(self, value, *args, **kwargs):
+        if value is None:
+            return None
+            # raise ValueError
+
+        if isinstance(value, list) and self.many:
+            return [self._deserialize(val, *args, *kwargs) for val in value]
+        elif isinstance(value, dict) and self.many:
+            val_d = dict()
+            for k, v in value.items():
+                val_d[k] = self._deserialize(v, *args, **kwargs)
+            return val_d
+
+        # assert isinstance(value, DocumentReference)
+        dm_cls, doc_id = value
+        doc_ref = self.obj_cls.ref_from_id(doc_id=doc_id)
+        return RelationshipReference(
+            doc_ref=doc_ref,
+            nested=True,
+            obj_type=dm_cls
+        )
 
 
-class Embedded(fields.Raw, Field):
+class Embedded(ObjClsMixin, fields.Raw, Field):
     """
     Note that when many is set to True, default value of this field
         is an empty list (even if a dict is expected).
     """
 
     def __init__(self, *args, missing=_MissingNotSpecified, many=False,
-                 obj_cls=_NA,
                  **kwargs):
         """
 
@@ -394,22 +448,11 @@ class Embedded(fields.Raw, Field):
         :param kwargs: Keyword arguments to pass to marshmallow.fields.Str
         """
 
-        if obj_cls is _NA:
-            raise ValueError
-
         if missing == _MissingNotSpecified:
             missing = list if many else None
         self.many = many
 
-        self._obj_cls = obj_cls
         super().__init__(*args, missing=missing, **kwargs)
-
-    @property
-    def obj_cls(self):
-        _obj_cls = self._obj_cls
-        if isinstance(self._obj_cls, str):
-            _obj_cls = ModelRegistry.get_cls_from_name(obj_type_str=_obj_cls)
-        return _obj_cls
 
     def _serialize(self, value, *args, embed_many=None, **kwargs):
         if embed_many is None:

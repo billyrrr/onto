@@ -46,10 +46,10 @@ class ViewMediatorDeltaDAV(ViewMediatorBase):
         """
         self.sink.emit(obj.doc_ref, obj)
 
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        if not hasattr(cls, "Protocol"):
-            raise NotImplementedError
+    # def __init_subclass__(cls, **kwargs):
+    #     super().__init_subclass__(**kwargs)
+    #     if not hasattr(cls, "Protocol"):
+    #         raise NotImplementedError
 
     def __init__(self, *args, query, **kwargs):
         """ Initializes a ViewMediator to declare protocols that

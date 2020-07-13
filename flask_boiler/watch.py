@@ -563,7 +563,7 @@ class _Watch(object):
             name = document_delete.document
             self.change_map[name] = ChangeType.REMOVED
 
-            target_ids = document_delete.target_ids or []
+            target_ids = document_delete.removed_target_ids or []
 
             for target_id in target_ids:
                 self.change_log[target_id].append(proto)
@@ -606,17 +606,16 @@ class _Watch(object):
         #     self.doc_tree, self.doc_map, deletes, adds, updates
         # )
 
-        if not self.has_pushed:
-            # TODO: It is possible in the future we will have the tree order
-            # on insert. For now, we sort here.
-            # key = functools.cmp_to_key(self._comparator)
-            # keys = sorted(updated_tree.keys(), key=key)
-            for target_id, changes in self.change_log.items():
-                if target_id not in self._target_callbacks:
-                    continue
-                callback = self._target_callbacks[target_id]
-                callback(target_id, changes, read_time)
-            self.has_pushed = True
+        # TODO: It is possible in the future we will have the tree order
+        # on insert. For now, we sort here.
+        # key = functools.cmp_to_key(self._comparator)
+        # keys = sorted(updated_tree.keys(), key=key)
+        for target_id, changes in self.change_log.items():
+            if target_id not in self._target_callbacks:
+                continue
+            callback = self._target_callbacks[target_id]
+            callback(target_id, changes, read_time)
+        self.has_pushed = True
         #
         # self.doc_tree = updated_tree
         # self.doc_map = updated_map
