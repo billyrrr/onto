@@ -1,6 +1,6 @@
 import typing
 
-from flask_boiler import fields
+from flask_boiler.mapper import fields
 from typing import Type, Callable
 
 from flask_boiler.common import _NA

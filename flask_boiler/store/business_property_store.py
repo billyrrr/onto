@@ -4,8 +4,8 @@ from flask_boiler.attrs.attribute import RelationshipAttribute
 from flask_boiler.common import _NA
 from typing import Tuple
 
-from flask_boiler.fields import StructuralRef
-from flask_boiler.schema import SchemaBase
+from flask_boiler.mapper.fields import StructuralRef
+from flask_boiler.mapper.schema import SchemaBase
 from flask_boiler.utils import snapshot_to_obj
 from flask_boiler.context import Context as CTX
 

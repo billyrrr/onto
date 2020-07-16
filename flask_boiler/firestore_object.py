@@ -4,7 +4,7 @@ from google.cloud.firestore import Transaction
 
 from flask_boiler.common import _NA
 from flask_boiler.database import Snapshot, Reference
-from flask_boiler.helpers import RelationshipReference
+from flask_boiler.mapper.helpers import RelationshipReference
 # from flask_boiler.view_model import ViewModel
 from flask_boiler.models.mixin import resolve_obj_cls
 from flask_boiler.registry import ModelRegistry

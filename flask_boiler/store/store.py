@@ -1,5 +1,5 @@
-from flask_boiler.fields import StructuralRef
-from flask_boiler.schema import SchemaBase
+from flask_boiler.mapper.fields import StructuralRef
+from flask_boiler.mapper.schema import SchemaBase
 from flask_boiler.firestore_object import FirestoreObjectValMixin
 from flask_boiler.models.base import Serializable
 

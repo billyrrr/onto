@@ -2,7 +2,7 @@ from .meta import SerializableMeta
 from ..registry import ModelRegistry
 from .mixin import Importable, NewMixin, Exportable
 from .utils import _collect_attrs
-from flask_boiler.schema import Schema
+from flask_boiler.mapper.schema import Schema
 
 
 class SimpleStore:

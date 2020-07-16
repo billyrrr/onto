@@ -3,7 +3,7 @@ import pytest
 from examples.meeting_room.domain_models import Meeting, User
 from examples.meeting_room.view_models.meeting_session import MeetingSession
 from flask_boiler.database import Snapshot
-from flask_boiler.mutation import PatchMutation
+from flask_boiler.view.mutation import PatchMutation
 from flask_boiler.query.query import ViewModelQuery
 from flask_boiler.view.document import \
     ViewMediatorDAV

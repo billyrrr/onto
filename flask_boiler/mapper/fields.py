@@ -6,7 +6,7 @@ import pytz
 from marshmallow import fields
 
 from flask_boiler.common import _NA
-from flask_boiler.helpers import RelationshipReference, EmbeddedElement
+from flask_boiler.mapper.helpers import RelationshipReference, EmbeddedElement
 
 from datetime import datetime
 

@@ -8,7 +8,7 @@ from flask_boiler.query.query_mixin import QueryMixin
 from flask_boiler.models.meta import SerializableMeta
 from flask_boiler.utils import random_id, doc_ref_from_str
 
-from flask_boiler import schema, fields
+from flask_boiler.mapper import schema, fields
 
 
 class PrimaryObjectSchema(schema.Schema):

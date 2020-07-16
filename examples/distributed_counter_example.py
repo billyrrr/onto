@@ -1,13 +1,14 @@
 from flask_boiler import fields
 from flask_boiler.store.store import BPSchema
 from flask_boiler.context import Context as CTX
-from flask_boiler.schema import Schema
-from flask_boiler.fields import Integer
+from flask_boiler.mapper.schema import Schema
+from flask_boiler.mapper.fields import Integer
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.store.struct import Struct
 from flask_boiler.view.document import ViewMediatorDAV
 from flask_boiler.view_model import ViewModel
 from flask_boiler import testing_utils
+
 
 class ShardSchema(Schema):
 

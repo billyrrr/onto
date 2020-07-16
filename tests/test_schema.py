@@ -6,7 +6,7 @@ from testfixtures import compare
 import flask_boiler.utils
 from flask_boiler import schema, fields
 from flask_boiler.errors import PropertyEvalError
-from flask_boiler.schema import Schema, BoilerProperty
+from flask_boiler.mapper.schema import Schema, BoilerProperty
 from flask_boiler.models.base import Serializable
 
 

@@ -2,7 +2,7 @@ from examples.meeting_room.domain_models import Ticket, User
 from examples.meeting_room.domain_models.location import Location
 from examples.meeting_room.domain_models.meeting import Meeting
 from flask_boiler import view_model, attrs
-from flask_boiler.mutation import PatchMutation
+from flask_boiler.view.mutation import PatchMutation
 from flask_boiler.store import Store, reference
 
 

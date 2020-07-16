@@ -4,7 +4,7 @@ from google.cloud.firestore import DocumentReference
 
 from examples.luggage_models import LuggageItem, Luggages
 from flask_boiler import fields, testing_utils
-from flask_boiler.schema import Schema
+from flask_boiler.mapper.schema import Schema
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.view_model import ViewModel
 from flask_boiler.collection_mixin import CollectionMixin

@@ -11,7 +11,7 @@ from flask_boiler.database import Reference, Snapshot, is_reference
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.models.factory import ClsFactory
 from flask_boiler.firestore_object import FirestoreObject
-from flask_boiler.helpers import RelationshipReference
+from flask_boiler.mapper.helpers import RelationshipReference
 from flask_boiler.primary_object import PrimaryObject
 from flask_boiler.query import run_transaction
 

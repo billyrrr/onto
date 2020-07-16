@@ -40,4 +40,3 @@ class LeancloudDatabase(Database):
         state = cla(id=object_id).destroy()
         if state is None:
             raise ValueError
-

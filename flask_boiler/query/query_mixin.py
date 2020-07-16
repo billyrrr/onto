@@ -1,5 +1,4 @@
-from flask_boiler.fields import argument, OBJ_TYPE_ATTR_NAME
-from flask_boiler.query import cmp
+from flask_boiler.mapper.fields import OBJ_TYPE_ATTR_NAME
 from flask_boiler.utils import snapshot_to_obj
 from flask_boiler.context import Context as CTX
 

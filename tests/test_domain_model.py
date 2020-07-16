@@ -13,7 +13,7 @@ from flask_boiler.config import Config
 from flask_boiler.context import Context as CTX
 
 from flask_boiler.domain_model import DomainModel
-from flask_boiler.schema import Schema, BasicSchema
+from flask_boiler.mapper.schema import Schema, BasicSchema
 from flask_boiler import fields, collection_mixin, attrs
 
 # For pytest, DO NOT DELETE

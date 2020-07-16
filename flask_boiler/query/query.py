@@ -3,7 +3,7 @@ from collections import namedtuple
 from typing import Optional, Tuple
 
 # from google.cloud.firestore import DocumentSnapshot, CollectionReference
-from flask_boiler.fields import argument, OBJ_TYPE_ATTR_NAME
+from flask_boiler.mapper.fields import argument, OBJ_TYPE_ATTR_NAME
 from google.cloud import firestore
 from . import cmp
 import weakref

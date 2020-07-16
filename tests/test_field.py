@@ -11,7 +11,7 @@ from unittest import mock
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.firestore_object import FirestoreObject, \
     _nest_relationship_import
-from flask_boiler.helpers import RelationshipReference
+from flask_boiler.mapper.helpers import RelationshipReference
 
 
 @pytest.fixture

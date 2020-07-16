@@ -2,10 +2,10 @@ from typing import Optional, Dict
 
 from marshmallow.utils import is_iterable_but_not_string
 
-from flask_boiler import fields, errors
+from flask_boiler import errors
+from flask_boiler.mapper import fields
 from flask_boiler.context import Context as CTX
-from flask_boiler.helpers import EmbeddedElement
-# from .base import BaseRegisteredModel, Serializable
+from flask_boiler.mapper.helpers import EmbeddedElement
 from ..common import _NA
 from ..database import Snapshot
 from ..registry import ModelRegistry
