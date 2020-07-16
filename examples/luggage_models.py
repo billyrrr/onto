@@ -1,5 +1,5 @@
 from flask_boiler import schema, fields, domain_model, view_model
-from flask_boiler.firestore_object import ClsFactory
+from flask_boiler.models.factory import ClsFactory
 
 Schema = schema.Schema
 

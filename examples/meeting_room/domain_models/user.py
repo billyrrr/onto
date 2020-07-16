@@ -1,4 +1,4 @@
-from flask_boiler import schema, fields, domain_model, factory, attrs
+from flask_boiler import domain_model, attrs
 
 
 class UserBase(domain_model.DomainModel):

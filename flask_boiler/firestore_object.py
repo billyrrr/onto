@@ -1,10 +1,7 @@
-import warnings
-
 # from google.cloud.firestore import DocumentReference
 from google.cloud.firestore import Transaction
 # from google.cloud.firestore_v1 import WriteOption, LastUpdateOption
 
-from flask_boiler import fields
 from flask_boiler.common import _NA
 from flask_boiler.database import Snapshot, Reference
 from flask_boiler.helpers import RelationshipReference
@@ -12,10 +9,8 @@ from flask_boiler.helpers import RelationshipReference
 from flask_boiler.models.mixin import resolve_obj_cls
 from flask_boiler.registry import ModelRegistry
 from flask_boiler.models.base import Serializable
-from flask_boiler.snapshot_container import SnapshotContainer
 from flask_boiler.utils import snapshot_to_obj
 from flask_boiler.context import Context as CTX
-from flask_boiler.factory import ClsFactory
 
 
 class FirestoreObjectMixin:
@@ -160,58 +155,6 @@ def _get_snapshots(transaction, **kwargs):
     :return:
     """
     return CTX.db.get_many(transaction=transaction, **kwargs)
-
-
-class RelationshipStore:
-
-    def __init__(self):
-        self.tasks = dict()  # TODO: Watch out for when (doc_ref, obj_type_super) and (doc_ref, obj_type_sub) are both in the set; the objects will be equivalent, but initialized twice under the current plan
-        self.visited = set()
-        self.container = SnapshotContainer()
-        self.object_container = dict()
-        self.saved = set()
-
-    def insert(self, *, doc_ref, obj_type) -> None:
-        """
-        TODO: implement obj_type kwarg or toss it
-        :param doc_ref:
-        :param obj_type:
-        :return:
-        """
-        if doc_ref in self.tasks or doc_ref in self.visited:
-            return
-        self.tasks[doc_ref] = obj_type
-        self.visited.add(doc_ref)
-
-    def refresh(self, transaction, get_snapshots=_get_snapshots):
-
-        while len(self.tasks) != 0:
-
-            refs = list()
-            for doc_ref in self.tasks:
-                refs.append(doc_ref)
-
-            res = get_snapshots(refs=refs, transaction=transaction)
-            for ref, doc in res:
-                self.container.set(key=ref, val=doc)
-
-            # for doc in res:
-                obj_type = self.tasks[ref]
-                del self.tasks[ref]
-
-                d = doc.to_dict()
-                obj_cls = resolve_obj_cls(cls=obj_type, d=d)
-
-                schema_obj = obj_cls.get_schema_obj()
-                d = schema_obj.load(d)
-                d = obj_cls._import_from_dict(d, transaction=transaction, _store=self)
-
-                instance = obj_cls.new(**d, transaction=transaction)
-                self.object_container[ref] = instance
-
-    def retrieve(self, *, doc_ref, obj_type):
-        snapshot = self.container.get(key=doc_ref)
-        return obj_type.from_snapshot(ref=doc_ref, snapshot=snapshot)
 
 
 class FirestoreObjectValMixin:

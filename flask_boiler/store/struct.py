@@ -1,5 +1,5 @@
 from collections import UserDict, namedtuple
-from .snapshot_container import SnapshotContainer
+from flask_boiler.store.snapshot_container import SnapshotContainer
 
 struct_ref = namedtuple(
     'struct_ref', ['dm_cls', 'id', 'ref', 'snapshot', 'obj'],

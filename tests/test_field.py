@@ -1,26 +1,17 @@
-import functools
-from _weakref import ProxyType
 from collections import UserDict, UserList
 
 import pytest
 
-from flask_boiler import utils, fields, attrs
+from flask_boiler import fields, attrs
 from flask_boiler import schema as fb_schema
-from flask_boiler import fields as fb_fields
 from marshmallow import fields as marshmallow_fields, schema
 
 from unittest import mock
 
-from flask_boiler.common import _NA
 from flask_boiler.domain_model import DomainModel
-from flask_boiler.factory import ClsFactory
 from flask_boiler.firestore_object import FirestoreObject, \
-    _nest_relationship_import, RelationshipStore
+    _nest_relationship_import
 from flask_boiler.helpers import RelationshipReference
-from flask_boiler.models.base import Serializable
-from flask_boiler.snapshot_container import SnapshotContainer
-
-from .fixtures import CTX
 
 
 @pytest.fixture
@@ -68,7 +59,7 @@ def test_relationship_many(CTX):
     assert res == [RelationshipReference(nested=False, doc_ref=doc_ref_1),
                    RelationshipReference(nested=False, doc_ref=doc_ref_2)]
 
-
+    from flask_boiler.models.factory import ClsFactory
     ContainsIterable = ClsFactory.create(
         "ContainsIterable",
         schema=ContainsIterableSchema,
@@ -175,7 +166,8 @@ def test_proxy(CTX):
     doc_ref = CTX.db.document('A/a')
     doc_ref.set(dict(foo='bar'))
 
-    s = RelationshipStore()
+    from flask_boiler.store import Gallery
+    s = Gallery()
 
     from google.cloud.firestore import transactional
     @transactional

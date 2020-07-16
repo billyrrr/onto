@@ -1,18 +1,14 @@
-import functools
 import typing
-import warnings
 from collections import namedtuple
 
 import iso8601
 import pytz
-from google.cloud.firestore import DocumentReference
 from marshmallow import fields
 
 from flask_boiler.common import _NA
 from flask_boiler.helpers import RelationshipReference, EmbeddedElement
 
 from datetime import datetime
-from math import inf
 
 from marshmallow import utils as mutils
 
@@ -22,7 +18,6 @@ from flask_boiler.registry import ModelRegistry
 # Note that this may result in defect where business data reaches
 #   this maximum.
 # from flask_boiler.models.meta import ModelRegistry
-from flask_boiler.struct import struct_ref
 
 _POS_INF_APPROX = 2 ** 63 - 1
 _NEGATIVE_INF_APPROX = -2 ** 63
@@ -413,6 +408,7 @@ class StructuralRef(ObjClsMixin, fields.Str, Field):
         if value is None:
             return None
             # raise ValueError
+        from flask_boiler.store.struct import struct_ref
 
         if isinstance(value, list) and self.many:
 

@@ -1,18 +1,11 @@
-import time
-from functools import partial
 from itertools import count
 
 import pytest as pytest
 
-from flask_boiler import schema, fields, view_model, view
+from flask_boiler import schema, fields, view_model
 
-from flask import Flask
-
-from flask_boiler.struct import Struct
-from tests.color_fixtures import Color, PaletteViewModel, vm, color_refs, \
-    RainbowStoreBpss
-from tests.fixtures import setup_app
-from .fixtures import CTX
+from flask_boiler.store.struct import Struct
+from tests.color_fixtures import Color, PaletteViewModel, RainbowStoreBpss
 
 
 @pytest.fixture

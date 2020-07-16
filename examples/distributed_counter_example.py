@@ -1,11 +1,10 @@
 from flask_boiler import fields
-from flask_boiler.business_property_store import BPSchema
-from flask_boiler.config import Config
+from flask_boiler.store.store import BPSchema
 from flask_boiler.context import Context as CTX
 from flask_boiler.schema import Schema
 from flask_boiler.fields import Integer
 from flask_boiler.domain_model import DomainModel
-from flask_boiler.struct import Struct
+from flask_boiler.store.struct import Struct
 from flask_boiler.view.document import ViewMediatorDAV
 from flask_boiler.view_model import ViewModel
 from flask_boiler import testing_utils
@@ -93,9 +92,6 @@ class CounterMediator(ViewMediatorDAV):
 """
 Reserved for testing 
 """
-
-import pytest
-import time
 
 
 def test_counter():

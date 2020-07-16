@@ -25,20 +25,6 @@ def to_ref(dm_cls, dm_doc_id):
     return CTX.db.make_document_path(doc_ref)
 
 
-class BPSchema(SchemaBase):
-
-    @classmethod
-    def from_dict(cls, fields, name):
-        for _, val in fields.items():
-            if not issubclass(val.__class__, StructuralRef):
-                raise TypeError
-        return super().from_dict(fields=fields, name=name)
-
-    @property
-    def structural_ref_fields(self):
-        return [fd for _, fd in self.fields.items() if isinstance(fd, StructuralRef)]
-
-
 class BusinessPropertyStore:
 
     @classmethod
@@ -128,9 +114,3 @@ class BusinessPropertyStore:
 
         return dict(g), dict(gr), manifest
 
-
-class SimpleStore:
-    """
-    To store simple business properties
-    """
-    pass

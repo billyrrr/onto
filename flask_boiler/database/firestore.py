@@ -11,7 +11,7 @@ from google.cloud.firestore_v1.document import _get_document_path, \
 # TODO: NOTE maximum of 1 firestore client allowed since we used a global var.
 from typing import List
 from flask_boiler.query.query import Query
-from flask_boiler.snapshot_container import SnapshotContainer
+from flask_boiler.store.snapshot_container import SnapshotContainer
 from math import inf
 
 class FirestoreReference(Reference):

@@ -1,11 +1,9 @@
 from examples.meeting_room.domain_models.user import User
 from examples.meeting_room.domain_models.meeting import Meeting
 from examples.meeting_room.view_models import MeetingSession
-from flask_boiler import fields, schema, view_model, view, attrs
-from flask_boiler.business_property_store import BPSchema
+from flask_boiler import view_model, attrs
 from flask_boiler.context import Context as CTX
 from flask_boiler.store import Store, reference
-from flask_boiler.struct import Struct
 
 
 class UserStore(Store):

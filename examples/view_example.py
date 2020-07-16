@@ -7,11 +7,8 @@ from flask_boiler import attrs
 from flask import Flask
 from flasgger import Swagger
 
-from flask_boiler import fields
 from flask_boiler.models.base import Serializable
 from flask_boiler.view import rest_api
-from flask_boiler.schema import Schema
-from flask_boiler.firestore_object import ClsFactory
 from flask_boiler.view_model import ViewModel
 
 

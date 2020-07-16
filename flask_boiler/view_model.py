@@ -1,20 +1,10 @@
 import threading
-from typing import Dict, Tuple, Callable
 
-from dictdiffer import diff, patch
 from google.cloud.firestore import DocumentReference
 
-from flask_boiler.business_property_store import BusinessPropertyStore, to_ref
-from flask_boiler.snapshot_container import SnapshotContainer
-from flask_boiler.watch import DataListener
 from .context import Context as CTX
-from .domain_model import DomainModel
-from flask_boiler.referenced_object import ReferencedObject
 from .models.base import Serializable
-from .store import Store
-from .struct import Struct
-from .business_property_store import BPSchema
-from .utils import random_id, snapshot_to_obj
+from .utils import random_id
 
 
 class PersistableMixin:

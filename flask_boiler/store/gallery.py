@@ -1,7 +1,6 @@
 from typing import List
 from flask_boiler.database import Reference, Snapshot
-from flask_boiler.models.mixin import resolve_obj_cls
-from flask_boiler.snapshot_container import SnapshotContainer
+from flask_boiler.store.snapshot_container import SnapshotContainer
 from flask_boiler.context import Context as CTX
 
 

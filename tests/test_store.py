@@ -33,7 +33,6 @@ def test_init():
 
     print(s)
 
-    from flask_boiler.struct import Struct
     struct = dict()
     struct['u'] = (U, 'foo')
     struct['v'] = (V, 'bar')

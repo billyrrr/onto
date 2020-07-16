@@ -1,4 +1,4 @@
-from flask_boiler import domain_model, schema, fields, factory, attrs
+from flask_boiler import domain_model, attrs
 
 
 class LocationBase(domain_model.DomainModel):

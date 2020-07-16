@@ -1,15 +1,13 @@
 import pytest as pytest
 from google.type.color_pb2 import Color
 
-from flask_boiler import schema, fields, domain_model, view_model, factory, \
+from flask_boiler import schema, fields, domain_model, view_model, \
     attrs
-from flask_boiler.business_property_store import BPSchema
+from flask_boiler.store.store import BPSchema
 from flask_boiler.registry import ModelRegistry
-from flask_boiler.struct import Struct
-from flask_boiler.utils import random_id
+from flask_boiler.store.struct import Struct
 from flask_boiler.view_model import ViewModel
-from .fixtures import setup_app
-
+from flask_boiler.models import factory
 
 class ColorSchema(schema.Schema):
     name = fields.Str()

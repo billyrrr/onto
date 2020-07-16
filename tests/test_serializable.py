@@ -8,7 +8,6 @@ import json
 import pytest as pytest
 from functools import lru_cache
 
-import flask_boiler.factory
 import flask_boiler.models.base
 from flask_boiler import view_model, schema, fields
 
@@ -93,7 +92,8 @@ def test__additional_fields(ModelASchema, ModelA):
     assert hasattr(obj_a, "int_a")
     assert not hasattr(obj_a, "int_aa")
 
-    ModelAA = flask_boiler.factory.ClsFactory.create(
+    from flask_boiler.models.factory import ClsFactory
+    ModelAA = ClsFactory.create(
         name="ModelAA",
         schema=ModelAASchema
     )
@@ -134,7 +134,8 @@ def test_multiple_inheritance(ModelASchema):
     class ModelABSchema(ModelASchema, ModelBSchema):
         pass
 
-    ModelAB = flask_boiler.factory.ClsFactory.create(
+    from flask_boiler.models.factory import ClsFactory
+    ModelAB = ClsFactory.create(
         name="ModelAB",
         schema=ModelABSchema
     )

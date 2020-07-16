@@ -1,4 +1,4 @@
-from flask_boiler import schema, fields, factory
+from flask_boiler import schema, fields
 
 
 def test_create():
@@ -9,7 +9,8 @@ def test_create():
     class ModelAASchema(ModelASchema):
         int_aa = fields.Integer(load_from="intAA", dump_to="intAA")
 
-    ModelAA = factory.ClsFactory.create(
+    from flask_boiler.models.factory import ClsFactory
+    ModelAA = ClsFactory.create(
         name="ModelAA",
         schema=ModelAASchema
     )
@@ -24,7 +25,8 @@ def test_create_with_new():
     class ModelACSchema(schema.Schema):
         int_a = fields.Integer(load_from="intA", dump_to="intA")
 
-    ModelAC = factory.ClsFactory.create_customized(
+    from flask_boiler.models.factory import ClsFactory
+    ModelAC = ClsFactory.create_customized(
         name="ModelAC",
         schema=ModelACSchema,
         importable=False,
@@ -41,7 +43,8 @@ def test_create_with_new_exportable():
     class ModelACSchema(schema.Schema):
         int_a = fields.Integer(load_from="intA", dump_to="intA")
 
-    ModelAC = factory.ClsFactory.create_customized(
+    from flask_boiler.models.factory import ClsFactory
+    ModelAC = ClsFactory.create_customized(
         name="ModelAC",
         schema=ModelACSchema,
         importable=False,

@@ -12,10 +12,7 @@ from google.cloud.firestore import Query, DocumentReference, \
 from flask_boiler.config import Config
 from flask_boiler.context import Context as CTX
 
-from flask_boiler.firestore_object import ClsFactory
 from flask_boiler.domain_model import DomainModel
-from flask_boiler.schema import Schema
-from flask_boiler import fields, collection_mixin
 from flask_boiler import attrs
 
 # For pytest, DO NOT DELETE
