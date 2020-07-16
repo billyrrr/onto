@@ -22,6 +22,7 @@ from flask_boiler.registry import ModelRegistry
 # Note that this may result in defect where business data reaches
 #   this maximum.
 # from flask_boiler.models.meta import ModelRegistry
+from flask_boiler.struct import struct_ref
 
 _POS_INF_APPROX = 2 ** 63 - 1
 _NEGATIVE_INF_APPROX = -2 ** 63
@@ -389,24 +390,24 @@ class StructuralRef(ObjClsMixin, fields.Str, Field):
         super().__init__(*args, missing=missing, **kwargs)
         self.many = many
 
-    # def _serialize(self, value, *args, **kwargs):
-    #     if value is None:
-    #         return None
-    #         # raise ValueError
-    #
-    #     if isinstance(value, list) and self.many:
-    #         return [self._serialize(val, *args, **kwargs) for val in value]
-    #     elif isinstance(value, dict) and self.many:
-    #         val_d = dict()
-    #         for k, v in value.items():
-    #             val_d[k] = self._serialize(v, *args, **kwargs)
-    #         return val_d
-    #
-    #     if isinstance(value, DocumentReference):
-    #         # Note that AssertionError is not always thrown
-    #         return RelationshipReference(doc_ref=value, nested=True)
-    #     else:
-    #         return RelationshipReference(obj=value, nested=True)
+    def _serialize(self, value, *args, **kwargs):
+        if value is None:
+            return None
+            # raise ValueError
+
+        if isinstance(value, list) and self.many:
+            return [self._serialize(val, *args, **kwargs) for val in value]
+        elif isinstance(value, dict) and self.many:
+            val_d = dict()
+            for k, v in value.items():
+                val_d[k] = self._serialize(v, *args, **kwargs)
+            return val_d
+
+        # if isinstance(value, DocumentReference):
+        #     # Note that AssertionError is not always thrown
+        #     return RelationshipReference(doc_ref=value, nested=True)
+        # else:
+        return RelationshipReference(obj=value, nested=True)
 
     def _deserialize(self, value, *args, **kwargs):
         if value is None:
@@ -414,21 +415,60 @@ class StructuralRef(ObjClsMixin, fields.Str, Field):
             # raise ValueError
 
         if isinstance(value, list) and self.many:
+
             return [self._deserialize(val, *args, *kwargs) for val in value]
+
         elif isinstance(value, dict) and self.many:
+
             val_d = dict()
             for k, v in value.items():
                 val_d[k] = self._deserialize(v, *args, **kwargs)
             return val_d
 
-        # assert isinstance(value, DocumentReference)
-        dm_cls, doc_id = value
-        doc_ref = self.obj_cls.ref_from_id(doc_id=doc_id)
-        return RelationshipReference(
-            doc_ref=doc_ref,
-            nested=True,
-            obj_type=dm_cls
-        )
+        elif isinstance(value, struct_ref):
+
+            if value.snapshot is not None and value.ref is not None:
+                dm_cls, snapshot, ref = value.dm_cls, value.snapshot, value.ref
+                obj = dm_cls.from_snapshot(ref=ref, snapshot=snapshot)
+                return RelationshipReference(
+                    obj=obj,
+                    nested=True,
+                    obj_type=dm_cls
+                )
+            elif value.obj is not None:
+                obj = value.obj
+                return RelationshipReference(
+                    obj=obj,
+                    nested=True,
+                    obj_type=obj.__class__
+                )
+            elif value.doc_ref is not None:
+                dm_cls, doc_ref = value.dm_cls, value.ref
+                return RelationshipReference(
+                    doc_ref=doc_ref,
+                    nested=True,
+                    obj_type=dm_cls
+                )
+            elif value.doc_id is not None:
+                dm_cls, doc_id = value.dm_cls, value.id
+                doc_ref = self.obj_cls.ref_from_id(doc_id=doc_id)
+                return RelationshipReference(
+                    doc_ref=doc_ref,
+                    nested=True,
+                    obj_type=dm_cls
+                )
+            else:
+                raise ValueError
+
+        else:
+
+            dm_cls, doc_id = value
+            doc_ref = self.obj_cls.ref_from_id(doc_id=doc_id)
+            return RelationshipReference(
+                doc_ref=doc_ref,
+                nested=True,
+                obj_type=dm_cls
+            )
 
 
 class Embedded(ObjClsMixin, fields.Raw, Field):

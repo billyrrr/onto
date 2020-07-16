@@ -36,6 +36,5 @@ class FirestoreSource(Source):
 
     def _call(self, container):
         for func_name, ref, snapshot in self.delta(container):
-            fname = self.protocol.fname_of(func_name)
-            f = getattr(self.parent()(), fname)
-            f(ref=ref, snapshot=snapshot)
+            self._invoke_mediator(
+                func_name=func_name, ref=ref, snapshot=snapshot)

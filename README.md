@@ -93,6 +93,27 @@ See ```examples/meeting_room/view_models``` on how to use flask-boiler
 to expose a "view model" in firestore that can be queried directly 
 by front end without aggregation.  
 
+### Processor Modes
+
+`flask-boiler` is essentially a framework for source-sink operations: 
+
+```
+Source(s) -> Processor -> Sink(s)
+```
+
+Take query as an example, 
+
+- Boiler
+- NoSQL
+- Flink
+    - staticmethods: converts to UDF
+    - classmethods: converts to operators and aggregator's 
+    
+Why would you choose `flask-boiler` over the protocols and frameworks it is employing? 
+- You can exchange components such as transportion protocols 
+- You will write code based on use case  
+
+
 ### Save data
 
 ```python

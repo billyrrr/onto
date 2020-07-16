@@ -112,7 +112,7 @@ class ViewModelQuery(QueryBase):
 
     def __init__(self, parent=None, **kwargs):
         self.parent = parent
-        super().__init__( **kwargs)
+        super().__init__(**kwargs)
 
     def _to_firestore_query(self):
         """ Returns a query with parent=cls._get_collection(), and

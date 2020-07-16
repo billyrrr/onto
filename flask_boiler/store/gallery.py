@@ -1,8 +1,8 @@
 from typing import List
-
-from flask_boiler.database import Reference
+from flask_boiler.database import Reference, Snapshot
 from flask_boiler.models.mixin import resolve_obj_cls
 from flask_boiler.snapshot_container import SnapshotContainer
+from flask_boiler.context import Context as CTX
 
 
 class Gallery:
@@ -12,7 +12,7 @@ class Gallery:
         self.visited = set()
         self.container = SnapshotContainer()
         self.object_container = dict()
-        self.saved = set()
+        self.save_tasks = dict()
 
     def insert(self, *, doc_ref, obj_type) -> None:
         """
@@ -25,6 +25,21 @@ class Gallery:
             return
         self.tasks[doc_ref] = obj_type
         self.visited.add(doc_ref)
+
+    def save_later(self, obj, transaction=None, **kwargs):
+        forward_kwargs = dict(kwargs, transaction=transaction)
+        if obj.doc_ref not in self.save_tasks:
+            self.save_tasks[obj.doc_ref] = (obj, forward_kwargs)
+        else:
+            # TODO: implement
+            # TODO: add logic for checking changes
+            pass
+
+    def save(self):
+        for _, (obj, kwargs) in self.save_tasks.items():
+            d = obj._export_as_dict(**kwargs)
+            snapshot = Snapshot(d)
+            CTX.db.set(snapshot=snapshot, ref=obj.doc_ref, transaction=kwargs['transaction'])
 
     @staticmethod
     def _get_snapshots_with_listener(refs: List[Reference]):
@@ -66,18 +81,23 @@ class Gallery:
                 # for doc in res:
                 obj_type = self.tasks[ref]
                 del self.tasks[ref]
+                instance = obj_type.from_snapshot(
+                    ref=ref, snapshot=doc, _store=self)
 
-                d = doc.to_dict()
-                obj_cls = resolve_obj_cls(cls=obj_type, d=d)
-
-                schema_obj = obj_cls.get_schema_obj()
-                d = schema_obj.load(d)
-                d = obj_cls._import_from_dict(d, transaction=transaction,
-                                              _store=self)
-
-                instance = obj_cls.new(**d, transaction=transaction)
+                # d = doc.to_dict()
+                # obj_cls = resolve_obj_cls(cls=obj_type, d=d)
+                #
+                # schema_obj = obj_cls.get_schema_obj()
+                # d = schema_obj.load(d)
+                # d = obj_cls._import_from_dict(d, transaction=transaction,
+                #                               _store=self)
+                #
+                # instance = obj_cls.new(
+                #     **d, transaction=transaction)
                 self.object_container[ref] = instance
 
     def retrieve(self, *, doc_ref, obj_type):
-        snapshot = self.container.get(key=doc_ref)
-        return obj_type.from_snapshot(ref=doc_ref, snapshot=snapshot)
+        if doc_ref not in self.object_container:
+            snapshot = self.container.get(key=doc_ref)
+            self.object_container[doc_ref] = obj_type.from_snapshot(ref=doc_ref, snapshot=snapshot)
+        return self.object_container[doc_ref]

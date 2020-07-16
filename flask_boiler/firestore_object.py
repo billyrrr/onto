@@ -20,17 +20,14 @@ from flask_boiler.factory import ClsFactory
 
 class FirestoreObjectMixin:
 
-    def __init__(self, *args, doc_ref=_NA, transaction=_NA, _store=None, **kwargs):
+    def __init__(self, *args, doc_ref=None, transaction=_NA, **kwargs):
 
         if transaction is _NA:
             transaction = CTX.transaction_var.get()
 
         self._doc_ref = doc_ref
         self.transaction = transaction
-        if _store is None:
-            from flask_boiler.store import Gallery
-            _store = Gallery()
-        self._store = _store
+
         super().__init__(*args, **kwargs)
 
     # def get_firestore_ref(self):
@@ -61,7 +58,7 @@ class FirestoreObjectMixin:
         return obj
 
     @classmethod
-    def from_snapshot(cls, ref, snapshot=None):
+    def from_snapshot(cls, ref, snapshot=None, **kwargs):
         """ Deserializes an object from a Document Snapshot.
 
         :param snapshot: Firestore Snapshot
@@ -69,7 +66,7 @@ class FirestoreObjectMixin:
         # if not snapshot.exists:
         #     return None
 
-        obj = cls.from_dict(d=snapshot.to_dict(), doc_ref=ref)
+        obj = cls.from_dict(d=snapshot.to_dict(), doc_ref=ref, **kwargs)
         return obj
 
     def to_snapshot(self):
@@ -78,7 +75,7 @@ class FirestoreObjectMixin:
     def save(self,
              transaction: Transaction=_NA,
              doc_ref=None,
-             _store=None,
+             _store=_NA,
              ):
         """ Save an object to Firestore
 
@@ -94,7 +91,14 @@ class FirestoreObjectMixin:
         if doc_ref is None:
             doc_ref = self.doc_ref
 
+        if _store is _NA:
+            if issubclass(self.__class__, FirestoreObjectValMixin):
+                _store = self._store
+            else:
+                _store = None
+
         d = self._export_as_dict(transaction=transaction, _store=_store)
+        _store.save()
         snapshot = Snapshot(d)
         CTX.db.set(snapshot=snapshot, ref=doc_ref, transaction=transaction)
 
@@ -117,6 +121,9 @@ def _nest_relationship_import(rr, _store):
     :param container:
     :return:
     """
+    if rr.obj is not None:
+        return rr.obj
+
     doc_ref, obj_type = rr.doc_ref, rr.obj_type
     if isinstance(obj_type, str):
         obj_type = ModelRegistry.get_cls_from_name(obj_type)
@@ -208,24 +215,31 @@ class RelationshipStore:
 
 
 class FirestoreObjectValMixin:
+    """
+    Subclasses of this class can hold FirestoreObject as an attribute
+    """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, _store=_NA, **kwargs):
+
+        if _store is _NA:
+            """ NOTE: This branch should only be invoked for objects that are 
+                created with new and never retrieved from datastore.
+            """
+            from flask_boiler.store import Gallery
+            _store = Gallery()
+
+        self._store = _store
         super().__init__(*args, **kwargs)
 
     def _export_val(self, val, transaction=None, _store=None):
 
         def nest_relationship(obj):
-            def _save():
-                if transaction is None:
-                    obj.save(_store=_store)
-                else:
-                    obj.save(transaction=transaction, _store=_store)
+            if _store is None:
+                # TODO: change
+                obj.save(transaction=transaction)
+            else:
+                _store.save_later(obj, transaction=transaction)
 
-            if _store is not None and obj.doc_ref not in _store.saved:
-                _store.saved.add(obj.doc_ref)
-                _save()
-            elif _store is None:
-                _save()
             return str(obj.doc_ref)
 
         if isinstance(val, RelationshipReference):
@@ -263,14 +277,21 @@ class FirestoreObjectValMixin:
     #     else:
     #         return super()._export_val_view(val)
 
-    def _export_as_dict(self, transaction=None, _store=None, **kwargs):
-        if transaction is None:
-            transaction = self.transaction
-        if _store is None:
-            _store = self._store
+    def _export_as_dict(self, transaction=None, _store=_NA, **kwargs):
 
-        return super()._export_as_dict(**kwargs,
-                                       transaction=transaction, _store=_store)
+        d = self.schema_obj.dump(self)
+
+        if _store is _NA:
+            from flask_boiler.store import Gallery
+            _store = self._store
+            res = self._export_val(d, transaction=transaction, _store=_store,
+                                   **kwargs)
+            _store.refresh(transaction=transaction)
+        else:
+            res = self._export_val(d, transaction=transaction, _store=_store,
+                                   **kwargs)
+
+        return res
 
     # def _export_val_view(self, val):
     #
@@ -297,8 +318,10 @@ class FirestoreObjectValMixin:
                 return _nest_relationship_import(val, _store=_store)
             elif not val.nested and val.doc_ref is not None:
                 return val.doc_ref
+            elif val.nested and val.obj is not None:
+                return _nest_relationship_import(val, _store=_store)
             else:
-                return None
+                raise ValueError
         else:
             return super()._import_val(val, transaction=transaction, _store=_store)
 
@@ -312,12 +335,14 @@ class FirestoreObjectValMixin:
         else:
             res = cls._import_val(d, transaction=transaction, _store=_store,
                                   **kwargs)
+        res['_store'] = _store
         return res
 
     @classmethod
     def from_dict(
             cls,
             d,
+            _store=_NA,
             transaction=None,
             **kwargs):
         """ Deserializes an object from a dictionary.
@@ -328,7 +353,17 @@ class FirestoreObjectValMixin:
             related documents, and for saving this object.
         :param kwargs: Keyword arguments to be forwarded to new
         """
-        return super().from_dict(d, transaction=transaction, **kwargs)
+
+        obj_cls = resolve_obj_cls(cls=cls, d=d)
+
+        schema_obj = obj_cls.get_schema_obj()
+        d = schema_obj.load(d)
+
+        d = cls._import_from_dict(d, _store=_store, transaction=transaction)
+
+        instance = obj_cls.new(**d, **kwargs)
+        # TODO: fix unexpected arguments
+        return instance
 
 
 class FirestoreObject(FirestoreObjectValMixin,

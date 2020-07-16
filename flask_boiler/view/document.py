@@ -85,5 +85,3 @@ class ViewMediatorDAV(ViewMediatorBase):
 
     def generate_entries(self):
         raise NotImplementedError
-
-

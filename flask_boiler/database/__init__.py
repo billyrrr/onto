@@ -165,3 +165,9 @@ class Listener:
     @classmethod
     def for_refs(cls):
         pass
+
+def is_reference(val):
+    return issubclass(val.__class__, Reference)
+
+def is_snapshot(val):
+    return issubclass(val.__class__, Snapshot)

@@ -98,7 +98,7 @@ class ViewModelMixin:
 
         :return:
         """
-        raise NotImplementedError
+        self.store.propagate_back()
 
     def wait_for_first_success(self):
         """ Blocks a thread until self.has_first_success is True.
@@ -121,9 +121,15 @@ class ViewModelMixin:
                 (Ex. When all relevant changes made in a single transaction
                     from another server has been loaded into the object.
                 )
+            NOTE: if f_notify is not set has_first_success will still
+                be set to True, and wait_for_first_success() will return
+                exactly after _notify is called (which is empty).
         """
         if self.f_notify is not None:
             self.f_notify(obj=self)
+        with self.success_condition:
+            self.success_condition.notify()
+            self.has_first_success = True
 
     def to_view_dict(self):
         # with self.lock:

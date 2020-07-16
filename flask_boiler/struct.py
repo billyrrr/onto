@@ -1,5 +1,9 @@
-from collections import UserDict
+from collections import UserDict, namedtuple
 from .snapshot_container import SnapshotContainer
+
+struct_ref = namedtuple(
+    'struct_ref', ['dm_cls', 'id', 'ref', 'snapshot', 'obj'],
+    defaults=[None, None, None, None, None])
 
 
 class Struct(UserDict):

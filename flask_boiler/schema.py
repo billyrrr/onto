@@ -122,6 +122,7 @@ class Schema(SchemaBase):
     obj_type: fields.Function
         Exports and imports class name of an instance for differentiating
             different subclasses of PrimaryObject in the same collection.
+    TODO: change, now doc_ref
     doc_id: firestore document id
         Caution: probable pitfall; doc_id won't be valid if obj is
             not a subclass of firestore object; watch out for strange

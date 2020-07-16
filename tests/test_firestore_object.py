@@ -7,17 +7,20 @@ from testfixtures import compare
 from flask_boiler import schema, fields, attrs
 from flask_boiler.context import Context as CTX
 from flask_boiler.config import Config
-from flask_boiler.database import Reference, Snapshot
+from flask_boiler.database import Reference, Snapshot, is_reference
 from flask_boiler.domain_model import DomainModel
-from flask_boiler.firestore_object import FirestoreObject, \
-    ClsFactory, RelationshipStore
+from flask_boiler.firestore_object import FirestoreObject, ClsFactory
 from flask_boiler.helpers import RelationshipReference
 from flask_boiler.primary_object import PrimaryObject
 from flask_boiler.query import run_transaction
 
 
 # Creates a schema for serializing and deserializing to firestore database
-class TestObjectSchema(schema.Schema):
+from flask_boiler.primary_object import PrimaryObjectSchema
+from flask_boiler.store.gallery import Gallery
+
+
+class TestObjectSchema(PrimaryObjectSchema):
     # Describes how obj.int_a is read from and stored to a document in firestore
     int_a = fields.Raw(
         # load_from="intA",
@@ -104,7 +107,7 @@ def test_import_nested():
     Import document reference from database as object 
     """
     with patch.object(CTX.db, 'get', return_value=snapshot) as mock_method:
-        store = RelationshipStore()
+        store = Gallery()
         field_deserialized = RelationshipReference(
             nested=True,
             doc_ref=doc_ref,
@@ -126,10 +129,10 @@ def test_import_nested():
             issues. 
     """
     with patch.object(CTX.db, 'get', return_value=snapshot) as mock_method:
-        obj = ContainsNested()
+        obj = ContainsNested.new()
         obj.inner = obj  # An example of circularly referenced object
         obj.save()
-        store = RelationshipStore()
+        store = Gallery()
         d = {'obj_type': 'ContainsNested', 'doc_ref': 'primary/test_document_0', 'inner': RelationshipReference(nested=True, doc_ref=obj.doc_ref)}
         ContainsNested._import_from_dict(d=d, _store=store)
         assert isinstance(res, TestObject)
@@ -146,7 +149,7 @@ def test_import_nested():
             doc_ref=doc_ref,
             obj_type=ContainsNested
         )
-        store = RelationshipStore()
+        store = Gallery()
 
         res = obj._import_val(
             val=field_deserialized, _store=store)
@@ -166,12 +169,12 @@ def test_export_nested():
 
     transaction = CTX.db.transaction()
     doc_ref = inner.doc_ref
-    snapshot = doc_ref.get()
+    # snapshot = doc_ref.get()
 
     """
     Export value 
     """
-    with patch.object(doc_ref, 'set', return_value=None) as mock_method:
+    with patch.object(CTX.db, 'set', return_value=None) as mock_method:
         obj = ContainsNested.new(inner=inner)
 
         field_deserialized = RelationshipReference(
@@ -179,13 +182,13 @@ def test_export_nested():
             obj=obj.inner
         )
         res = obj._export_val(val=field_deserialized)
-        assert isinstance(res, DocumentReference)
-        mock_method.assert_called_once()
+        assert isinstance(res, str)
+        assert mock_method.call_args == call(snapshot=inner.to_snapshot(), ref=doc_ref, transaction=None)
 
     """
     Set object in relationship reference with transaction
     """
-    with patch.object(Transaction, 'set', return_value=None) as mock_method:
+    with patch.object(CTX.db, 'set', return_value=None) as mock_method:
         obj = ContainsNested.new(inner=inner, transaction=transaction)
 
         field_deserialized = RelationshipReference(
@@ -194,59 +197,65 @@ def test_export_nested():
         )
         res = obj._export_val(
             val=field_deserialized, transaction=transaction)
-        assert isinstance(res, DocumentReference)
-        mock_method.assert_called_once()
+        assert isinstance(res, str)
+        assert mock_method.call_args == call(snapshot=inner.to_snapshot(), ref=doc_ref, transaction=transaction)
 
-    with patch.object(Transaction, 'set', return_value=None) as mock_method:
-        obj = ContainsNested.new(inner=inner, transaction=transaction)
-        obj._export_as_dict(transaction=transaction)
-        assert mock_method.call_args == call(document_data=inner._export_as_dict(), reference=doc_ref)
+    # with patch.object(CTX.db, 'set', return_value=None) as mock_method:
+    #     obj = ContainsNested.new(inner=inner, transaction=transaction)
+    #     obj.save(transaction=transaction)
+    #     assert mock_method.call_args == call(snapshot=inner.to_snapshot(), ref=doc_ref, transaction=transaction)
+    #
+    # with patch.object(CTX.db, 'set', return_value=None) as mock_method:
+    #
+    #     # global primary_doc_ref
+    #     obj = ContainsNested.new(inner=inner, transaction=transaction, doc_ref=primary_doc_ref)
+    #     obj._export_as_dict(transaction=transaction)
+    #
+    #     # do_stuffs()
+    #
+    #     assert mock_method.call_args == call(snapshot=inner._export_as_dict(), ref=doc_ref, transaction=transaction)
 
-    with patch.object(Transaction, 'set', return_value=None) as mock_method:
+    # with patch.object(CTX.db, 'set', return_value=None) as mock_method:
+    #     transaction_invoked = None
+    #
+    #     @run_transaction
+    #     def do_stuffs(transaction: Transaction):
+    #         global primary_doc_ref
+    #         nonlocal transaction_invoked
+    #         transaction_invoked = transaction
+    #         obj = ContainsNested.new(inner=inner, transaction=transaction, doc_ref=primary_doc_ref)
+    #         obj.save(transaction=transaction)
+    #
+    #     do_stuffs()
+    #
+    #     assert mock_method.call_args == call(snapshot=inner._export_as_dict(), ref=doc_ref, transaction=transaction_invoked)
 
-        @run_transaction
-        def do_stuffs(transaction: Transaction):
-            global primary_doc_ref
-            obj = ContainsNested.new(inner=inner, transaction=transaction, doc_ref=primary_doc_ref)
-            obj._export_as_dict(transaction=transaction)
-
-        do_stuffs()
-
-        assert mock_method.call_args == call(document_data=inner._export_as_dict(), reference=doc_ref)
-
-    with patch.object(Transaction, 'set', return_value=None) as mock_method:
-
-        @run_transaction
-        def do_stuffs(transaction: Transaction):
-            global primary_doc_ref
-            obj = ContainsNested.new(inner=inner, transaction=transaction, doc_ref=primary_doc_ref)
-            obj._export_as_dict(transaction=transaction)
-
-        do_stuffs()
-
-        assert mock_method.call_args == call(document_data=inner._export_as_dict(), reference=doc_ref)
-
-    with patch.object(Transaction, 'set', return_value=None) as mock_method:
-
-        @run_transaction
-        def do_stuffs(transaction: Transaction):
-            global primary_doc_ref
-            # transaction.set = Mock(return_value=None)
-            obj = ContainsNested.new(inner=inner, doc_ref=primary_doc_ref)
-            obj._export_as_dict()
-
-        do_stuffs()
-
-        assert Transaction.set.call_args == call(document_data=inner._export_as_dict(), reference=doc_ref)
+    # with patch.object(CTX.db, 'set', return_value=None) as mock_method:
+    #
+    #     @run_transaction
+    #     def do_stuffs(transaction: Transaction):
+    #         global primary_doc_ref
+    #         # transaction.set = Mock(return_value=None)
+    #         obj = ContainsNested.new(inner=inner, doc_ref=primary_doc_ref)
+    #         obj._export_as_dict()
+    #
+    #     do_stuffs()
+    #
+    #     assert mock_method.call_args == call(snapshot=inner._export_as_dict(), ref=doc_ref, transaction=transaction)
 
     """
     Tests that transactions are implicitly passed to referenced objects 
     """
 
-    with patch.object(Transaction, 'set', return_value=None) as mock_method:
+    with patch.object(CTX.db, 'set', return_value=None) as mock_method:
+
+        transaction_invoked = None
 
         @run_transaction
         def do_stuffs(transaction: Transaction):
+            nonlocal transaction_invoked
+            transaction_invoked = transaction
+
             # transaction.set = Mock(return_value=None)
             global primary_doc_ref
             obj = ContainsNested.new(inner=inner, doc_ref=primary_doc_ref)
@@ -255,8 +264,8 @@ def test_export_nested():
         do_stuffs()
 
         assert mock_method.call_args_list == [
-            call(document_data=inner._export_as_dict(), reference=doc_ref),
-            call(document_data={'obj_type': 'ContainsNested', 'doc_ref': 'primary/test_document_0', 'inner': doc_ref}, reference=primary_doc_ref)
+            call(snapshot=inner._export_as_dict(), ref=doc_ref, transaction=transaction_invoked),
+            call(snapshot={'obj_type': 'ContainsNested', 'inner': doc_ref}, ref=primary_doc_ref, transaction=transaction_invoked)
         ]
 
     delete_object(inner.doc_id)
@@ -272,7 +281,8 @@ def test_relationship_not_nested():
     # Saves to firestore "TestObject/testObjId1"
     referenced_obj.save()
 
-    class MasterObjectSchema(schema.Schema):
+    from flask_boiler.primary_object import PrimaryObjectSchema
+    class MasterObjectSchema(PrimaryObjectSchema):
         # Describes how obj.int_a is read from and stored to a document in firestore
         nested_ref = fields.Relationship(nested=False)
 
@@ -285,14 +295,14 @@ def test_relationship_not_nested():
     master_obj = MasterObject.new(doc_id="masterObjId1")
     master_obj.nested_ref = referenced_obj.doc_ref
     assert master_obj._export_as_dict() == {
-        'doc_id': 'masterObjId1',
         'doc_ref': 'MasterObject/masterObjId1',
+        'doc_id': 'masterObjId1',
         'obj_type': 'MasterObject',
         "nestedRef": CTX.db.ref/"TestObject"/"testObjId1"
     }
 
     master_obj.delete()
-    CTX.db.delete(reference=CTX.db.ref/"TestObject"/"testObjId1")
+    CTX.db.delete(ref=CTX.db.ref/"TestObject"/"testObjId1")
 
 
 def test_relationship_nested():
@@ -302,8 +312,8 @@ def test_relationship_nested():
     referenced_obj.int_a = 1
     referenced_obj.int_b = 2
 
-    class MasterObjectSchemaNested(schema.Schema):
-        # Describes how obj.int_a is read from and stored to a document in firestore
+    from flask_boiler.primary_object import PrimaryObjectSchema
+    class MasterObjectSchemaNested(PrimaryObjectSchema):        # Describes how obj.int_a is read from and stored to a document in firestore
         nested_obj = fields.Relationship(nested=True)
 
     MasterObjectNested = ClsFactory.create(
@@ -324,7 +334,8 @@ def test_relationship_nested():
 
     master_obj.save()
 
-    assert CTX.db.ref/"TestObject"/"testObjId3".get().to_dict() == \
+    doc_ref = CTX.db.ref/"TestObject"/"testObjId3"
+    assert CTX.db.get(ref=doc_ref).to_dict() == \
            {
                "intA": 1,
                "intB": 2,
@@ -334,7 +345,7 @@ def test_relationship_nested():
            }
 
     master_obj.delete()
-    CTX.db.delete(reference=CTX.db.ref/"TestObject"/"testObjId3")
+    CTX.db.delete(ref=doc_ref)
 
 
 def setup_object(doc_id):

@@ -130,9 +130,8 @@ def test_watch():
     from flask_boiler import testing_utils
 
     testing_utils._wait()
-
-    assert False
-
+    # TODO: add and test tearDown for _watch
+    # Implement close() for listener
 
 def test_listener():
     from flask_boiler.database.firestore import FirestoreListener, Query
@@ -151,9 +150,9 @@ def test_listener():
 
     query = DomainModelQuery(parent=S, arguments=[])
 
-    from flask_boiler.source.base import Source
+    from flask_boiler.source.firestore import FirestoreSource
     class M:
-        source = Source(query=query)
+        source = FirestoreSource(query=query)
 
         @staticmethod
         @source.triggers.on_create

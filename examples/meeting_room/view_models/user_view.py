@@ -3,11 +3,14 @@ from examples.meeting_room.domain_models.meeting import Meeting
 from examples.meeting_room.view_models import MeetingSession
 from flask_boiler import fields, schema, view_model, view, attrs
 from flask_boiler.business_property_store import BPSchema
+from flask_boiler.context import Context as CTX
+from flask_boiler.store import Store, reference
 from flask_boiler.struct import Struct
 
 
-class UserBpss(BPSchema):
-    user = fields.StructuralRef(dm_cls=User)
+class UserStore(Store):
+    user = reference(dm_cls=User)
+
 
 class UserViewMixin:
 
@@ -42,7 +45,7 @@ class UserViewMixin:
     @meetings.getter
     def meetings(self):
         meetings_generator = Meeting.where(
-            users=("array_contains", self.store.user.doc_ref)
+            users=("array_contains", str(self.store.user.doc_ref))
         )
         return [
             MeetingSession.get(meeting=meeting).to_dict()
@@ -50,17 +53,23 @@ class UserViewMixin:
         ]
 
     @classmethod
-    def get_from_user_id(cls, user_id, once=False, **kwargs):
-        struct = Struct(schema_obj=UserBpss())
-
-        u: User = User.get(doc_id=user_id)
-
-        struct["user"] = (User, u.doc_ref.id)
-
-        return super().get(struct_d=struct, once=once, user_id=user_id,
+    def get(cls, user_id, once=False, **kwargs):
+        struct = dict()
+        struct["user"] = (User, user_id)
+        store = UserStore.from_struct(struct)
+        return super().get(store=store, once=once, user_id=user_id,
                            **kwargs)
+
+    get_from_user_id = get
 
 
 class UserView(UserViewMixin, view_model.ViewModel):
     pass
 
+
+class UserViewDAV(UserViewMixin, view_model.ViewModel):
+
+    @property
+    def doc_ref(self):
+        doc_ref = CTX.db.ref/"UserViewDAV"/self.user_id
+        return doc_ref

@@ -10,7 +10,10 @@ class Protocol:
         return decorator
 
     def fname_of(self, rule):
-        return self.mapping[rule]
+        if rule in self.mapping:
+            return self.mapping[rule]
+        else:
+            return None
 
     def __getattr__(self, item):
         return self._register(item)

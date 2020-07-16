@@ -28,3 +28,11 @@ class Source:
     @property
     def triggers(self):
         return self.protocol
+
+    def _invoke_mediator(self, func_name, *args, **kwargs):
+        fname = self.protocol.fname_of(func_name)
+        if fname is None:
+            raise ValueError
+        f = getattr(self.parent()(), fname)
+        f(*args, **kwargs)
+

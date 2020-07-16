@@ -99,9 +99,6 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
     #     else:
     #         return super().get_schema_cls()
 
-    def __init__(self, doc_ref=None, **kwargs):
-        super().__init__(doc_ref=doc_ref, **kwargs)
-
     @property
     def doc_id(self):
         """ Returns Document ID

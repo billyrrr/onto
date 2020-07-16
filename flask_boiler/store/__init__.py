@@ -22,13 +22,25 @@ Thus shelf layer keeps obj_type and reference as key, and
     objects as values. 
 """
 
+
 class Store(FirestoreObjectValMixin, Serializable):
+
+    class Meta:
+        case_conversion = False
 
     _schema_base = BPSchema
 
     @classmethod
     def from_struct(cls, struct):
-        return cls.from_dict(d=struct)
+        from flask_boiler.store import Gallery
+
+        schema_obj = cls.get_schema_obj()
+        d = schema_obj.load(struct)
+        _store = Gallery()
+        d = cls._import_from_dict(d, _store=_store, transaction=None)
+        _store.refresh(transaction=None)
+        instance = cls.new(**d)  # TODO: fix unexpected arguments
+        return instance
 
     @classmethod
     def from_snapshot_struct(cls, snapshot_struct, **kwargs):
@@ -45,6 +57,13 @@ class Store(FirestoreObjectValMixin, Serializable):
     #         struct_sub = struct_sub[parent_name]
     #     struct_sub[key] = (dm_cls, snapshot.reference.id)
     #     container.set(snapshot.reference._document_path, snapshot)
+
+    def __init__(
+            self, *args, readonly=False, transaction=None, _store=None,
+            **kwargs):
+        self.transaction = transaction
+        self.readonly = readonly
+        super().__init__(*args, **kwargs)
 
     # def __init__(self, obj_options=None, **kwargs):
     #     """
@@ -63,16 +82,10 @@ class Store(FirestoreObjectValMixin, Serializable):
     #     # self._info = self._get_manifests(self.struct, self.schema_obj)
     #     self.objs = dict()
 
-    @classmethod
-    def _import_from_dict(cls, *args, **kwargs):
-        _store = Gallery()
-        obj = super()._import_from_dict(*args, **kwargs, _store=_store)
-        _store.refresh(transaction=None)
-        return obj
-
     def propagate_back(self):
-        for _, obj in self.objs.items():
-            obj.save()
-
-
-
+        """
+        TODO: add transaction
+        :return:
+        """
+        self._export_as_dict(_store=self._store, transaction=None)
+        self._store.save()

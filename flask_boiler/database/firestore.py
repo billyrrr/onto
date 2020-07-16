@@ -35,7 +35,7 @@ class FirestoreReference(Reference):
 
     @classmethod
     def from_document_reference(cls, ref: DocumentReference):
-        return cls(_s=ref.path)
+        return cls.from_str(ref.path)
 
 
 class FirestoreDatabase(Database):

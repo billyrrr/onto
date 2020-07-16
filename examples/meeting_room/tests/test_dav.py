@@ -1,89 +1,22 @@
 import pytest
-from google.cloud.firestore_v1 import CollectionReference
 
 from examples.meeting_room.domain_models import Meeting, User
 from examples.meeting_room.view_models.meeting_session import MeetingSession
-from examples.meeting_room.view_models.user_view import UserViewMixin
-from flask_boiler.database import Reference, Snapshot
-from flask_boiler.database.firestore import FirestoreReference
-from flask_boiler.errors import UnauthorizedError
+from flask_boiler.database import Snapshot
 from flask_boiler.mutation import PatchMutation
-from flask_boiler.query.query import Query, ViewModelQuery
-from flask_boiler.source.firestore import FirestoreSource
-from flask_boiler.view import Mediator
+from flask_boiler.query.query import ViewModelQuery
 from flask_boiler.view.document import \
     ViewMediatorDAV
-from flask_boiler.view.query_delta import ViewMediatorDeltaDAV, ProtocolBase
-from flask_boiler.view_model import ViewModel
-from flask_boiler import utils, testing_utils
+from flask_boiler import testing_utils
 # Import the fixtures used by fixtures
 from flask_boiler.context import Context
-from tests.fixtures import CTX, setup_app
-from .fixtures import users, tickets, location, meeting
-from flask_boiler import sink
-
-
-class MeetingSessionPatch(Mediator):
-    from flask_boiler.source.base import Source
-
-    source = FirestoreSource(
-        query=ViewModelQuery.patch_query(parent=MeetingSession)
-    )
-    sink = sink.firestore()
-
-    @source.triggers.on_create
-    def patch_meeting(self, reference, snapshot, transaction):
-        d = snapshot.to_dict()
-        meeting_id = d["target_meeting_id"]
-
-        d = {
-            Meeting.get_schema_cls().g(key): val
-            for key, val in d.items() if key in {"inSession",}
-        }
-
-        ref = snapshot.reference
-        user_id = ref.parent.parent.id
-
-        obj = MeetingSession.get(
-            doc_id=meeting_id,
-            once=True,
-        )
-        obj.update_vals(user_id=user_id, with_dict=d)
-        # TODO: switch to notify
-        obj.propagate_change()
-
-
-class MeetingSessionGet(Mediator):
-
-    from flask_boiler import source
-
-    source = source.domain_model(Meeting)
-    sink = sink.firestore()
-
-    @source.triggers.on_update
-    @source.triggers.on_create
-    def materialize_meeting_session(self, obj):
-        meeting = obj
-        assert isinstance(meeting, Meeting)
-
-        def notify(obj):
-            for ref in obj._view_refs:
-                self.sink.emit(reference=ref, snapshot=obj.to_snapshot())
-
-        _ = MeetingSession.get(
-            doc_id=meeting.doc_id,
-            once=False,
-            f_notify=notify
-        )
-        # mediator.notify(obj=obj)
-
-    @classmethod
-    def start(cls):
-        cls.source.start()
+from tests.fixtures import CTX
+from examples.meeting_room.view_models.user_view import UserViewDAV
 
 
 def test_start(users, tickets, location, meeting, CTX):
 
+    from examples.meeting_room.views.mediators import MeetingSessionGet
     MeetingSessionGet.start()
 
     testing_utils._wait()
@@ -110,13 +43,13 @@ def test_start(users, tickets, location, meeting, CTX):
 
 
 @pytest.fixture
-def delete_after(request):
+def delete_after(request, CTX):
     def fin():
         patch_collection_name = "{}_PATCH".format(MeetingSession.__name__)
-        for doc in Context.db.collection(
-            f'users/tijuana/{patch_collection_name}'
-        ).stream():
-            doc.reference.delete()
+        col_ref = Context.db.ref/'**'/patch_collection_name
+        q = ViewModelQuery(ref=col_ref)
+        for ref, _ in CTX.db.query(q):
+            CTX.db.delete(ref=ref)
     request.addfinalizer(finalizer=fin)
 
 
@@ -133,7 +66,10 @@ def test_mutate(users, tickets, location, meeting, delete_after, CTX):
     # mediator = MeetingSessionGet()
     # mediator.start()
 
-    MeetingSessionPatch.start()
+    from examples.meeting_room.views.mediators import MeetingSessionGet
+    from examples.meeting_room.views.mediators import MeetingSessionPatch
+    MeetingSessionGet.start()
+    MeetingSessionPatch.start()  # TODO: isolate state between tests
 
     testing_utils._wait(factor=.7)
 
@@ -165,9 +101,8 @@ def test_mutate(users, tickets, location, meeting, delete_after, CTX):
     """
     Tests that MeetingSessionPatch works 
     """
-    patch_ref = Context.db.ref/\
-          f'users/tijuana/{ViewModelQuery.patch_query(parent=MeetingSession)}/patch_1'
-    CTX.db.set(
+    patch_ref = Context.db.ref/'users'/'tijuana'/'MeetingSession_PATCH'/meeting.doc_id
+    CTX.db.update(
         ref=patch_ref,
         snapshot=Snapshot(
             target_meeting_id="meeting_1",
@@ -203,8 +138,20 @@ def test_mutate(users, tickets, location, meeting, delete_after, CTX):
         CTX.db.delete(reference)
 
 
-def test_domain_model_changes(users, tickets, location, meeting):
+@pytest.fixture
+def delete_meeting_sessions(request, CTX):
+    def fin():
+        col_ref = Context.db.ref/'**'/MeetingSession.__name__
+        q = ViewModelQuery(ref=col_ref)
+        for ref, _ in CTX.db.query(q):
+            CTX.db.delete(ref=ref)
+    request.addfinalizer(finalizer=fin)
+
+
+def test_domain_model_changes(users, tickets, location, meeting, delete_meeting_sessions, CTX):
     """ Tests that view model updates when domain model is changed
+    The feature is currently broken; it requires an active connection for all
+        models in store
 
     :param users:
     :param tickets:
@@ -212,16 +159,16 @@ def test_domain_model_changes(users, tickets, location, meeting):
     :param meeting:
     :return:
     """
+    from examples.meeting_room.views.mediators import MeetingSessionGet
     mediator = MeetingSessionGet()
 
     mediator.start()
 
     testing_utils._wait(factor=2)
 
-    ref = Context.db.collection("users").document(users[0].doc_id) \
-        .collection(MeetingSession.__name__).document(meeting.doc_id)
+    ref = Context.db.ref/"users"/users[0].doc_id/MeetingSession.__name__/meeting.doc_id
 
-    assert ref.get().to_dict() == {'latitude': 32.880361,
+    assert CTX.db.get(ref=ref).to_dict() == {'latitude': 32.880361,
                                    'numHearingAidRequested': 2,
                                    'attending': [
                                        {'hearing_aid_requested': True,
@@ -248,7 +195,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
       list of people attending the meeting session and the hearing aid
       counter.
     """
-    assert ref.get().to_dict() == {'latitude': 32.880361,
+    assert CTX.db.get(ref=ref).to_dict()  == {'latitude': 32.880361,
                                    'numHearingAidRequested': 1,
                                    'attending': [
                                        {
@@ -270,7 +217,7 @@ def test_domain_model_changes(users, tickets, location, meeting):
             .delete()
 
 
-def test_view_model(users, tickets, location, meeting):
+def test_view_model(users, tickets, location, meeting, delete_meeting_sessions):
     meeting_session = MeetingSession.get(doc_id=meeting.doc_id,
                                          once=True)
 
@@ -296,21 +243,6 @@ def test_view_model(users, tickets, location, meeting):
             'numHearingAidRequested': 2}
 
 
-class UserViewDAV(UserViewMixin, ViewModel):
-
-    @classmethod
-    def get(cls, user_id, once=False, **kwargs):
-        return super().get_from_user_id(user_id, once=once,
-                                        **kwargs)
-
-    def notify(self, obj):
-        doc_ref = Context.db.document(f"UserViewDAV/{obj.user_id}")
-        doc_ref.set(obj.to_dict())
-
-    def propagate_change(self):
-         self.store.user.save()
-
-
 class UserViewMediatorDAV(ViewMediatorDAV):
 
     def __init__(self, *args, user_cls=None, **kwargs):
@@ -319,22 +251,22 @@ class UserViewMediatorDAV(ViewMediatorDAV):
 
     @classmethod
     def notify(cls, obj):
-        doc_ref = Context.db.document(f"UserViewDAV/{obj.user_id}")
+        doc_ref = CTX.db.ref/"UserViewDAV"/obj.user_id
         doc_ref.set(obj.to_dict())
 
-    def generate_entries(self):
-        d = dict()
-        users = self.user_cls.all()
-        for user in users:
-            assert isinstance(user, User)
-            user_id = user.doc_id
-            obj = self.view_model_cls.get(
-                user_id=user_id,
-                once=False,
-                f_notify=self.notify
-            )
-            d[Context.db.document(f"UserViewDAV/{user_id}")._document_path] = obj
-        return d
+    # def generate_entries(self):
+    #     d = dict()
+    #     users = self.user_cls.all()
+    #     for user in users:
+    #         assert isinstance(user, User)
+    #         user_id = user.doc_id
+    #         obj = self.view_model_cls.get(
+    #             user_id=user_id,
+    #             once=False,
+    #             f_notify=self.notify
+    #         )
+    #         d[Context.db.document(f"UserViewDAV/{user_id}")._document_path] = obj
+    #     return d
 
 
 def test_user_view(users, tickets, location, meeting):
@@ -379,7 +311,7 @@ def test_user_view_diff(users, tickets, location, meeting):
     assert res == {'lastName': 'M.'}
 
 
-def test_propagate_change(users, tickets, location, meeting):
+def test_propagate_change(users, tickets, location, meeting, CTX):
     user_id = users[1].doc_id
 
     user_view = UserViewDAV.get(user_id=user_id, )
@@ -390,8 +322,8 @@ def test_propagate_change(users, tickets, location, meeting):
     user_view.store.user.last_name = "M."
     user_view.propagate_change()
 
-    user_ref = Context.db.collection("users").document(user_id)
-    assert user_ref.get().to_dict()["lastName"] == "M."
+    user_ref = Context.db.ref/"users"/user_id
+    assert CTX.db.get(ref=user_ref).to_dict()["lastName"] == "M."
 
 
 class UserViewMutationDAV(PatchMutation):

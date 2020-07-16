@@ -8,4 +8,20 @@ class FirestoreSink(Sink):
         CTX.db.set(ref=reference, snapshot=snapshot)
 
 
-firestore = FirestoreSink
+class ViewModelSink(Sink):
+
+    def emit(self, obj):
+        CTX.db.set(ref=obj.doc_ref, snapshot=obj.to_snapshot())
+
+
+class FormSink(ViewModelSink):
+
+    def emit(self, view_model_obj):
+        view_model_obj.propagate_change()
+
+
+class DomainModelSink(FirestoreSink):
+
+    def emit(self, obj, **kwargs):
+        obj.save(**kwargs)
+
