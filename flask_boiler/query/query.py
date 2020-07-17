@@ -1,3 +1,5 @@
+import abc
+
 from flask_boiler.context import Context as CTX
 from collections import namedtuple
 from typing import Optional, Tuple
@@ -10,6 +12,14 @@ import weakref
 
 
 class QueryBase:
+    """
+    Query depends on Database
+    """
+
+    """
+    Abstract property: database 
+    must override
+    """
 
     def __init__(self, ref=None, path=None, arguments=None):
         if path is not None:
@@ -41,18 +51,6 @@ class QueryBase:
 
         return cur_arguments
 
-    @classmethod
-    def _append_new_style(cls, *, cur_arguments=None, **kwargs):
-        if cur_arguments is None:
-            raise ValueError
-
-        for key, val in kwargs.items():
-            comp, other = val if isinstance(val, tuple) else ("==", val)
-            cur_arguments.append(
-                argument(key=key, comparator=comp, val=other)
-            )
-        return cur_arguments
-
     @staticmethod
     def _append_cmp_style(*args, cur_arguments=None):
 
@@ -66,7 +64,8 @@ class QueryBase:
             while len(arg_stack) != 0:
 
                 condition = arg_stack.pop(0)
-                key = condition.fieldname
+
+                key = condition.attr_name
 
                 for comp, other in condition.constraints:
                     if comp == "_in":
@@ -94,8 +93,6 @@ class QueryBase:
             *cmp_args, cur_arguments=arguments)
         arguments = self._append_original(
             *remaining_args, cur_arguments=arguments)
-        arguments = self._append_new_style(
-            **kwargs, cur_arguments=arguments)
         return self.make_copy(arguments=arguments)
 
 
@@ -164,6 +161,8 @@ class DomainModelQuery(QueryBase):
         """
         from flask_boiler.database.firestore import FirestoreDatabase
 
+        # TODO: move
+
         db: FirestoreDatabase = CTX.db
         if self.ref.first == '**':
             cur_where = db.firestore_client.collection_group(self.ref.last)
@@ -175,7 +174,35 @@ class DomainModelQuery(QueryBase):
             arguments = self.arguments + [condition]
         else:
             arguments = self.arguments.copy()
-        for arg in arguments:
-            data_key = self.parent._query_schema().fields[arg.key].data_key
-            cur_where = cur_where.where(data_key, arg.comparator, arg.val)
+        for (key, comparator, val) in arguments:
+            # TODO: NOTE: data_key will always be translated
+            data_key = self.parent._query_schema().fields[key].data_key
+            condition = comparator if isinstance(comparator, str) else comparator.condition
+            # TODO: translate val
+            cur_where = cur_where.where(data_key, condition, val)
         return cur_where
+
+    def _to_leancloud_query(self):
+        from flask_boiler.database.leancloud import LeancloudDatabase
+
+        # db: LeancloudDatabase = CTX.dbs.leancloud  # TODO: read db elsewhere
+
+        condition = self.parent.get_obj_type_condition()
+
+        if condition is not None:
+            arguments = self.arguments + [condition]
+        else:
+            arguments = self.arguments.copy()
+
+        cla_str = self.ref.last
+        import leancloud
+        cla = leancloud.Object.extend(name=cla_str)
+        q = cla.query
+
+        for key, comparator, val in arguments:
+            data_key = self.parent._query_schema().fields[key].data_key
+            func_name = comparator.condition
+            f = getattr(q, func_name)
+            f(data_key, val)
+
+        return q

@@ -252,7 +252,7 @@ class ObjectTypeField(fields.Function, Field):
         else:
             return argument(
                 key=data_key,
-                comparator="in",
+                comparator=obj_cls._datastore().Comparators._in,
                 val=obj_cls._get_subclasses_str())
 
     def __init__(self, *args, serialize=_NA, data_key="obj_type",

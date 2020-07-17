@@ -66,3 +66,41 @@ class MeetingSessionGet(Mediator):
     @classmethod
     def start(cls):
         cls.source.start()
+
+
+class MeetingSessionLc(MeetingSession):
+
+    @classmethod
+    def _datastore(cls):
+        from flask_boiler.context import Context as CTX
+        return CTX.dbs.leancloud
+
+
+class MeetingSessionShow(Mediator):
+
+    from flask_boiler import source
+    from flask_boiler.sink.leancloud import LcSink
+
+    source = source.domain_model(Meeting)
+    sink = LcSink()  # TODO: check variable resolution order
+
+    @source.triggers.on_update
+    @source.triggers.on_create
+    def materialize_meeting_session(self, obj):
+        meeting = obj
+        assert isinstance(meeting, Meeting)
+
+        def notify(obj):
+            for ref in obj._view_refs:
+                self.sink.emit(ref=ref, snapshot=obj.to_snapshot())
+
+        _ = MeetingSessionLc.get(
+            doc_id=meeting.doc_id,
+            once=False,
+            f_notify=notify
+        )
+        # mediator.notify(obj=obj)
+
+    @classmethod
+    def start(cls):
+        cls.source.start()

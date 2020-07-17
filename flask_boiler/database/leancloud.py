@@ -1,9 +1,20 @@
 import leancloud
 from . import Database, Reference, Snapshot
 from ..common import _NA
+from ..query.query import Query
 
 
 class LeancloudDatabase(Database):
+
+    class Comparators(Database.Comparators):
+
+        eq = 'equal_to'
+        gt = 'greater_than'
+        ge = 'greater_than_or_equal_to'
+        lt = 'less_than'
+        le = 'less_than_or_equal_to'
+
+        _in = 'contained_in'
 
     @classmethod
     def _get_cla(cls, cla_str):
@@ -15,14 +26,17 @@ class LeancloudDatabase(Database):
     def set(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
         object_id = ref.last
         cla = cls._get_cla(ref.first)
-        obj = cla(id=object_id, **snapshot.to_dict())
+        obj = cla(_doc_id=object_id, **snapshot.to_dict())
         obj.save()
 
     @classmethod
     def get(cls, ref: Reference, transaction=_NA):
-        object_id = ref.last
+        doc_id = ref.last
         cla = cls._get_cla(ref.first)
-        snapshot = Snapshot(cla.query.get(object_id=object_id).dump())
+        cla_obj = cla.query.equal_to('_doc_id', doc_id).first()
+        d = LeancloudSnapshot.from_cla_obj(cla_obj).to_dict()
+        d['doc_id'] = d.pop('_doc_id')
+        snapshot = LeancloudSnapshot(d)
         return snapshot
 
     @classmethod
@@ -37,9 +51,14 @@ class LeancloudDatabase(Database):
     def delete(cls, ref: Reference, transaction=_NA):
         object_id = ref.last
         cla = cls._get_cla(ref.first)
-        state = cla(id=object_id).destroy()
-        if state is None:
-            raise ValueError
+        cla.create_without_data(object_id).destroy()
+
+    @classmethod
+    def query(cls, q: Query):
+        for cla_obj in q._to_leancloud_query().find():
+            ref = LeancloudReference.from_cla_obj(cla_obj)
+            snapshot = LeancloudSnapshot.from_cla_obj(cla_obj)
+            yield (ref, snapshot)
 
 
 class LeancloudSnapshot(Snapshot):
@@ -57,5 +76,5 @@ class LeancloudReference(Reference):
 
     @classmethod
     def from_cla_obj(cls, cla_obj):
-        ref = cls()/cla_obj._class_name/cla_obj.id
+        ref = cls()/cla_obj._class_name/cla_obj.get('_doc_id')
         return ref

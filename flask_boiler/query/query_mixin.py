@@ -40,8 +40,8 @@ def convert_query_ref(func):
 
 def convert_query(func):
     def call(cls, *args, **kwargs):
-        q = func(cls, *args, **kwargs)
-        for ref, snapshot in CTX.db.query(q):
+        q, db = func(cls, *args, **kwargs)
+        for ref, snapshot in db.query(q):
             yield snapshot_to_obj(
                 reference=ref,
                 snapshot=snapshot,
@@ -58,12 +58,12 @@ class QueryMixin:
                 the collection.
         """
 
-        return cls.get_query()
+        return cls.get_query(), cls._datastore()
 
     @classmethod
     @convert_query
     def where(cls, *args, **kwargs):
-        return cls.get_query().where(*args, **kwargs)
+        return cls.get_query().where(*args, **kwargs), cls._datastore()
 
     @classmethod
     def get_obj_type_condition(cls):

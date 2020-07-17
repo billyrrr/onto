@@ -3,6 +3,16 @@ import abc
 
 from flask_boiler.common import _NA
 
+import abc
+from enum import Enum, auto
+
+
+class ConditionArg(Enum):
+    """
+    Do not declare attributes here
+    """
+    pass
+
 
 class Reference(collections.UserString):
     """
@@ -112,6 +122,11 @@ class Snapshot(collections.UserDict):
 
 class Database:
 
+    class Comparators(ConditionArg):
+        @property
+        def condition(self):
+            return self.value
+
     @classmethod
     @abc.abstractmethod
     def set(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
@@ -166,8 +181,10 @@ class Listener:
     def for_refs(cls):
         pass
 
+
 def is_reference(val):
     return issubclass(val.__class__, Reference)
+
 
 def is_snapshot(val):
     return issubclass(val.__class__, Snapshot)

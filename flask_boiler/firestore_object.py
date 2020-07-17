@@ -29,6 +29,11 @@ class FirestoreObjectMixin:
     #     warnings.warn("Please use .doc_ref instead. ", DeprecationWarning)
     #     return self.doc_ref
 
+    @classmethod
+    def _datastore(cls):
+        _db = CTX.db
+        return _db
+
     @property
     def doc_ref(self) -> Reference:
         """ Returns the Document Reference of this object.
@@ -44,7 +49,7 @@ class FirestoreObjectMixin:
         :param kwargs: Keyword arguments to be forwarded to from_dict
         """
 
-        snapshot = CTX.db.get(ref=doc_ref, transaction=transaction)
+        snapshot = cls._datastore().get(ref=doc_ref, transaction=transaction)
         obj = snapshot_to_obj(
             snapshot=snapshot,
             reference=doc_ref,
@@ -95,7 +100,7 @@ class FirestoreObjectMixin:
         d = self._export_as_dict(transaction=transaction, _store=_store)
         _store.save()
         snapshot = Snapshot(d)
-        CTX.db.set(snapshot=snapshot, ref=doc_ref, transaction=transaction)
+        self._datastore().set(snapshot=snapshot, ref=doc_ref, transaction=transaction)
 
     def delete(self, transaction: Transaction = _NA) -> None:
         """ Deletes and object from Firestore.
@@ -106,7 +111,7 @@ class FirestoreObjectMixin:
         if transaction is _NA:
             transaction = CTX.transaction_var.get()
 
-        CTX.db.delete(ref=self.doc_ref, transaction=transaction)
+        self._datastore().delete(ref=self.doc_ref, transaction=transaction)
 
 
 def _nest_relationship_import(rr, _store):

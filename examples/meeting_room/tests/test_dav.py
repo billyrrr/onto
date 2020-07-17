@@ -17,6 +17,34 @@ from examples.meeting_room.view_models.user_view import UserViewDAV
 
 def test_start(users, tickets, location, meeting, CTX):
 
+    from examples.meeting_room.views.mediators import MeetingSessionShow
+    MeetingSessionShow.start()
+
+    testing_utils._wait()
+
+    ref = Context.db.ref / "users" / users[0].doc_id / MeetingSession.__name__ / meeting.doc_id
+    assert CTX.dbs.leancloud.get(ref).to_dict().items() >= {'latitude': 32.880361,
+                                   'numHearingAidRequested': 2,
+                                   'attending': [
+                                       {'hearing_aid_requested': True,
+                                        'name': 'Joshua Pendergrast',
+                                        'organization': 'SDSU'},
+                                       {'organization': 'UCSD',
+                                        'hearing_aid_requested': False,
+                                        'name': 'Thomasina Manes'},
+                                       {'organization': 'UCSD',
+                                        'hearing_aid_requested': True,
+                                        'name': 'Tijuana Furlong'}],
+                                   'longitude': -117.242929,
+                                   # 'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
+                                   'inSession': True,
+                                   'address': '9500 Gilman Drive, La Jolla, CA'}.items()
+
+    CTX.db.delete(ref=ref)
+
+
+def test_start_fs(users, tickets, location, meeting, CTX):
+
     from examples.meeting_room.views.mediators import MeetingSessionGet
     MeetingSessionGet.start()
 
@@ -41,6 +69,7 @@ def test_start(users, tickets, location, meeting, CTX):
                                    'address': '9500 Gilman Drive, La Jolla, CA'}
 
     CTX.db.delete(ref=ref)
+
 
 
 @pytest.fixture

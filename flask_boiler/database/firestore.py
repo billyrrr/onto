@@ -42,6 +42,16 @@ class FirestoreDatabase(Database):
 
     firestore_client = None
 
+    class Comparators(Database.Comparators):
+
+        eq = '=='
+        gt = '>'
+        ge = '>='
+        lt = '<'
+        le = '<='
+        contains = 'array_contains'
+        _in = 'in'
+
     @classmethod
     def make_document_path(cls, ref: FirestoreReference):
         """Create and cache the full path for this document.
