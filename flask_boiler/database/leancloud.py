@@ -40,3 +40,22 @@ class LeancloudDatabase(Database):
         state = cla(id=object_id).destroy()
         if state is None:
             raise ValueError
+
+
+class LeancloudSnapshot(Snapshot):
+    """
+    TODO: apply to LeancloudDatabase class and other places
+    """
+
+    @classmethod
+    def from_cla_obj(self, cla_obj):
+        snapshot = Snapshot(cla_obj.dump())
+        return snapshot
+
+
+class LeancloudReference(Reference):
+
+    @classmethod
+    def from_cla_obj(cls, cla_obj):
+        ref = cls()/cla_obj._class_name/cla_obj.id
+        return ref

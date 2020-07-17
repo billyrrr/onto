@@ -11,6 +11,7 @@ from flask_boiler import testing_utils
 # Import the fixtures used by fixtures
 from flask_boiler.context import Context
 from tests.fixtures import CTX
+from .fixtures import *
 from examples.meeting_room.view_models.user_view import UserViewDAV
 
 
@@ -54,6 +55,91 @@ def delete_after(request, CTX):
 
 
 def test_mutate(users, tickets, location, meeting, delete_after, CTX):
+    """
+    Tests that mutate actions affect domain model and view model.
+
+    :param users:
+    :param tickets:
+    :param location:
+    :param meeting:
+    :return:
+    """
+    # mediator = MeetingSessionGet()
+    # mediator.start()
+
+    from examples.meeting_room.views.mediators import MeetingSessionGet
+    from examples.meeting_room.views.mediators import MeetingSessionPatch
+    MeetingSessionGet.start()
+    MeetingSessionPatch.start()  # TODO: isolate state between tests
+
+    testing_utils._wait(factor=.7)
+
+    # testing_utils._wait(60)  # TODO: delete; used right now for breakpoint
+
+    """
+    Tests that MeetingSessionGet works 
+    """
+    ref = Context.db.ref/"users"/users[0].doc_id/MeetingSession.__name__/meeting.doc_id
+    assert CTX.db.get(ref).to_dict() == {'latitude': 32.880361,
+                                   'numHearingAidRequested': 2,
+                                   'attending': [
+                                       {'hearing_aid_requested': True,
+                                        'name': 'Joshua Pendergrast',
+                                        'organization': 'SDSU'},
+                                       {'organization': 'UCSD',
+                                        'hearing_aid_requested': False,
+                                        'name': 'Thomasina Manes'},
+                                       {'organization': 'UCSD',
+                                        'hearing_aid_requested': True,
+                                        'name': 'Tijuana Furlong'}],
+                                   'longitude': -117.242929,
+                                   # 'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
+                                   'inSession': True,
+                                   'address': '9500 Gilman Drive, La Jolla, CA'}
+
+    # testing_utils._wait(500)
+
+    """
+    Tests that MeetingSessionPatch works 
+    """
+    patch_ref = Context.db.ref/'users'/'tijuana'/'MeetingSession_PATCH'/meeting.doc_id
+    CTX.db.update(
+        ref=patch_ref,
+        snapshot=Snapshot(
+            target_meeting_id="meeting_1",
+            inSession=False
+        )
+    )
+
+    testing_utils._wait(factor=.7)
+
+    m = Meeting.get(doc_id="meeting_1")
+    assert m.status == "closed"
+    #
+    # ref = Context.db.collection("users").document(users[0].doc_id) \
+    #     .collection(MeetingSession.__name__).document(meeting.doc_id)
+    assert CTX.db.get(ref=ref).to_dict() == {'latitude': 32.880361,
+                                   'numHearingAidRequested': 2,
+                                   'attending': [
+                                       {'hearing_aid_requested': True,
+                                        'name': 'Joshua Pendergrast',
+                                        'organization': 'SDSU'},
+                                       {'organization': 'UCSD',
+                                        'hearing_aid_requested': False,
+                                        'name': 'Thomasina Manes'},
+                                       {'organization': 'UCSD',
+                                        'hearing_aid_requested': True,
+                                        'name': 'Tijuana Furlong'}],
+                                   'longitude': -117.242929,
+                                   'inSession': False,
+                                   'address': '9500 Gilman Drive, La Jolla, CA'}
+
+    for user in users:
+        reference = CTX.db.ref/"users"/user.doc_id/MeetingSession.__name__/meeting.doc_id
+        CTX.db.delete(reference)
+
+
+def test_mutate_fs(users, tickets, location, meeting, delete_after, CTX):
     """
     Tests that mutate actions affect domain model and view model.
 

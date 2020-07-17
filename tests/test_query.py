@@ -17,7 +17,7 @@ def test_where():
         s = attrs.bproperty()
 
     q = Foo.get_query().where(v.s==1)
-    from flask_boiler.fields import argument
+    from flask_boiler.mapper.fields import argument
     assert q.arguments == [argument(key='s', comparator='==', val=1)]
     q = q._to_firestore_query()
     assert q is not None

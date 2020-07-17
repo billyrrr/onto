@@ -15,7 +15,30 @@ class LeancloudBeforeSaveSource(Source):
         engine = CTX.services.engine
         engine.before_save(self.class_name, self._call)
 
-    def _call(self, *args, **kwargs):
-        raise NotImplementedError
+    def _call(self, cla_obj):
+        from flask_boiler.database.leancloud import LeancloudSnapshot
+        snapshot = LeancloudSnapshot.from_cla_obj(cla_obj)
+        self._invoke_mediator(
+            func_name='before_save',
+            snapshot=snapshot
+        )
 
+
+class BeforeSaveDomainModelSource(LeancloudBeforeSaveSource):
+
+    def __init__(self, domain_model_cls):
+        super().__init__(class_name=domain_model_cls._get_collection_name())
+        self.domain_model_cls = domain_model_cls
+
+    def _call(self, cla_obj):
+        from flask_boiler.database.leancloud import LeancloudSnapshot
+
+        from flask_boiler.database.leancloud import LeancloudReference
+        ref = LeancloudReference.from_cla_obj(cla_obj)
+        snapshot = LeancloudSnapshot.from_cla_obj(cla_obj)
+        obj = self.domain_model_cls.from_snapshot(ref=ref, snapshot=snapshot)
+        self._invoke_mediator(
+            func_name='before_save',
+            obj=obj
+        )
 
