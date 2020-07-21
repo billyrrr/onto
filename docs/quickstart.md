@@ -1,4 +1,4 @@
-# Quickstart using a flask-boiler
+# Quickstart
 
 This page is adapted from [Quickstart using a server client library](https://cloud.google.com/firestore/docs/quickstart-servers)
  released under [Creative Commons Attribution 4.0 License](https://creativecommons.org/licenses/by/4.0/). 
@@ -9,7 +9,7 @@ This page is adapted from [Quickstart using a server client library](https://clo
  the Google's quickstart guide. 
  Please refer to these license for more information.  
 
-### Retrieve credentials 
+## Retrieve credentials 
 
 1. In the GCP Console, go to the **Create service account** key page.
 
@@ -42,7 +42,7 @@ gcloud iam service-accounts add-iam-policy-binding firebase-adminsdk-nztgj@gravi
 (Effect unclear)
  
  
-### Add flask-boiler and the server client library to your app
+## Add flask-boiler and the server client library to your app
 
 Add the required dependencies and client libraries to your app.
 
@@ -99,7 +99,7 @@ from flask_boiler.context import Context as CTX
 CTX.load()
 ```
 
-### Declare a Domain Model
+## Declare a Domain Model
 
 In ```models.py```, create a model, 
 
@@ -201,7 +201,7 @@ class CityViewMediator(ViewMediatorDeltaDAV):
             mediator.notify(obj=view)
 ```
 
-### Add Entrypoint 
+## Add Entrypoint 
 
 In ```main.py```, 
 

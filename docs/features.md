@@ -1,13 +1,14 @@
+# Features
 
-## Features
-Many features are still being implemented. 
+Here are some reasons for choosing `flask-boiler` over the protocols 
+and frameworks it is employing. 
 
 ### Native to Distributed Systems
 
 #### Load Balancing 
 
 `flask-boiler` is designed to run on clusters such as `kubernetes`. By 
-limiting the source range, you may route an event to its dedicated server 
+limiting the source range, you may route an event to its dedicated pod  
 which, for example, may already hold the states it requires. 
 
 #### Consistency 

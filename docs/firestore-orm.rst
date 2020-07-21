@@ -10,6 +10,7 @@ Add data
 ########
 
 Original:
+
 .. code-block:: python
 
     doc_ref = db.collection(u'users').document(u'alovelace')
@@ -21,6 +22,7 @@ Original:
 
 
 New:
+
 .. code-block:: python
 
     user = User.new(doc_id="alovelace", first='Ada')
@@ -34,6 +36,7 @@ Read data
 #########
 
 Original:
+
 .. code-block:: python
 
     users_ref = db.collection(u'users')
@@ -44,6 +47,7 @@ Original:
 
 
 New:
+
 .. code-block:: python
 
     for user in User.all():
@@ -54,6 +58,7 @@ Save data
 #########
 
 Original:
+
 .. code-block:: python
 
     class City(object):
@@ -87,6 +92,7 @@ Original:
 
 
 New:
+
 .. code-block:: python
 
     def CityBase(DomainModel):
@@ -118,6 +124,7 @@ Get data
 ########
 
 Original:
+
 .. code-block:: python
 
     doc_ref = db.collection(u'cities').document(u'SF')
@@ -130,6 +137,7 @@ Original:
 
 
 New:
+
 .. code-block:: python
 
     sf = City.get(doc_id='SF')
@@ -143,6 +151,7 @@ Simple queries
 ##############
 
 Original:
+
 .. code-block:: python
 
     docs = db.collection(u'cities').where(u'capital', u'==', True).stream()
@@ -152,6 +161,7 @@ Original:
 
 
 New:
+
 .. code-block:: python
 
     for city in City.where(capital=True):
@@ -185,7 +195,8 @@ Declare Models
 
 Method 1: flask_boiler.attrs
 
-.. code-block::python
+.. code-block:: python
+
     class City(DomainModel):
         city_name = attrs.bproperty()
         country = attrs.bproperty()
@@ -202,6 +213,7 @@ Method 1: flask_boiler.attrs
     class StandardCity(City):
         city_state = attrs.bproperty()
         regions = attrs.bproperty()
+
 
 Method 2: flask_boiler.mapper.schema
 
@@ -232,6 +244,8 @@ Field name conversion
 Sometimes, you want to have object attributes in "snake_case" and
 Firestore Document field name in "camelCase". This is by default for
 flask-boiler. You may customize this conversion also.
+
+.. code-block:: python
 
     sf = StandardCity.create(doc_id="SF")
     sf.city_name, sf.city_state, sf.country, sf.capital, sf.regions = \
@@ -284,6 +298,7 @@ or firestore field name.
 Or equivalently
 
 .. code-block:: python
+
     # Currently broken
     for obj in City.where("cityState", "==", "CA"):
         print(obj.city_name)

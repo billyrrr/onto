@@ -126,7 +126,6 @@ Take query as an example,
     - staticmethods: converts to UDF
     - classmethods: converts to operators and aggregator's 
     
-Why would you choose `flask-boiler` over the protocols and frameworks it is employing? 
 - 
 
 

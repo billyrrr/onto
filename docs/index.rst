@@ -10,10 +10,13 @@ Welcome to flask-boiler's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   README.md
+
    firestore-orm
    context-management
-   quickstart_link
+   quickstart
 
+   features
    apidoc/modules
 
 Indices and tables
