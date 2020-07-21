@@ -20,14 +20,18 @@ of the list of people attending the meeting.
 
 ![Untitled_2](https://user-images.githubusercontent.com/24789156/71137341-be0e1000-2242-11ea-98cb-53ad237cac43.gif)
 
-Some reasons that you may want to use this framework:
-- The automatically documented API accelerates your development
-- You want to use Firestore to build your front end, but
-    you have to give up because your data contains many
-    relational reference
-- You want to move some business logic to back end
-- You are open to trying something new and contributing to a framework
-- You want to develop a new reactive service to your existing flask app
+Some reasons that you may want to use this framework or architectual
+practice:
+- You want to build a reactive system and not just a reactive view. 
+- You want to build a scalable app that is native to distributed 
+    systems. 
+- You want a framework with a higher level of abstraction, so you can 
+    exchange components such as transportion protocols 
+- You want your code to be readable and clear and written mostly 
+    in python, while maintaining compatibility to different APIs. 
+- You have constantly-shifting requirements, and want to have 
+    the flexibility to migrate different layers, for example, 
+    switch from REST API to WebSocket to serve a resource. 
 
 This framework is at ***beta testing stage***. 
 API is not guaranteed and ***may*** change. 
@@ -42,24 +46,37 @@ Example of a Project using flask-boiler: [gravitate-backend](https://github.com/
 
 [Related Technologies](https://medium.baqend.com/real-time-databases-explained-why-meteor-rethinkdb-parse-and-firebase-dont-scale-822ff87d2f87)
 
+## Ideal Usage
+
+boiler will compile your python code into flink jobs, web servers, 
+and more to be run on a kubernetes engine (not currently implemented).  
+
+![Ideal Usage](docs/distributed.png)
+
+## Introduction
+boiler is technically MVVM (Model-View-ViewModel), where, 
+1. Model consists of a transactional database or datastore, and 
+lives in back end. 
+2. ViewModel consists of a distributed state consists of Model and 
+    aggregator. It is the main part of boiler. For client-read, 
+    it receives the streams coming in from the Model layer, and 
+    output them as a View to the View layer. For client-write, 
+    it receives the change streams from View 
+    layer, and operate on Model layer to persist the change. 
+    ViewModel lives in the back end, and may be operated as 
+    boiler python code, or compiled as flink jobs in the case of 
+    big data application (to be implemented). 
+3. View is the presentational layer for the back end. It serves 
+    1NF normalized data that are readable to the front end 
+    without further aggregation. Client reads and writes to View. 
+    View should be ephemeral, and can be rebuilt from ViewModel.  
+    View may be a remote system, eg. firestore or leancloud. 
+
 ## Installation
-In your project's requirements.txt, 
-
-```
-flask-boiler
-```
-
-Configure virtual environment 
-```
-pip install virtualenv
-virtualenv env
-source env/bin/activate
-```
-
 In your project directory, 
 
 ```
-pip install -r requirements.txt
+pip install flask-boiler
 ```
 
 See more in [Quickstart](https://flask-boiler.readthedocs.io/en/latest/quickstart_link.html). 
@@ -101,7 +118,7 @@ by front end without aggregation.
 Source(s) -> Processor -> Sink(s)
 ```
 
-Take query as an example, 
+Take query as an example,  
 
 - Boiler
 - NoSQL
@@ -110,37 +127,9 @@ Take query as an example,
     - classmethods: converts to operators and aggregator's 
     
 Why would you choose `flask-boiler` over the protocols and frameworks it is employing? 
-- You can exchange components such as transportion protocols 
-- You will write code based on use case  
+- 
 
 
-### Save data
-
-```python
-
-from flask_boiler.domain_model import DomainModel
-from flask_boiler import attrs
-
-class City(DomainModel):
-
-    city_name = attrs.bproperty()
-    country = attrs.bproperty()
-    capital = attrs.bproperty()
-
-    class Meta:
-        collection_name = "City"
-    
-City.new(
-        doc_id='SF',
-        name='San Francisco',
-        state='CA', 
-        country='USA', 
-        capital=False, 
-        populations=860000,
-        regions=['west_coast', 'norcal']).save()
-
-# ...
-```
 
 ### Declare View Model
 

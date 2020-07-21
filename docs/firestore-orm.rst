@@ -9,8 +9,7 @@ firestore client library with flask-boiler ORM.
 Add data
 ########
 
-It allows you to replace,
-
+Original:
 .. code-block:: python
 
     doc_ref = db.collection(u'users').document(u'alovelace')
@@ -20,12 +19,11 @@ It allows you to replace,
         u'born': 1815
     })
 
-with this,
 
+New:
 .. code-block:: python
 
-    user = User.create(doc_id="alovelace")
-    user.first = 'Ada'
+    user = User.new(doc_id="alovelace", first='Ada')
     user.last = 'Lovelace'
     user.born = "1815"
     user.save()
@@ -35,8 +33,7 @@ with this,
 Read data
 #########
 
-It allows you to replace,
-
+Original:
 .. code-block:: python
 
     users_ref = db.collection(u'users')
@@ -45,8 +42,8 @@ It allows you to replace,
     for doc in docs:
         print(u'{} => {}'.format(doc.id, doc.to_dict()))
 
-with this,
 
+New:
 .. code-block:: python
 
     for user in User.all():
@@ -56,8 +53,7 @@ with this,
 Save data
 #########
 
-It allows you to replace,
-
+Original:
 .. code-block:: python
 
     class City(object):
@@ -87,20 +83,10 @@ It allows you to replace,
     cities_ref.document(u'SF').set(
         City(u'San Francisco', u'CA', u'USA', False, 860000,
              [u'west_coast', u'norcal']).to_dict())
-    cities_ref.document(u'LA').set(
-        City(u'Los Angeles', u'CA', u'USA', False, 3900000,
-             [u'west_coast', u'socal']).to_dict())
-    cities_ref.document(u'DC').set(
-        City(u'Washington D.C.', None, u'USA', True, 680000,
-             [u'east_coast']).to_dict())
-    cities_ref.document(u'TOK').set(
-        City(u'Tokyo', None, u'Japan', True, 9000000,
-             [u'kanto', u'honshu']).to_dict())
-    cities_ref.document(u'BJ').set(
-        City(u'Beijing', None, u'China', True, 21500000, [u'hebei']).to_dict())
+    #...
 
-with this,
 
+New:
 .. code-block:: python
 
     def CityBase(DomainModel):
@@ -131,8 +117,7 @@ with this,
 Get data
 ########
 
-It allows you to replace,
-
+Original:
 .. code-block:: python
 
     doc_ref = db.collection(u'cities').document(u'SF')
@@ -143,8 +128,8 @@ It allows you to replace,
     except google.cloud.exceptions.NotFound:
         print(u'No such document!')
 
-with this,
 
+New:
 .. code-block:: python
 
     sf = City.get(doc_id='SF')
@@ -157,8 +142,7 @@ with this,
 Simple queries
 ##############
 
-It allows you to replace,
-
+Original:
 .. code-block:: python
 
     docs = db.collection(u'cities').where(u'capital', u'==', True).stream()
@@ -166,8 +150,8 @@ It allows you to replace,
     for doc in docs:
         print(u'{} => {}'.format(doc.id, doc.to_dict()))
 
-with this,
 
+New:
 .. code-block:: python
 
     for city in City.where(capital=True):
@@ -177,7 +161,7 @@ with this,
 Query operators
 ###############
 
-It allows you to replace,
+Original:
 
 .. code-block:: python
 
@@ -192,17 +176,34 @@ with this,
 .. code-block:: python
 
     City.where(state="CA")
-    City.where(population=('<', 1000000))
-    City.where(name=('>=', "San Francisco"))
+    City.where(City.population<1000000)
+    City.where(City.name>="San Francisco")
 
-Field name conversion
-#####################
 
-Sometimes, you want to have object attributes in "snake_case" and
-Firestore Document field name in "camelCase". This is by default for
-flask-boiler. You may customize this conversion also.
+Declare Models
+##############
 
-Consider this example,
+Method 1: flask_boiler.attrs
+
+.. code-block::python
+    class City(DomainModel):
+        city_name = attrs.bproperty()
+        country = attrs.bproperty()
+        capital = attrs.bproperty()
+
+        class Meta:
+            collection_name = "City"
+
+
+    class Municipality(City):
+        pass
+
+
+    class StandardCity(City):
+        city_state = attrs.bproperty()
+        regions = attrs.bproperty()
+
+Method 2: flask_boiler.mapper.schema
 
 .. code-block:: python
 
@@ -225,19 +226,12 @@ Consider this example,
     class City(DomainModel):
         _collection_name = "City"
 
+Field name conversion
+#####################
 
-    Municipality = ClsFactory.create(
-        name="Municipality",
-        schema=MunicipalitySchema,
-        base=City,
-    )
-
-
-    StandardCity = ClsFactory.create(
-        name="StandardCity",
-        schema=StandardCitySchema,
-        base=City
-    )
+Sometimes, you want to have object attributes in "snake_case" and
+Firestore Document field name in "camelCase". This is by default for
+flask-boiler. You may customize this conversion also.
 
     sf = StandardCity.create(doc_id="SF")
     sf.city_name, sf.city_state, sf.country, sf.capital, sf.regions = \
@@ -290,6 +284,6 @@ or firestore field name.
 Or equivalently
 
 .. code-block:: python
-
+    # Currently broken
     for obj in City.where("cityState", "==", "CA"):
         print(obj.city_name)

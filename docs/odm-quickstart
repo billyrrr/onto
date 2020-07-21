@@ -1,0 +1,33 @@
+
+### Save data
+
+```python
+
+from flask_boiler.domain_model import DomainModel
+from flask_boiler import attrs
+
+class City(DomainModel):
+
+    city_name = attrs.bproperty()
+    country = attrs.bproperty()
+    capital = attrs.bproperty()
+
+    class Meta:
+        collection_name = "City"
+    
+
+class StandardCity(City):
+    city_state = attrs.bproperty()
+    regions = attrs.bproperty()
+    
+StandardCity.new(
+        doc_id='SF',
+        name='San Francisco',
+        state='CA', 
+        country='USA', 
+        capital=False, 
+        populations=860000,
+        regions=['west_coast', 'norcal']).save()
+
+# ...
+```
