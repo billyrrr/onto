@@ -126,9 +126,6 @@ Take query as an example,
     - staticmethods: converts to UDF
     - classmethods: converts to operators and aggregator's 
     
-- 
-
-
 
 ### Declare View Model
 
@@ -158,9 +155,44 @@ class CityView(ViewModel):
         return CTX.db.document(f"cityView/{self.store.city.doc_id}")
 ```
 
+### Document View
+
+``` python
+
+class MeetingSessionGet(Mediator):
+
+    from flask_boiler import source, sink
+
+    source = source.domain_model(Meeting)
+    sink = sink.firestore()  # TODO: check variable resolution order
+
+    @source.triggers.on_update
+    @source.triggers.on_create
+    def materialize_meeting_session(self, obj):
+        meeting = obj
+        assert isinstance(meeting, Meeting)
+
+        def notify(obj):
+            for ref in obj._view_refs:
+                self.sink.emit(reference=ref, snapshot=obj.to_snapshot())
+
+        _ = MeetingSession.get(
+            doc_id=meeting.doc_id,
+            once=False,
+            f_notify=notify
+        )
+        # mediator.notify(obj=obj)
+
+    @classmethod
+    def start(cls):
+        cls.source.start()
+
+```
+
 ### WebSocket View 
 
 ```python
+
 class Demo(WsMediator):
     pass
 
@@ -171,6 +203,7 @@ mediator = Demo(view_model_cls=rainbow_vm,
 io = flask_socketio.SocketIO(app=app)
 
 io.on_namespace(mediator)
+
 ```
 
 ### Create Flask View
@@ -180,33 +213,44 @@ automatically generated in ```<site_url>/apidocs``` when you run ```_ = Swagger(
 ```python
 app = Flask(__name__)
 
-meeting_session_mediator = view.RestMediator(
-    view_model_cls=MeetingSession,
-    app=app,
-    mutation_cls=MeetingSessionMutation
-)
-meeting_session_mediator.add_list_get(
-    rule="/meeting_sessions",
-    list_get_view=meeting_session_ops.ListGet
-)
+class MeetingSessionRest(Mediator):
 
-meeting_session_mediator.add_instance_get(
-    rule="/meeting_sessions/<string:doc_id>")
-meeting_session_mediator.add_instance_patch(
-    rule="/meeting_sessions/<string:doc_id>")
+    # from flask_boiler import source, sink
 
-user_mediator = view.RestMediator(
-    view_model_cls=UserView,
-    app=app,
-)
-user_mediator.add_instance_get(
-    rule="/users/<string:doc_id>"
-)
+    view_model_cls = MeetingSessionC
+
+    rest = RestViewModelSource()
+
+    @rest.route('/<doc_id>', methods=('GET',))
+    def materialize_meeting_session(self, doc_id):
+
+        meeting = Meeting.get(doc_id=doc_id)
+
+        def notify(obj):
+            d = obj.to_snapshot().to_dict()
+            content = jsonify(d)
+            self.rest.emit(content)
+
+        _ = MeetingSessionC.get(
+            doc_id=meeting.doc_id,
+            once=False,
+            f_notify=notify
+        )
+
+    # @rest.route('/', methods=('GET',))
+    # def list_meeting_ids(self):
+    #     return [meeting.to_snapshot().to_dict() for meeting in Meeting.all()]
+
+    @classmethod
+    def start(cls, app):
+        cls.rest.start(app)
 
 swagger = Swagger(app)
 
 app.run(debug=True)
 ```
+
+(currently under implementation) 
 
 ## Object Lifecycle
 
