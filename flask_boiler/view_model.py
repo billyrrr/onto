@@ -2,6 +2,7 @@ import threading
 
 from google.cloud.firestore import DocumentReference
 
+from .collection_mixin import CollectionMixin, CollectionMemberMeta
 from .context import Context as CTX
 from .models.base import Serializable
 from .utils import random_id
@@ -150,3 +151,8 @@ class ViewModel(ViewModelMixin, Serializable):
     pass
     # def __init__(self, *args, doc_ref=None, **kwargs):
     #     super().__init__(*args, doc_ref=doc_ref, **kwargs)
+
+
+class ViewModelCollectionMember(
+    CollectionMixin, ViewModel, metaclass=CollectionMemberMeta):
+    pass

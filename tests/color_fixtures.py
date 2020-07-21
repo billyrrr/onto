@@ -3,7 +3,8 @@ from google.type.color_pb2 import Color
 
 from flask_boiler import schema, fields, domain_model, view_model, \
     attrs
-from flask_boiler.store.store import BPSchema
+from flask_boiler.store import reference
+from flask_boiler.store.store import BPSchema, Store
 from flask_boiler.registry import ModelRegistry
 from flask_boiler.store.struct import Struct
 from flask_boiler.view_model import ViewModel
@@ -27,6 +28,10 @@ def rainbow_vm(CTX):
     if ModelRegistry.get_cls_from_name("RainbowViewModelDAV") is not None:
         return ModelRegistry.get_cls_from_name("RainbowViewModelDAV")
 
+    class RainbowStore(Store):
+        colors = reference(dm_cls=Color, many=True, missing=list)
+
+
     class RainbowViewModelDAV(ViewModel):
 
         rainbow_name = attrs.bproperty(import_enabled=False)
@@ -40,50 +45,36 @@ def rainbow_vm(CTX):
 
         obj_type = attrs.bproperty(import_enabled=False, export_enabled=False)
 
-        _color_d = dict()
-
         @colors.getter
         def colors(self):
-            res = list()
-            for key in sorted(self._color_d):
-                res.append(self._color_d[key])
-            return res
+            return [self.store.colors[key] for key in sorted(self.store.colors)]
 
         @rainbow_name.getter
         def rainbow_name(self):
-            res = list()
-            for key in sorted(self._color_d):
-                res.append(self._color_d[key])
-            return "-".join(res)
-
-        def set_color(self, color_id, color_name):
-            self._color_d[color_id] = color_name
-
-        def get_vm_update_callback(self, dm_cls, *args, **kwargs):
-
-            if dm_cls == Color:
-                def callback(vm: RainbowViewModelDAV, dm: Color):
-                    vm.set_color(dm.doc_id, dm.name)
-                return callback
-            else:
-                return super().get_vm_update_callback(dm_cls, *args, **kwargs)
+            return "-".join(self.colors)
 
         @classmethod
-        def new(cls, color_names: str=None, once=True, **kwargs):
+        def get(cls, color_names: str=None, once=True, **kwargs):
             color_name_list = color_names.split("+")
-            struct = Struct(schema_obj=RainbowStoreBpss())
+            struct = dict()
             struct["colors"] = {
                 "doc_id_{}".format(color_name):
                     (Color, "doc_id_{}".format(color_name))
                 for color_name in color_name_list
             }
-
+            store = RainbowStore.from_struct(struct=struct)
             vm_id = color_names
-            doc_ref = CTX.db.collection("RainbowDAV").document(vm_id)
+            doc_ref = CTX.db.ref/"RainbowDAV"/vm_id
             return super().get(doc_ref=doc_ref,
-                               struct_d=struct,
+                               store=store,
                                once=once,
                                **kwargs)
+
+        def save(self):
+            CTX.db.set(
+                ref=self.doc_ref,
+                snapshot=self.to_snapshot()
+            )
 
     return RainbowViewModelDAV
 
@@ -171,6 +162,7 @@ class ColorViewModel(view_model.ViewModel):
 class PaletteViewModel(view_model.ViewModel):
     palette_name = attrs.bproperty()
     colors = attrs.embed(obj_cls=ColorViewModel, many=True)
+    doc_ref = attrs.doc_ref()
 
     @colors.getter
     def colors(self):

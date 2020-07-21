@@ -15,6 +15,42 @@ from .fixtures import *
 from examples.meeting_room.view_models.user_view import UserViewDAV
 
 
+def test_start_flask(users, tickets, location, meeting, CTX):
+
+    from examples.meeting_room.views.rest_mediators import MeetingSessionRest
+    from flask import Flask
+    app = Flask(__name__)
+    MeetingSessionRest.start(app)
+
+    testing_utils._wait()
+
+    test_client = app.test_client()
+
+    res = test_client.get(
+        path='meeting_sessions/meeting_1')
+
+    assert res.json.items() >= {'latitude': 32.880361,
+                                   'numHearingAidRequested': 2,
+                                   'attending': [
+                                       {'hearing_aid_requested': True,
+                                        'name': 'Joshua Pendergrast',
+                                        'organization': 'SDSU'},
+                                       {'organization': 'UCSD',
+                                        'hearing_aid_requested': False,
+                                        'name': 'Thomasina Manes'},
+                                       {'organization': 'UCSD',
+                                        'hearing_aid_requested': True,
+                                        'name': 'Tijuana Furlong'}],
+                                   'longitude': -117.242929,
+                                   # 'doc_ref': 'users/tijuana/MeetingSessionDAV/meeting_1',
+                                   'inSession': True,
+                                   'address': '9500 Gilman Drive, La Jolla, CA'}.items()
+
+    res = test_client.get(
+        path='meeting_sessions/')
+    assert res == dict()
+
+
 def test_start(users, tickets, location, meeting, CTX):
 
     from examples.meeting_room.views.mediators import MeetingSessionShow

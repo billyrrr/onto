@@ -7,6 +7,7 @@ import pytest
 from .fixtures import CTX
 
 
+@pytest.mark.skip
 def test_retrofit(CTX):
 
     class ExampleView(SwaggerView):

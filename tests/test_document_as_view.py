@@ -16,7 +16,7 @@ def test_rainbow_stuffs(CTX, setup_app, color_refs, rainbow_vm):
     def notify(obj):
         obj.save()
 
-    obj = RainbowViewModelDAV.new("yellow+magenta+cian",
+    obj = RainbowViewModelDAV.get("yellow+magenta+cian",
                                   f_notify=notify)  # Non-standard usage
 
     vm_id = obj.doc_ref.id

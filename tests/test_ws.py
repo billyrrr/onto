@@ -14,6 +14,7 @@ import flask_socketio
 import time
 
 
+@pytest.mark.skip
 def test_connect(setup_app, rainbow_vm, color_refs):
     app = setup_app
 

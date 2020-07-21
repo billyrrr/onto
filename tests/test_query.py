@@ -3,7 +3,7 @@ from google.cloud.firestore_v1 import DocumentSnapshot, DocumentReference
 
 from flask_boiler.view.query_delta import make_snapshot
 from .fixtures import CTX
-from .test_domain_model import setup_cities, City
+from .test_domain_model import setup_cities, City, StandardCity
 
 from flask_boiler.query.cmp import v
 
@@ -106,7 +106,8 @@ def test_query_with_cmp():
 
     res_dict = dict()
 
-    for obj in City.where(v.country == "USA", v.city_state == "CA"):
+
+    for obj in City.where(City.country == "USA", StandardCity.city_state == "CA"):
         d = obj.to_dict()
         res_dict[d["cityName"]] = d
 
@@ -121,10 +122,10 @@ def test_trigger_snapshot(CTX):
                       "name": "projects/flask-boiler-testing/databases/(default)/documents/gcfTest/36ea7LTtYJHpW4yJQCp2",
                       "updateTime": "2020-06-03T00:23:18.348623Z"}}
 
-    snapshot = make_snapshot(data['value'], client=CTX.db)
+    snapshot = make_snapshot(data['value'], client=CTX.dbs.firestore.client)
     assert isinstance(snapshot, DocumentSnapshot)
     assert snapshot.to_dict() == {'a': 'b'}
     assert snapshot.create_time is not None
     assert snapshot.update_time is not None
 
-    assert make_snapshot(dict(), client=CTX.db) is None
+    assert make_snapshot(dict(), client=CTX.dbs.firestore.client) is None

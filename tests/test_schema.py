@@ -171,7 +171,8 @@ def test_raw():
 
 
 def test_schema_new():
-    class CitySchema(schema.Schema):
+    from flask_boiler.primary_object import PrimaryObjectSchema
+    class CitySchema(PrimaryObjectSchema):
         city_name = fields.Raw(data_key="name")
 
         country = fields.Raw(data_key="country")

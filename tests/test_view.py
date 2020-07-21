@@ -6,6 +6,7 @@ from flask_boiler import schema, fields, view_model
 
 from flask_boiler.store.struct import Struct
 from tests.color_fixtures import Color, PaletteViewModel, RainbowStoreBpss
+from .fixtures import CTX
 
 
 @pytest.fixture

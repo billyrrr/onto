@@ -3,7 +3,7 @@ import weakref
 from flask_boiler.source.protocol import Protocol
 
 
-class Source:
+class SourceBase:
 
     def __set_name__(self, owner, name):
         """ Keeps mediator as a weakref to protect garbage collection
@@ -16,6 +16,11 @@ class Source:
         """
         self.parent = weakref.ref(owner)
 
+
+class Source(SourceBase):
+
+    _protocol_cls = Protocol
+
     def __init__(self):
         """ Initializes a ViewMediator to declare protocols that
                 are called when the results of a query change. Note that
@@ -23,16 +28,19 @@ class Source:
 
         :param query: a listener will be attached to this query
         """
-        self.protocol = Protocol()
+        self.protocol = self._protocol_cls()
 
     @property
     def triggers(self):
         return self.protocol
 
+    @property
+    def mediator_instance(self):
+        return self.parent()()
+
     def _invoke_mediator(self, func_name, *args, **kwargs):
         fname = self.protocol.fname_of(func_name)
         if fname is None:
             raise ValueError
-        f = getattr(self.parent()(), fname)
+        f = getattr(self.mediator_instance, fname)
         f(*args, **kwargs)
-

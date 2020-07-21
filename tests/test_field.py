@@ -12,6 +12,7 @@ from flask_boiler.domain_model import DomainModel
 from flask_boiler.firestore_object import FirestoreObject, \
     _nest_relationship_import
 from flask_boiler.mapper.helpers import RelationshipReference
+from .fixtures import CTX
 
 
 @pytest.fixture
@@ -195,7 +196,7 @@ def test_proxy(CTX):
 
 
 def test_local_time():
-    from flask_boiler.fields import local_time_from_timestamp, timestamp_from_local_time
+    from flask_boiler.mapper.fields import local_time_from_timestamp, timestamp_from_local_time
     local_time_str = local_time_from_timestamp(1545062400)
     assert local_time_str == "2018-12-17T08:00:00"
     local_time_timestamp = timestamp_from_local_time("2018-12-17T08:00:00")

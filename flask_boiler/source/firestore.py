@@ -31,8 +31,12 @@ class FirestoreSource(Source):
                 cur: Snapshot = snapshot
                 if not prev.exists:
                     yield ("on_create", key, cur)
-                else:
+                elif prev.exists and cur.exists:
                     yield ("on_update", key, cur)
+                elif prev.exists and not cur.exists:
+                    yield ("on_delete", key, cur)
+                else:
+                    raise ValueError
 
     def _call(self, container):
         for func_name, ref, snapshot in self.delta(container):

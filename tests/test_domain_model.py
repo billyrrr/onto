@@ -6,17 +6,13 @@ Some examples are inspired by firestore documentations, some copyright
 """
 
 import pytest
-from google.cloud.firestore import Query, DocumentReference, \
-    CollectionReference
-
-from flask_boiler.config import Config
-from flask_boiler.context import Context as CTX
 
 from flask_boiler.domain_model import DomainModel
 from flask_boiler.mapper.schema import Schema, BasicSchema
 from flask_boiler import fields, collection_mixin, attrs
 
 # For pytest, DO NOT DELETE
+from flask_boiler.primary_object import PrimaryObjectSchema
 from .fixtures import *
 
 from .utils import _delete_all
@@ -240,7 +236,7 @@ def test_customized_reserved_fields_domain_model(CTX):
             the data_key for saving and reading obj_type
         """
 
-        class _schema_cls(Schema):
+        class _schema_cls(PrimaryObjectSchema):
             obj_type = fields.ObjectTypeField(data_key="_object_type")
 
             status = fields.String()
@@ -277,7 +273,7 @@ def test_customized_reserved_fields_domain_model(CTX):
         Example of a use case of excluding "obj_type", "doc_id", and "doc_ref"
         """
 
-        class _schema_cls(Schema):
+        class _schema_cls(PrimaryObjectSchema):
             class Meta:
                 exclude = ("obj_type", "doc_id", "doc_ref")
 

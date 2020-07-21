@@ -1,4 +1,6 @@
 import unittest
+
+from flask_boiler.database.firestore import FirestoreDatabase
 from flask_boiler.query import cmp
 
 
@@ -6,27 +8,21 @@ class MyTestCase(unittest.TestCase):
 
     def test_eq(self):
         a = cmp.CMP().age
-        assert isinstance(a, cmp.Condition)
         b = a == 1
-        assert isinstance(b, cmp.Condition)
-        assert b.constraints == [("==", 1)]
-        assert b.fieldname == "age"
+        assert isinstance(b, cmp.NodeCondition)
+        assert b.constraints == [(FirestoreDatabase.Comparators.eq, 1)]
 
     def test_range(self):
         a = cmp.CMP().age
-        assert isinstance(a, cmp.Condition)
         b = 0 <= a <= 1
-        assert isinstance(b, cmp.Condition)
-        assert b.constraints == [(">=", 0), ("<=", 1)]
-        assert b.fieldname == "age"
+        assert isinstance(b, cmp.NodeCondition)
+        assert b.constraints == [(FirestoreDatabase.Comparators.ge, 0), (FirestoreDatabase.Comparators.le, 1)]
 
     def test_excl_range(self):
         a = cmp.CMP().day
-        assert isinstance(a, cmp.Condition)
         b = 0 < a < 8
-        assert isinstance(b, cmp.Condition)
-        assert b.constraints == [(">", 0), ("<", 8)]
-        assert b.fieldname == "day"
+        assert isinstance(b, cmp.NodeCondition)
+        assert b.constraints == [(FirestoreDatabase.Comparators.gt, 0), (FirestoreDatabase.Comparators.lt, 8)]
 
     def test_neq_raise(self):
         a = cmp.CMP().day
@@ -38,11 +34,10 @@ class MyTestCase(unittest.TestCase):
 
     def test_in(self):
         a = cmp.CMP().friends
-        assert isinstance(a, cmp.Condition)
+        assert isinstance(a, cmp.RootCondition)
         b = a.has("user_k")
-        assert isinstance(b, cmp.Condition)
-        assert b.constraints == [("array_contains", "user_k")]
-        assert b.fieldname == "friends"
+        assert isinstance(b, cmp.NodeCondition)
+        assert b.constraints == [(FirestoreDatabase.Comparators.contains, "user_k")]
 
 
 if __name__ == '__main__':

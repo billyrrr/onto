@@ -13,7 +13,7 @@ class MeetingSessionStore(Store):
     location = reference(dm_cls=Location)
 
 
-class MeetingSession(view_model.ViewModel):
+class MeetingSessionMixin:
 
     class Meta:
         exclude = ('obj_type',)
@@ -170,6 +170,17 @@ class MeetingSession(view_model.ViewModel):
     #         super().update_vals(*args, **kwargs)
     #     else:
     #         raise UnauthorizedError
+
+
+class MeetingSessionC(MeetingSessionMixin, view_model.ViewModelCollectionMember):
+
+    class Meta:
+        collection_name = 'meeting_sessions'
+
+
+class MeetingSession(MeetingSessionMixin, view_model.ViewModel):
+
+    pass
 
 
 class MeetingSessionMutation(PatchMutation):

@@ -2,6 +2,19 @@ from flask_boiler.context import Context as CTX
 from google.cloud.firestore import CollectionReference
 
 from flask_boiler.database import Reference
+from flask_boiler.models.meta import SerializableMeta
+
+
+class CollectionMemberMeta(SerializableMeta):
+
+    def __new__(mcs, name, bases, attrs):
+        klass = super().__new__(mcs, name, bases, attrs)
+        if hasattr(klass, "Meta"):
+            meta = klass.Meta
+            if hasattr(meta, "collection_name"):
+                klass._collection_name = meta.collection_name
+        return klass
+
 
 
 class CollectionMixin:

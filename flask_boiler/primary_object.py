@@ -2,7 +2,7 @@ import warnings
 
 from google.cloud.firestore_v1 import Transaction
 
-from flask_boiler.collection_mixin import CollectionMixin
+from flask_boiler.collection_mixin import CollectionMixin, CollectionMemberMeta
 from flask_boiler.firestore_object import FirestoreObject
 from flask_boiler.query.query_mixin import QueryMixin
 from flask_boiler.models.meta import SerializableMeta
@@ -46,19 +46,8 @@ def _collect_query_schema(klass):
     return tmp_schema
 
 
-class PrimaryObjectMeta(SerializableMeta):
-
-    def __new__(mcs, name, bases, attrs):
-        klass = super().__new__(mcs, name, bases, attrs)
-        if hasattr(klass, "Meta"):
-            meta = klass.Meta
-            if hasattr(meta, "collection_name"):
-                klass._collection_name = meta.collection_name
-        return klass
-
-
 class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
-                    metaclass=PrimaryObjectMeta):
+                    metaclass=CollectionMemberMeta):
     """
     Primary Object is placed in a collection in root directory only.
     the document will be stored in and accessed from

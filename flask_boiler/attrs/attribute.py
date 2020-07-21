@@ -412,7 +412,7 @@ class ReferenceAttribute(PropertyAttribute):
         field_cls = fields.StructuralRef
         return field_cls(**self._field_kwargs, attribute=self.name)
 
-    def __init__(self, many=_NA, dm_cls=_NA, **kwargs):
+    def __init__(self, many=_NA, dm_cls=_NA, missing=_NA, **kwargs):
         super().__init__(
             **kwargs
         )
@@ -421,6 +421,11 @@ class ReferenceAttribute(PropertyAttribute):
             many = False
         self.many = many
         self._field_kwargs["many"] = self.many
+
+        if missing == _NA:
+            missing = None
+        self.missing = missing
+        self._field_kwargs['missing'] = missing
 
         if dm_cls == _NA:
             dm_cls = None
