@@ -1,4 +1,5 @@
 import typing
+from functools import partial
 
 from flask_boiler.mapper import fields
 from typing import Type, Callable
@@ -27,6 +28,12 @@ class AttributeBase(Condition):
         self.name = name
 
     def copy(self):
+        """
+        TODO: debug
+        NOTE: contents in self.field_kwargs may or may not be copied
+        TODO: fix
+        :return:
+        """
         from copy import deepcopy
         return deepcopy(self)
 
@@ -99,17 +106,23 @@ class AttributeBase(Condition):
         """
         Initialization precedes import 
         """
-        if initialize == _NA:
-            self.initialize = False
-        else:
-            self.initialize = initialize
-            field_kwargs["initialize"] = self.initialize
 
-        if self.initialize:
-            if initializer == _NA:
-                raise ValueError
 
-        self.initializer: Callable[[object], None] = initializer
+        if initialize is _NA:
+            initialize = False
+
+        self.initialize = initialize
+
+        """
+        Initializer: used to initialize the attribute when 
+            attr.initialize is set to True. 
+        """
+        if initializer is _NA:
+            def _initializer_not_defined(_self):
+                raise NotImplementedError
+            initializer = _initializer_not_defined
+
+        self.initializer = initializer
 
         # Parse data key
         if data_key != _NA:
@@ -242,53 +255,32 @@ class PropertyAttribute(AttributeBase):
 
     def  __init__(self,
                   *, fget=None, fset=None, fdel=None, doc=None,
-                  initializer=_NA,
                   **kwargs):
 
         """
         Getter
         """
-        if fget is None:
-            def fget(_self):
-                inner = getattr(_self, _ATTRIBUTE_STORE_NAME)
-                return getattr(inner, self.name)
+
         self.fget = fget
 
         """
         Setter
         """
-        if fset is None:
-            def fset(_self, value):
-                inner = getattr(_self, _ATTRIBUTE_STORE_NAME)
-                return setattr(inner, self.name, value)
+
         self.fset = fset
 
         """
         Deleter 
         """
-        if fdel is None:
-            def fdel(_self):
-                inner = getattr(_self, _ATTRIBUTE_STORE_NAME)
-                return delattr(inner, self.name)
+
         self.fdel = fdel
 
-        """
-        Initializer: used to initialize the attribute when 
-            attr.initialize is set to True. 
-        """
-        def finit(_self):
-            raise NotImplementedError
-        self.finit = finit
-
         self.__doc__ = doc
+        """
+        TODO: check that __doc__ is forwarded 
+        """
 
-        if initializer == _NA:
-            def _initializer(_self) -> None:
-                _finit = getattr(self, "finit")
-                return _finit(_self)
-            initializer = _initializer
-
-        super().__init__(initializer=initializer, **kwargs)
+        super().__init__(**kwargs)
 
     # @typing.overload
     # def __get__(self, instance: typing.Any, owner: typing.Any):
@@ -298,33 +290,54 @@ class PropertyAttribute(AttributeBase):
         if instance is None:
             return self
         else:
-            return self.fget(instance)
+            fget = self.fget
+            if fget is None:
+                def fget(_self):
+                    inner = getattr(_self, _ATTRIBUTE_STORE_NAME)
+                    return getattr(inner, self.name)
+            return fget(instance)
 
     def __set__(self, instance, value):
-        self.fset(instance, value)
+        if instance is None:
+            raise ValueError
+        else:
+            fset = self.fset
+            if fset is None:
+                def fset(_self_obj, value):
+                    inner = getattr(_self_obj, _ATTRIBUTE_STORE_NAME)
+                    return setattr(inner, self.name, value)
+            fset(instance, value)
 
     def __delete__(self, instance):
-        self.fdel(instance)
+        if instance is None:
+            raise ValueError
+        else:
+            fdel = self.fdel
+            if fdel is None:
+                def fdel(_self):
+                    inner = getattr(_self, _ATTRIBUTE_STORE_NAME)
+                    return delattr(inner, self.name)
+            fdel(instance)
 
     def getter(self, fget):
-        # _self = self.copy()
-        self.fget = fget
-        return self
+        _self = self.copy()
+        _self.fget = fget
+        return _self
 
     def setter(self, fset):
-        # _self = self.copy()
-        self.fset = fset
-        return self
+        _self = self.copy()
+        _self.fset = fset
+        return _self
 
     def deleter(self, fdel):
-        # _self = self.copy()
-        self.fdel = fdel
-        return self
+        _self = self.copy()
+        _self.fdel = fdel
+        return _self
 
-    def init(self, finit):
-        # self = self.copy()
-        self.finit = finit
-        return self
+    def init(self, initializer):
+        _self = self.copy()
+        _self.initializer = initializer
+        return _self
 
 
 class DictAttribute(PropertyAttribute):

@@ -16,10 +16,12 @@ class LeancloudBeforeSaveSource(Source):
         engine.before_save(self.class_name, self._call)
 
     def _call(self, cla_obj):
-        from flask_boiler.database.leancloud import LeancloudSnapshot
+        from flask_boiler.database.leancloud import LeancloudSnapshot, LeancloudReference
         snapshot = LeancloudSnapshot.from_cla_obj(cla_obj)
+        ref = LeancloudReference.from_cla_obj(cla_obj)
         self._invoke_mediator(
             func_name='before_save',
+            ref=ref,
             snapshot=snapshot
         )
 
@@ -42,3 +44,4 @@ class BeforeSaveDomainModelSource(LeancloudBeforeSaveSource):
             obj=obj
         )
 
+before_save = LeancloudBeforeSaveSource

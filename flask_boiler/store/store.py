@@ -2,6 +2,7 @@ from flask_boiler.mapper.fields import StructuralRef
 from flask_boiler.mapper.schema import SchemaBase
 from flask_boiler.firestore_object import FirestoreObjectValMixin
 from flask_boiler.models.base import Serializable
+from flask_boiler.store.struct import struct_ref
 
 """
 Store provides a unified interface to access dependencies from a View Model
@@ -47,6 +48,14 @@ class Store(FirestoreObjectValMixin, Serializable):
         _store.refresh(transaction=None)
         instance = cls.new(**d)  # TODO: fix unexpected arguments
         return instance
+
+    @classmethod
+    def from_objects(cls, **kwargs):
+        d = {
+            key: struct_ref(obj=val)
+            for key, val in kwargs.items()
+        }
+        return cls.from_struct(d)
 
     @classmethod
     def from_snapshot_struct(cls, snapshot_struct, **kwargs):

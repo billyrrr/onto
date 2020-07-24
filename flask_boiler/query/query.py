@@ -107,6 +107,11 @@ class ViewModelQuery(QueryBase):
         path = "**/{}_PATCH".format(parent.__name__)
         return cls(parent=parent, path=path)
 
+    @classmethod
+    def from_view_model(cls, parent):
+        ref = parent._get_collection()
+        return cls(parent=parent, ref=ref)
+
     def __init__(self, parent=None, **kwargs):
         self.parent = parent
         super().__init__(**kwargs)

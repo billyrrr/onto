@@ -68,21 +68,30 @@ def test_property_attribute():
     assert c.i == 2
 
 
-class D(Serializable):
 
-    class Meta:
-        pass
-
-    i = PropertyAttribute(initialize=True)
-
-    i.init(mock.Mock(return_value=None))
 
 
 def test_initializer():
+
+    f = mock.Mock(return_value=None, __name__='i')
+
+    class D(Serializable):
+        class Meta:
+            pass
+
+        i = PropertyAttribute(initialize=True)
+        # i = PropertyAttribute()
+
+        # i = i.init(f)
+
+        @i.init
+        def i(self):
+            f()
+
     d = D()
     d.i = 2
     assert d.i == 2
-    D.i.finit.assert_called_once()
+    f.assert_called_once()
 
 
 class E(Serializable):
@@ -92,7 +101,7 @@ class E(Serializable):
 
     i = PropertyAttribute(initialize=False)
 
-    i.init(mock.Mock(return_value=None))
+    i = i.init(mock.Mock(return_value=None, __name__='i'))
 
 
 def test_initializer_not_called():
@@ -100,7 +109,7 @@ def test_initializer_not_called():
     e = E()
     e.i = 2
     assert e.i == 2
-    E.i.finit.assert_not_called()
+    E.i.initializer.assert_not_called()
 
 
 def test_copy():
@@ -118,7 +127,7 @@ def test_import_only():
 
         i = PropertyAttribute(initialize=False)
 
-        i.init(mock.Mock(return_value=None))
+        i = i.init(mock.Mock(return_value=None, __name__='i'))
 
     k = K.new(i=1)
     assert 'i' not in k.to_dict()

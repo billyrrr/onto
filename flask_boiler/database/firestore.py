@@ -95,21 +95,21 @@ class FirestoreDatabase(Database):
             raise ValueError
 
     @classmethod
-    def set(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
+    def set(cls, ref: Reference, snapshot: Snapshot, transaction=_NA, **kwargs):
 
         if transaction is _NA:
             transaction = CTX.transaction_var.get()
 
         doc_ref = cls._doc_ref_from_ref(ref)
-        doc_ref.set(
-            document_data=snapshot.to_dict()
-        )
+        # doc_ref.set(
+        #     document_data=snapshot.to_dict()
+        # )
 
         if transaction is None:
-            doc_ref.set(document_data=snapshot.to_dict())
+            doc_ref.set(document_data=snapshot.to_dict(), **kwargs)
         else:
             transaction.set(reference=doc_ref,
-                            document_data=snapshot.to_dict())
+                            document_data=snapshot.to_dict(), **kwargs)
 
     @classmethod
     def get(cls, ref: Reference, transaction=_NA):

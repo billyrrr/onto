@@ -153,6 +153,12 @@ class ViewModel(ViewModelMixin, Serializable):
     #     super().__init__(*args, doc_ref=doc_ref, **kwargs)
 
 
-class ViewModelCollectionMember(
+class ViewModelR(
     CollectionMixin, ViewModel, metaclass=CollectionMemberMeta):
-    pass
+    """
+    ViewModelR = View Model with Repo
+    """
+
+    @classmethod
+    def _get_collection(cls):
+        return CTX.db.ref / "**" / cls._get_collection_name()

@@ -24,25 +24,25 @@ def _schema_cls_from_attributed_class(cls):
         d[key] = field
     if len(d) == 0:
         return None
+    else:
+        m_meta = {
+            "exclude": getattr(cls.Meta, "exclude", tuple())
+        }
 
-    m_meta = {
-        "exclude": getattr(cls.Meta, "exclude", tuple())
-    }
+        d["Meta"] = type(
+            "Meta",
+            tuple(),
+            m_meta
+        )
 
-    d["Meta"] = type(
-        "Meta",
-        tuple(),
-        m_meta
-    )
+        if hasattr(cls.Meta, "case_conversion"):
+            d["case_conversion"] = cls.Meta.case_conversion
 
-    if hasattr(cls.Meta, "case_conversion"):
-        d["case_conversion"] = cls.Meta.case_conversion
+        schema_base = cls._schema_base if cls._schema_cls is None else cls._schema_cls
 
-    schema_base = cls._schema_base
+        TempSchema = type(_make_schema_name(cls), (schema_base,), d)
 
-    TempSchema = type(_make_schema_name(cls), (schema_base,), d)
-
-    return TempSchema
+        return TempSchema
 
 
 def _collect_attrs(cls) -> Iterable[Tuple[str, AttributeBase]]:

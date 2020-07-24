@@ -37,7 +37,11 @@ may induce a higher cost. In this case, you can declare a mediator to be hosted
 as a Flink UDF (User Defined Function), and Flink will handle the invocation and logics 
 for triggering. `flask-boiler` will compile/transform your code to be runnable as UDF. 
 
-### Object-Oriented Code 
+### Object-Oriented Code
+
+#### Type hinting
+- Write queries more easily and more accurately 
+- Refactor more easily 
 
 #### Easy to see the overall picture 
 The code to write with `flask-boiler` reflects the use case better. You may 

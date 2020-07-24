@@ -172,7 +172,7 @@ class MeetingSessionMixin:
     #         raise UnauthorizedError
 
 
-class MeetingSessionC(MeetingSessionMixin, view_model.ViewModelCollectionMember):
+class MeetingSessionC(MeetingSessionMixin, view_model.ViewModelR):
 
     class Meta:
         collection_name = 'meeting_sessions'

@@ -35,11 +35,8 @@ class Field(fields.Field):
 
     def __init__(self,
                  *args, missing=None, default=fields.missing_,
-                 initialize=True, initialize_value=None,
                  **kwargs):
         super().__init__(*args, missing=missing, default=default, **kwargs)
-        self.initialize_value = initialize_value
-        self.initialize = initialize
 
     @property
     def default_value(self):

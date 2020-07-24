@@ -12,15 +12,17 @@ class SerializableMeta(ModelRegistry):
 
     def __new__(mcs, name, bases, attrs):
         klass = super().__new__(mcs, name, bases, attrs)
-        attributed = _schema_cls_from_attributed_class(cls=klass)
 
+        meta = klass.Meta
+        if hasattr(meta, "schema_cls"):
+            klass._schema_cls = meta.schema_cls
+
+        attributed = _schema_cls_from_attributed_class(cls=klass)
         if attributed is not None:
             klass._schema_cls = attributed
         # if hasattr(klass, "Meta"):
         #     Moves Model.Meta.schema_cls to Model._schema_cls
-        meta = klass.Meta
-        if hasattr(meta, "schema_cls"):
-            klass._schema_cls = meta.schema_cls
+
 
             # if hasattr(meta, "default_fields"):
             #     default_fields = meta.default_fields
