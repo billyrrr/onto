@@ -356,9 +356,13 @@ class Relationship(ObjClsMixin, fields.Str, Field):
 
         # assert isinstance(value, DocumentReference)
         from flask_boiler.database.firestore import FirestoreReference
+        if isinstance(value, str):
+            doc_ref = FirestoreReference.from_str(value)
+        else:
+            doc_ref = FirestoreReference.from_document_reference(value)
         # TODO: change
         return RelationshipReference(
-            doc_ref=FirestoreReference.from_str(value),
+            doc_ref=doc_ref,
             nested=self.nested,
             obj_type=self.obj_cls
         )
