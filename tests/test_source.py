@@ -2,7 +2,7 @@ from flask_boiler.source.protocol import Protocol
 from unittest.mock import patch, call, ANY
 from .fixtures import CTX
 
-from examples.meeting_room.tests.fixtures import meeting
+from examples.meeting_room.tests.fixtures import *
 
 
 def test_register():

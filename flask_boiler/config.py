@@ -60,7 +60,7 @@ class ConfigBase:
     def __new__(cls, certificate_filename=None, certificate_path=None,
                 testing=False, debug=False,
                 app_name=None, storage_bucket_name=None,
-                database=None,
+                database=None, default_database=None,
                 *args, **kwargs):
         if certificate_path is not None:
             cls.FIREBASE_CERTIFICATE_JSON_PATH = certificate_path
@@ -75,10 +75,21 @@ class ConfigBase:
         else:
             cls.STORAGE_BUCKET_NAME = f"{app_name}.appspot.com"
         cls.database = database if database is not None else dict()
+        cls.default_database = default_database
         return cls
 
 
 class Config(ConfigBase):
+
+    @classmethod
+    def _load_from_file(cls, file):
+        from yaml import load, dump
+        try:
+            from yaml import CLoader as Loader, CDumper as Dumper
+        except ImportError:
+            from yaml import Loader, Dumper
+        y = load(file, Loader=Loader)
+        return cls(**y)
 
     @classmethod
     def load(cls):
@@ -87,10 +98,4 @@ class Config(ConfigBase):
         filename = os.getenv(CONFIG_FILENAME_KEY, DEFAULT_CONFIG_FILENAME)
 
         with open(filename) as file:
-            from yaml import load, dump
-            try:
-                from yaml import CLoader as Loader, CDumper as Dumper
-            except ImportError:
-                from yaml import Loader, Dumper
-            y = load(file, Loader=Loader)
-            return cls(**y)
+            return cls._load_from_file(file)

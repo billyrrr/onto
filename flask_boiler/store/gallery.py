@@ -1,17 +1,23 @@
 from typing import List
-from flask_boiler.database import Reference, Snapshot
+from flask_boiler.database import Reference, Snapshot, Database
 from flask_boiler.store.snapshot_container import SnapshotContainer
 from flask_boiler.context import Context as CTX
 
 
 class Gallery:
 
-    def __init__(self):
+    def __init__(self, database=None):
         self.tasks = dict()  # TODO: Watch out for when (doc_ref, obj_type_super) and (doc_ref, obj_type_sub) are both in the set; the objects will be equivalent, but initialized twice under the current plan
         self.visited = set()
         self.container = SnapshotContainer()
         self.object_container = dict()
         self.save_tasks = dict()
+        if database is None:
+            database = CTX.db
+        self._database = database
+
+    def _datastore(self):
+        return self._database
 
     def insert(self, *, doc_ref, obj_type) -> None:
         """
@@ -38,7 +44,7 @@ class Gallery:
         for _, (obj, kwargs) in self.save_tasks.items():
             d = obj._export_as_dict(**kwargs)
             snapshot = Snapshot(d)
-            CTX.db.set(snapshot=snapshot, ref=obj.doc_ref, transaction=kwargs['transaction'])
+            self._datastore().set(snapshot=snapshot, ref=obj.doc_ref, transaction=kwargs['transaction'])
 
     @staticmethod
     def _get_snapshots_with_listener(refs: List[Reference]):
@@ -51,7 +57,7 @@ class Gallery:
 
 
     @staticmethod
-    def _get_snapshots_with_batch(transaction, **kwargs):
+    def _get_snapshots_with_batch(database: Database, transaction, **kwargs):
         """ needed because transactional wrapper uses specific argument
             ordering
 
@@ -59,8 +65,7 @@ class Gallery:
         :param kwargs:
         :return:
         """
-        from flask_boiler.context import Context as CTX
-        return CTX.db.get_many(transaction=transaction, **kwargs)
+        return database.get_many(transaction=transaction, **kwargs)
 
     def refresh(self, transaction, get_snapshots=None):
 
@@ -73,7 +78,7 @@ class Gallery:
             for doc_ref in self.tasks:
                 refs.append(doc_ref)
 
-            res = get_snapshots(refs=refs, transaction=transaction)
+            res = get_snapshots(database=self._datastore(), refs=refs, transaction=transaction)
             for ref, doc in res:
                 self.container.set(key=ref, val=doc)
 

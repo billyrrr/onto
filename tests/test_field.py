@@ -37,7 +37,7 @@ def test_init_read_only():
 def test_relationship_many(CTX):
 
     doc_ref_1, doc_ref_2 = \
-        CTX.db.document("hello/1"), CTX.db.document("hello/2")
+        CTX.db.ref/"hello/1", CTX.db.ref/"hello/2"
 
     class ContainsIterableSchema(schema.Schema):
         the_iterable = marshmallow_fields.Dict(
@@ -164,7 +164,7 @@ def test_proxy(CTX):
     class A(DomainModel):
         foo = attrs.bproperty()
 
-    doc_ref = CTX.db.document('A/a')
+    doc_ref = CTX.db.ref/'A'/'a'
     doc_ref.set(dict(foo='bar'))
 
     from flask_boiler.store import Gallery

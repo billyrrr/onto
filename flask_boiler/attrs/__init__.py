@@ -9,6 +9,7 @@ from .attribute import AttributeBase, \
     LocalTimeAttribute as local_time, \
     PropertyAttribute as string, \
     PropertyAttribute as integer, \
-    DocRefAttribute as doc_ref
+    DocRefAttribute as doc_ref, \
+    PropertyAttribute as action
 
 # TODO: change import for string and integer

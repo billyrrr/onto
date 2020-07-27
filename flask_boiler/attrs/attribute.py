@@ -5,7 +5,7 @@ from flask_boiler.mapper import fields
 from typing import Type, Callable
 
 from flask_boiler.common import _NA
-from flask_boiler.query.cmp import Condition
+from flask_boiler.query.cmp import Condition, RootCondition
 
 _ATTRIBUTE_STORE_NAME = "_attrs"
 
@@ -13,7 +13,7 @@ class ValueNotProvided:
     pass
 
 
-class AttributeBase(Condition):
+class AttributeBase(RootCondition):
 
     def _make_field(self) -> fields.Field:
         """

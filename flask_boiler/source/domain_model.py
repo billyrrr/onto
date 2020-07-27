@@ -14,9 +14,9 @@ from flask_boiler.context import Context as CTX
 
 class DomainModelSource(FirestoreSource):
 
-    def __init__(self, domain_model_cls: Type[DomainModel]):
+    def __init__(self, domain_model_cls: Type[DomainModel], *args, **kwargs):
         self.domain_model_cls = domain_model_cls
-        query = self.domain_model_cls.get_query()
+        query = self.domain_model_cls.get_query().where(*args, **kwargs)
         super().__init__(query=query)
 
     def _call(self, container):

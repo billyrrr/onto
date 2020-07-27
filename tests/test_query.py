@@ -122,10 +122,10 @@ def test_trigger_snapshot(CTX):
                       "name": "projects/flask-boiler-testing/databases/(default)/documents/gcfTest/36ea7LTtYJHpW4yJQCp2",
                       "updateTime": "2020-06-03T00:23:18.348623Z"}}
 
-    snapshot = make_snapshot(data['value'], client=CTX.dbs.firestore.client)
+    snapshot = make_snapshot(data['value'], client=CTX.dbs.firestore_client)
     assert isinstance(snapshot, DocumentSnapshot)
     assert snapshot.to_dict() == {'a': 'b'}
     assert snapshot.create_time is not None
     assert snapshot.update_time is not None
 
-    assert make_snapshot(dict(), client=CTX.dbs.firestore.client) is None
+    assert make_snapshot(dict(), client=CTX.dbs.firestore.firestore_client) is None

@@ -4,7 +4,8 @@ testing: False
 certificate_filename: "flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
 
 database:
-  default:
+  firestore:
+    default: True
     type: firestore
     certificate_path: "config_jsons/flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
   leancloud:

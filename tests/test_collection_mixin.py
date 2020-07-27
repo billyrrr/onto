@@ -1,4 +1,5 @@
 import pytest
+
 from flask_boiler import collection_mixin, domain_model
 from abc import ABC
 from .fixtures import CTX
@@ -13,10 +14,14 @@ def test_init():
 
 
 @pytest.fixture
-def ExampleMixin():
+def ExampleMixin(CTX):
 
     class ExampleMixin(collection_mixin.CollectionMixin):
         _collection_name = "Examples"
+
+        @classmethod
+        def _datastore(cls):
+            return CTX.dbs.firestore
 
     return ExampleMixin
 

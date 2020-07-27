@@ -116,9 +116,9 @@ def test_import_nested():
         )
         res = ContainsNested._import_val(val=field_deserialized, _store=store)
 
-        def _get_snapshots(transaction, refs):
+        def _get_snapshots(database, transaction, refs):
             return list(
-                (ref, CTX.db.get(ref=ref))
+                (ref, database.get(ref=ref))
                 for ref in refs
             )
 

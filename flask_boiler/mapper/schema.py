@@ -106,6 +106,9 @@ class BoilerProperty(object):
 
 class SchemaBase(SchemaMixin, marshmallow.Schema):
 
+    class Meta:
+        ordered = True
+
     @classmethod
     def _get_reserved_fieldnames(cls):
         return set()

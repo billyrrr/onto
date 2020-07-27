@@ -5,4 +5,10 @@ class DomainModel(PrimaryObject):
     """
     Domain model is intended for handling business logic.
     """
-    pass
+
+    @classmethod
+    def _datastore(cls):
+        from flask_boiler.context import Context as CTX
+        return CTX.db
+
+

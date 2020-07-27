@@ -1,4 +1,6 @@
 # from google.cloud.firestore import DocumentReference
+import abc
+
 from google.cloud.firestore import Transaction
 # from google.cloud.firestore_v1 import WriteOption, LastUpdateOption
 
@@ -30,9 +32,9 @@ class FirestoreObjectMixin:
     #     return self.doc_ref
 
     @classmethod
+    @abc.abstractmethod
     def _datastore(cls):
-        _db = CTX.db
-        return _db
+        pass
 
     @property
     def doc_ref(self) -> Reference:
@@ -151,21 +153,32 @@ def _nest_relationship_import(rr, _store):
 #     return CallbackProxy(_callback)
 
 
-def _get_snapshots(transaction, **kwargs):
-    """ needed because transactional wrapper uses specific argument
-        ordering
-
-    :param transaction:
-    :param kwargs:
-    :return:
-    """
-    return CTX.db.get_many(transaction=transaction, **kwargs)
+# def _get_snapshots(transaction, **kwargs):
+#     """ needed because transactional wrapper uses specific argument
+#         ordering
+#
+#     :param transaction:
+#     :param kwargs:
+#     :return:
+#     """
+#     return CTX.db.get_many(transaction=transaction, **kwargs)
 
 
 class FirestoreObjectValMixin:
     """
     Subclasses of this class can hold FirestoreObject as an attribute
     """
+
+    @classmethod
+    @abc.abstractmethod
+    def _datastore(cls):
+        """
+        NOTE: this is declared in all of:
+            - FirestoreObjectMixin
+            - FirestoreObjectValMixin
+        :return:
+        """
+        pass
 
     def __init__(self, *args, _store=_NA, **kwargs):
 
@@ -317,4 +330,8 @@ class FirestoreObjectValMixin:
 class FirestoreObject(FirestoreObjectValMixin,
                       FirestoreObjectMixin,
                       Serializable):
-    pass
+
+    @classmethod
+    def _datastore(cls):
+        _db = CTX.db
+        return _db

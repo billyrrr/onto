@@ -47,7 +47,7 @@ class CollectionMixin:
 
     @classmethod
     def _get_collection(cls) -> Reference:
-        return CTX.db.ref / cls._get_collection_name()
+        return cls._datastore().ref / cls._get_collection_name()
 
     @classmethod
     def ref_from_id(cls, doc_id):

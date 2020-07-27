@@ -160,5 +160,9 @@ class ViewModelR(
     """
 
     @classmethod
+    def _datastore(cls):
+        return CTX.db
+
+    @classmethod
     def _get_collection(cls):
-        return CTX.db.ref / "**" / cls._get_collection_name()
+        return cls._datastore().ref / "**" / cls._get_collection_name()

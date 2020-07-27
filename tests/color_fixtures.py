@@ -47,7 +47,7 @@ def rainbow_vm(CTX):
 
         @colors.getter
         def colors(self):
-            return [self.store.colors[key] for key in sorted(self.store.colors)]
+            return [self.store.colors[key].name for key in sorted(self.store.colors)]
 
         @rainbow_name.getter
         def rainbow_name(self):

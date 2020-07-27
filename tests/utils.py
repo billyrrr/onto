@@ -11,15 +11,16 @@ def _delete_all(CTX, collection_name=None, subcollection_name=None):
     :param collection_name:
     :return:
     """
+    testing_datastore = CTX.dbs.firestore
     app_name = CTX.firebase_app.name
     if not app_name.find("testing"):
         raise Exception("Firebase App Name is {}. "
                         "Only app name containing testing is supported"
                         .format(app_name))
     if collection_name is not None:
-        collection: CollectionReference = CTX.db._doc_ref_from_ref(CTX.db.ref/collection_name)
+        collection: CollectionReference = testing_datastore._doc_ref_from_ref(testing_datastore.ref/collection_name)
     elif subcollection_name is not None:
-        collection: CollectionReference = CTX.db._doc_ref_from_ref(CTX.db.ref/'**'/subcollection_name)
+        collection: CollectionReference = testing_datastore._doc_ref_from_ref(testing_datastore.ref/'**'/subcollection_name)
 
     warnings.warn("Deleting collection: {}, App Name: {}.".format(collection_name, app_name))
 

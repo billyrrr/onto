@@ -174,6 +174,8 @@ class Context:
         cls._reload_testing_flag(cls.config.TESTING)
         cls._reload_firebase_app()
         cls._reload_dbs(cls.config.database)
+        default_db_name = cls.config.default_database
+        cls._reload_default_db(db_name=default_db_name)
         cls._reload_celery_app()
         from flask_boiler.database.firestore import FirestoreListener
         cls.listener = FirestoreListener
@@ -200,10 +202,13 @@ class Context:
         cls.dbs = Dbs()
         for db_name, db_config in database.items():
             db = cls.create_db(db_config)
-            if db_name == 'default':
-                setattr(cls, 'db', db)
-            else:
-                setattr(cls.dbs, db_name, db)
+            setattr(cls.dbs, db_name, db)
+
+    @classmethod
+    def _reload_default_db(cls, db_name=None):
+        if db_name is not None:
+            db = getattr(cls.dbs, db_name)
+            setattr(cls, 'db', db)
 
     @staticmethod
     def create_db(db_config):
