@@ -54,3 +54,9 @@ couchbase
 
 # Optional
 leancloud
+
+# Optional
+Flask-JSONRPC
+
+# Optional - jsonrpc sink
+jsonrpcclient[requests]

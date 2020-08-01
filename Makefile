@@ -195,3 +195,10 @@ autobuild-stable:
 		exit 1;; \
 	esac
 	@make autobuild-dev
+
+build-package:
+	python setup.py sdist
+
+upload-pypi:
+	pip install twine
+	python -m twine upload dist/*

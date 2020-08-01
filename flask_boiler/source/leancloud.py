@@ -2,7 +2,7 @@ from flask_boiler.source.base import Source
 from flask_boiler.context import Context as CTX
 
 
-class LeancloudBeforeSaveSource(Source):
+class LeancloudHook(Source):
 
     def __init__(self, class_name):
         super().__init__()
@@ -13,26 +13,34 @@ class LeancloudBeforeSaveSource(Source):
 
     def _register(self):
         engine = CTX.services.engine
-        engine.before_save(self.class_name, self._call)
+        for trigger_name in self.protocol.mapping:
+            wrapper_f = getattr(engine, trigger_name)
+            wrapper = wrapper_f(self.class_name)
 
-    def _call(self, cla_obj):
+            @wrapper
+            def f(*args, **kwargs):
+                from functools import partial
+                f = partial(self._call, trigger_name=trigger_name)
+                return f(*args, **kwargs)
+
+    def _call(self, cla_obj, *, trigger_name):
         from flask_boiler.database.leancloud import LeancloudSnapshot, LeancloudReference
         snapshot = LeancloudSnapshot.from_cla_obj(cla_obj)
         ref = LeancloudReference.from_cla_obj(cla_obj)
         self._invoke_mediator(
-            func_name='before_save',
+            func_name=trigger_name,
             ref=ref,
             snapshot=snapshot
         )
 
 
-class BeforeSaveDomainModelSource(LeancloudBeforeSaveSource):
+class DomainModelSource(LeancloudHook):
 
     def __init__(self, domain_model_cls):
         super().__init__(class_name=domain_model_cls._get_collection_name())
         self.domain_model_cls = domain_model_cls
 
-    def _call(self, cla_obj):
+    def _call(self, trigger_name, cla_obj):
         from flask_boiler.database.leancloud import LeancloudSnapshot
 
         from flask_boiler.database.leancloud import LeancloudReference
@@ -40,8 +48,10 @@ class BeforeSaveDomainModelSource(LeancloudBeforeSaveSource):
         snapshot = LeancloudSnapshot.from_cla_obj(cla_obj)
         obj = self.domain_model_cls.from_snapshot(ref=ref, snapshot=snapshot)
         self._invoke_mediator(
-            func_name='before_save',
+            func_name=trigger_name,
             obj=obj
         )
 
-before_save = LeancloudBeforeSaveSource
+# before_save = LeancloudBeforeSaveSource
+hook = LeancloudHook
+domain_model_hook = DomainModelSource

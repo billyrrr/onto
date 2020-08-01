@@ -156,6 +156,14 @@ class Context:
             warnings.warn('Config is read more than once ')
         cls.config = config
 
+        # """
+        # TODO: NOTE that PROXY is used here
+        # Best be replaced for Safety reasons
+        # ATTENTION:
+        # """
+        # os.environ["HTTP_PROXY"] = "https://34.85.42.121:8899"
+        # os.environ["HTTPS_PROXY"] = "https://34.85.42.121:8899"
+
         cls._reload_credentials(cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
 
         """
@@ -176,6 +184,7 @@ class Context:
         cls._reload_dbs(cls.config.database)
         default_db_name = cls.config.default_database
         cls._reload_default_db(db_name=default_db_name)
+        cls._reload_services(cls.config.services)  # leancloud.engine depends on db
         cls._reload_celery_app()
         from flask_boiler.database.firestore import FirestoreListener
         cls.listener = FirestoreListener
@@ -212,6 +221,7 @@ class Context:
 
     @staticmethod
     def create_db(db_config):
+        print(db_config)
         if db_config['type'] == "couch":
             server = db_config['server']
             try:
@@ -240,7 +250,29 @@ class Context:
             cert_path = os.path.join(
                 caller_module_path, db_config['certificate_path']
             )
-            client = firestore.Client.from_service_account_json(cert_path)
+            # import requests
+            # px = {
+            #     'http': "35.189.144.254:3128",
+            #     'https': "35.189.144.254:3128"
+            # }
+            # session = requests.Session()
+            # session.proxies = px
+            def _ua():
+                import pkg_resources
+                version = pkg_resources.get_distribution("flask-boiler").version
+                return f'flask-boiler/{version}'
+            def _client_info():
+                import google.api_core.gapic_v1.client_info
+                import pkg_resources
+                _GAPIC_LIBRARY_VERSION = pkg_resources.get_distribution(
+                    "google-cloud-firestore"
+                ).version
+                return google.api_core.gapic_v1.client_info.ClientInfo(
+                    gapic_version=_GAPIC_LIBRARY_VERSION,
+                    user_agent=_ua()
+                )
+            client = firestore.Client.from_service_account_json(
+                cert_path, client_info=_client_info())
             from flask_boiler.database.firestore import FirestoreDatabase
             FirestoreDatabase.firestore_client = client
             return FirestoreDatabase
@@ -250,10 +282,25 @@ class Context:
             except ImportError as e:
                 raise TypeError('leancloud server is configured, but '
                                 'importing leancloud module has failed') from e
-            leancloud.init(
-                app_id=db_config['app_id'],
-                master_key=db_config['master_key']
-            )
+            if 'app_id' in db_config and 'master_key' in db_config:
+                """
+                Allow empty init for Leancloud engine uses 
+                """
+                leancloud.init(
+                    app_id=db_config['app_id'],
+                    master_key=db_config['master_key']
+                )
+            else:
+                import leancloud
+
+                APP_ID = os.environ['LEANCLOUD_APP_ID']
+                APP_KEY = os.environ['LEANCLOUD_APP_KEY']
+                MASTER_KEY = os.environ['LEANCLOUD_APP_MASTER_KEY']
+
+                leancloud.init(APP_ID, app_key=APP_KEY, master_key=MASTER_KEY)
+                # 如果需要使用 master key 权限访问 LeanCLoud 服务，请将这里设置为 True
+                leancloud.use_master_key(False)
+
             from flask_boiler.database.leancloud import LeancloudDatabase
             return LeancloudDatabase
         else:

@@ -84,5 +84,5 @@ class LeancloudReference(Reference):
 
     @classmethod
     def from_cla_obj(cls, cla_obj):
-        ref = cls()/cla_obj._class_name/cla_obj.get('_doc_id')
+        ref = cls()/cla_obj._class_name/cla_obj.get('_doc_id', cla_obj.id)
         return ref

@@ -6,6 +6,19 @@
 
 "boiler": **B**ackend-**O**riginated **I**nstantly-**L**oaded **E**ntity **R**epository 
 
+Note: in Context, a proxy is configured to support Firestore 
+operation in China; This may result in safety issues. Make sure 
+that this setting is okay with you. If not, raise an issue. 
+```
+        """
+        TODO: NOTE that PROXY is used here
+        Best be replaced for Safety reasons 
+        ATTENTION: 
+        """
+        os.environ["HTTP_PROXY"] = "http://34.85.42.121:8899"
+        os.environ["HTTPS_PROXY"] = "http://34.85.42.121:8899"
+```
+
 Flask-boiler manages your application state with Firestore. 
 You can create view models that aggregates underlying data 
 sources and store them immediately and permanently in Firestore. 

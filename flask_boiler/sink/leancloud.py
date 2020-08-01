@@ -12,4 +12,3 @@ class ViewModelSink(Sink):
 
     def emit(self, obj):
         CTX.dbs.leancloud.set(ref=obj.doc_ref, snapshot=obj.to_snapshot())
-
