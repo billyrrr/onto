@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="flask_boiler",
     # Beta release
-    version="0.0.2dev5",
+    version="0.0.2dev9",
     author="Bill Rao",
     author_email="billrao@me.com",
     description="Build reactive back end with ease ",
@@ -32,7 +32,8 @@ setuptools.setup(
     install_requires=[
         'Flask>=0.10',
         'google-auth',
-        'google-cloud-datastore>=1.4.0',
+        # 'google-cloud-datastore>=1.4.0',
+        'grpc-io==1.27.2'
         'google-api-python-client',
         'firebase-admin',
         'flask_restful',

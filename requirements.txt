@@ -3,7 +3,7 @@ testfixtures
 
 Flask>=0.10
 google-auth
-google-cloud-datastore>=1.4.0
+# google-cloud-datastore>=1.4.0
 google-api-python-client
 firebase-admin>=3.0.0
 
