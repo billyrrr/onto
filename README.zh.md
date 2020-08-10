@@ -44,10 +44,15 @@ Flask-boiler通过Firestore管理您的应用程序状态。您可以创建视�
 
 锅炉在技术上是MVVM（Model-View-ViewModel），其中， 
 
-1.   Model consists of a transactional database or datastore, and lives in back end. 
-2.   ViewModel consists of a distributed state consists of Model and  aggregator. It is the main part of boiler. For client-read,  it receives the streams coming in from the Model layer, and  output them as a View to the View layer. For client-write,  it receives the change streams from View  layer, and operate on Model layer to persist the change.  ViewModel lives in the back end, and may be operated as  boiler python code, or compiled as flink jobs in the case of  big data application (to be implemented). 
-3.   View is the presentational layer for the back end. It serves  1NF normalized data that are readable to the front end  without further aggregation. Client reads and writes to View.  View should be ephemeral, and can be rebuilt from ViewModel.  
-     View may be a remote system, eg. firestore or leancloud. 
+1. 模型由事务性数据库或数据存储组成，并位于后端。 
+2. ViewModel由一个分布式状态组成，该状态由Model和聚合器组成。
+它是锅炉的主要部分。对于客户端读取，它接收来自Model层的流，并将它们作为View
+输出到View层。对于客户端编写，它从View层接收更改流，并在Model层上操作以保留更改。
+3. ViewModel位于后端，可以用作锅炉python代码，或者在大数据应用程序中（待实现）
+编译为flink作业。视图是后端的表示层。它为1NF范式数据提供服务，
+无需进一步聚合即可读取到前端。客户端读取和写入View。 View应该是短暂的，
+并且可以从ViewModel重建。视图可以是远程系统，例如。 Firestore或leancloud。 
+
 
 ## 安装
 
@@ -68,7 +73,7 @@ Flask-boiler通过Firestore管理您的应用程序状态。您可以创建视�
 <!--vm.register_listener()-->
 <!--```-->
 
-### 国家管理
+### 状态管理
 
 您可以合并在域模型中收集的信息并在Firestore中提供这些信息，以便前端可以读取单个文档或集合中所需的所有数据，而无需客户端查询和过多的服务器往返时间。 
 
