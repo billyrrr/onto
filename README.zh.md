@@ -53,8 +53,8 @@
 
 在您的项目目录中， 
 
-    pip install flask-boiler
-
+<code>pip install flask-boiler
+</code>
 在[快速入门中](https://flask-boiler.readthedocs.io/en/latest/quickstart_link.html)查看更多信息。 
 
 <!--## Usage-->
@@ -80,23 +80,19 @@
 
  `` flask-boiler ``本质上是源-接收器操作的框架： 
 
-    Source(s) -> Processor -> Sink(s)
-
+<code>Source(s) -> Processor -> Sink(s)
+</code>
 以查询为例， 
 
-*   Boiler
-*   NoSQL
-*   Flink
-    
-    *   staticmethods: converts to UDF
-    *   classmethods: converts to operators and aggregator's 
-    
-    
-    
+*   锅炉
+*    NoSQL 
+*    Flink 
+    *   静态方法 staticmethod：转换为UDF 
+    *   类方法 classmethod：转换为运算符和聚合器
 
 ### 声明视图模型
 
-<pre><code class="lang-python">class CityView(ViewModel):
+<code class="lang-python">class CityView(ViewModel):
 
     name = attrs.bproperty()
     country = attrs.bproperty()
@@ -119,11 +115,10 @@
     @property
     def doc_ref(self):
         return CTX.db.document(f"cityView/{self.store.city.doc_id}")
-</code></pre>
-
+</code>
 ### 文件检视
 
-<pre><code class="lang-python">
+<code class="lang-python">
 class MeetingSessionGet(Mediator):
 
     from flask_boiler import source, sink
@@ -151,11 +146,10 @@ class MeetingSessionGet(Mediator):
     @classmethod
     def start(cls):
         cls.source.start()
-</code></pre>
-
+</code>
 ###  WebSocket视图
 
-<pre><code class="lang-python">
+<code class="lang-python">
 class Demo(WsMediator):
     pass
 
@@ -166,13 +160,12 @@ mediator = Demo(view_model_cls=rainbow_vm,
 io = flask_socketio.SocketIO(app=app)
 
 io.on_namespace(mediator)
-</code></pre>
-
+</code>
 ### 创建烧瓶视图
 
-您可以使用RestMediator创建REST API。当您运行`` _ = Swagger(app) ``时，OpenAPI3 docs将在`` &lt;site_url&gt;/apidocs ``自动生成。 
+您可以使用RestMediator创建REST API。当您运行`` _ = Swagger(app) ``时，OpenAPI3 docs将在`` <site_url>/apidocs ``自动生成。 
 
-<pre><code class="lang-python">app = Flask(__name__)
+<code class="lang-python">app = Flask(__name__)
 
 class MeetingSessionRest(Mediator):
 
@@ -182,7 +175,7 @@ class MeetingSessionRest(Mediator):
 
     rest = RestViewModelSource()
 
-    @rest.route('/&lt;doc_id&gt;', methods=('GET',))
+    @rest.route('/<doc_id>', methods=('GET',))
     def materialize_meeting_session(self, doc_id):
 
         meeting = Meeting.get(doc_id=doc_id)
@@ -209,67 +202,68 @@ class MeetingSessionRest(Mediator):
 swagger = Swagger(app)
 
 app.run(debug=True)
-</code></pre>
-
+</code>
  （目前正在实施中） 
 
 ## 对象生命周期
 
 ### 一旦 Once
 
-使用`` cls.new ``创建的对象-&gt;使用`` obj.to_view_dict ``导出的对象。 
+使用`` cls.new ``创建的对象->使用`` obj.to_view_dict ``导出的对象。 
 
 ### 多 Multi
 
-在数据库中创建新域模型时创建的对象-&gt;基础数据源更改时对象更改-&gt;对象调用`` self.notify `` 
+在数据库中创建新域模型时创建的对象->基础数据源更改时对象更改->对象调用`` self.notify `` 
 
 ## 典型的ViewMediator用例
 
-数据流方向描述为源-&gt;接收器。 “读取”描述了前端在Sink中发现有用数据的数据流。 “写入”描述了数据流，其中接收器是真实的唯一来源。 
+数据流方向描述为源->接收器。 “读取”描述了前端在Sink中发现有用数据的数据流。 “写入”描述了数据流，其中接收器是真实的唯一来源。 
 
 ### Rest
 
-读取：请求-&gt;响应\\写入：请求-&gt;文档
+读取：请求->响应
+写入：请求->文档
 
-1.   Front end sends HTTP request to Server 
-2.   Server queries datastore
-3.   Server returns response
+1.   前端向服务器发送HTTP请求
+2.   服务器查询数据存储
+3.   服务器返回响应
 
 ### 询问
 
-读取：文档-&gt;文档\\写入：文档-&gt;文档
+读取：文档->文档
+写入：文档->文档
 
-1.   Datastore triggers update function 
-2.   Server rebuilds ViewModel that may be changed as a result 
-3.   Server saves newly built ViewModel to datastore 
+1.   数据存储区触发更新功能
+2.   服务器重建可能会因此而更改的ViewModel 
+3.   服务器将新建的ViewModel保存到数据存储区
 
 ### 查询+任务
 
-读取：文档-&gt;文档\\写入：文档-&gt;文档
+读取：文档->文档
+写入：文档->文档
 
-1.   Datastore triggers update function for document `` d `` at time `` t ``
-2.   Server starts a transaction
-3.   Server sets write\_option to only allow commit if documents are last updated at time `` t `` (still under design)
-4.   Server builds ViewModel with transaction 
-5.   Server saves ViewModel with transaction
-6.   Server marks document `` d `` as processed (remove document or update a field)
-7.   Server retries up to MAX\_RETRIES from step 2 if precondition failed 
+1.   数据存储在时间`` t ``触发文档`` d ``更新功能
+2.   服务器开始交易
+3.   服务器将write_option设置为仅在文档最后一次更新时间为`` t ``时才允许提交（仍在设计中） 
+4.   服务器使用事务构建ViewModel 
+5.   服务器使用事务保存ViewModel 
+6.   服务器将文档`` d ``标记为已处理（删除文档或更新字段） 
+7.   如果前提条件失败，服务器将从步骤2重试，最多重试次数由MAX_RETRIES定义
 
 ###  WebSocket 
 
-读取：文档-&gt; WebSocket事件\\写入：WebSocket事件-&gt;文档
+读取：文档-> WebSocket事件
+写入：WebSocket事件->文档
 
-1.   Front end subscribes to a ViewModel by sending a WebSocket event to server 
-2.   Server attaches listener to the result of the query
-3.   Every time the result of the query is changed and consistent:
-    
-    1.   Server rebuilds ViewModel that may be changed as a result 
-    2.   Server publishes newly built ViewModel
-    
-    
-    
-4.   Front end ends the session
-5.   Document listeners are released 
+1.   前端通过向服务器发送WebSocket事件来订阅ViewModel 
+2.   服务器将侦听器附加到查询结果
+3.   每次查询结果更改并保持一致时：
+        1.服务器重建可能会因此而更改的ViewModel 
+        2.服务器发布新建的ViewModel 
+4.   前端结束会话
+5.   文档监听器被释放
+
+### 文件
 
 ### 数据库文档 
 
@@ -350,6 +344,8 @@ app.run(debug=True)
  [MIT](https://choosealicense.com/licenses/mit/) 
 
 <div class="footnotes">
-<hr/>
-<ol></ol>
+<hr>
+<ol><li id="fn-1">一条消息可由多个使用者接收和处理，但只有一个接收者可以成功修改数据存储<p><a href="#fnref-1" class="footnote">↩</a></p></li>
+<li id="fn-2">可伸缩性受到可以附加到数据存储的侦听器数量的限制。<p><a href="#fnref-2" class="footnote">↩</a></p></li>
+</ol>
 </div>
