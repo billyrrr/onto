@@ -6,7 +6,7 @@
 
 注意：未分析或检查此软件包的内存使用情况。建议您使用Kubernetes来提高容错能力。 
 
-Flask-boiler通过Firestore管理您的应用程序状态。您可以创建视图模型来汇总基础数据源，并将其立即永久存储在Firestore中。因此，您的前端开发将像使用Firestore一样容易。 Flask-boiler与Spring Web Reactive相当。 
+ Flask-boiler通过Firestore管理您的应用程序状态。您可以创建视图模型来汇总基础数据源，并将其立即永久存储在Firestore中。因此，您的前端开发将像使用Firestore一样容易。 Flask-boiler与Spring Web Reactive相当。 
 
 演示： 
 
@@ -16,13 +16,13 @@ Flask-boiler通过Firestore管理您的应用程序状态。您可以创建视�
 
 您可能要使用此框架或架构实践的一些原因： 
 
-*   You want to build a reactive system and not just a reactive view. 
-*   You want to build a scalable app that is native to distributed  systems. 
-*   You want a framework with a higher level of abstraction, so you can  exchange components such as transportion protocols 
-*   You want your code to be readable and clear and written mostly  in python, while maintaining compatibility to different APIs. 
-*   You have constantly-shifting requirements, and want to have  the flexibility to migrate different layers, for example,  switch from REST API to WebSocket to serve a resource. 
+*   您想要构建一个反应式系统，而不仅仅是反应式视图。 
+*   您要构建一个分布式系统固有的可伸缩应用程序。 
+*   您需要一个具有更高抽象级别的框架，以便可以交换传输协议之类的组件
+*   您希望您的代码易于阅读，清晰并主要使用python编写，同时保持对不同API的兼容性。 
+*   您有不断变化的需求，并且希望具有灵活性来迁移不同的层，例如，从REST API切换到WebSocket来提供资源。 
 
-该框架处于___beta测试阶段___ 。无法保证API，并且___可能会___更改。 
+该框架处于***beta测试阶段*** 。无法保证API，并且***可能会***更改。 
 
 文档： [阅读](https://flask-boiler.readthedocs.io/)文档
 
@@ -44,15 +44,10 @@ Flask-boiler通过Firestore管理您的应用程序状态。您可以创建视�
 
 锅炉在技术上是MVVM（Model-View-ViewModel），其中， 
 
-1. 模型由事务性数据库或数据存储组成，并位于后端。 
-2. ViewModel由一个分布式状态组成，该状态由Model和聚合器组成。
-它是锅炉的主要部分。对于客户端读取，它接收来自Model层的流，并将它们作为View
-输出到View层。对于客户端编写，它从View层接收更改流，并在Model层上操作以保留更改。
-3. ViewModel位于后端，可以用作锅炉python代码，或者在大数据应用程序中（待实现）
-编译为flink作业。视图是后端的表示层。它为1NF范式数据提供服务，
-无需进一步聚合即可读取到前端。客户端读取和写入View。 View应该是短暂的，
-并且可以从ViewModel重建。视图可以是远程系统，例如。 Firestore或leancloud。 
-
+1.   模型由事务性数据库或数据存储组成，并位于后端。 
+2.    ViewModel由一个分布式状态组成，该状态由Model和聚合器组成。它是锅炉的主要部分。对于客户端读取，它接收来自Model层的流，并将它们作为View输出到View层。对于客户端编写，它从View层接收更改流，并在Model层上操作以保留更改。 ViewModel位于后端，可以用作锅炉python代码，或者在大数据应用程序中（待实现）编译为flink作业。 
+3.   视图是后端的表示层。它为1NF范式数据提供服务，无需进一步聚合即可读取到前端。客户端读取和写入View。 View应该是短暂的，并且可以从ViewModel重建。   
+    视图可以是远程系统，例如。 Firestore或leancloud。 
 
 ## 安装
 
