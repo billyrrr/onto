@@ -68,6 +68,7 @@ class AttributeBase(RootCondition):
             requires=_NA,
 
             type_cls=_NA,
+            doc=_NA
 
     ):
         """
@@ -106,8 +107,6 @@ class AttributeBase(RootCondition):
         """
         Initialization precedes import 
         """
-
-
         if initialize is _NA:
             initialize = False
 
@@ -180,6 +179,10 @@ class AttributeBase(RootCondition):
             #   dump_only are true
             field_kwargs["load_only"] = True
 
+        if doc == _NA:
+            doc = None
+        self.doc = doc
+
         # To be used by self._make_field
         self._field_kwargs = field_kwargs
 
@@ -199,6 +202,12 @@ class AttributeBase(RootCondition):
 
 
 class Boolean(AttributeBase):
+
+    # def _make_graphql_type(self):
+    #     import graphql
+    #     return graphql.GraphQLBoolean
+
+
     """Field that serializes to a boolean and deserializes
         to a boolean.
     """
@@ -254,7 +263,7 @@ class PropertyAttribute(AttributeBase):
     """
 
     def  __init__(self,
-                  *, fget=None, fset=None, fdel=None, doc=None,
+                  *, fget=None, fset=None, fdel=None,
                   **kwargs):
 
         """
@@ -275,7 +284,6 @@ class PropertyAttribute(AttributeBase):
 
         self.fdel = fdel
 
-        self.__doc__ = doc
         """
         TODO: check that __doc__ is forwarded 
         """

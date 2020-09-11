@@ -17,3 +17,6 @@ m2r
 sphinx-rtd-theme
 
 recommonmark
+
+# Optional - Kafka
+pytest-kafka

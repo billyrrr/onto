@@ -38,7 +38,7 @@ class Source(SourceBase):
     def mediator_instance(self):
         return self.parent()()
 
-    def _invoke_mediator(self, func_name, *args, **kwargs):
+    def _invoke_mediator(self, *args, func_name, **kwargs):
         fname = self.protocol.fname_of(func_name)
         if fname is None:
             raise ValueError(f"fail to locate {func_name} for {self.mediator_instance.__class__.__name__}")

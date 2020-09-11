@@ -13,3 +13,4 @@ class JsonRpcSink(Sink):
         return response
 
 sink = JsonRpcSink
+

@@ -45,6 +45,60 @@ def _schema_cls_from_attributed_class(cls):
         return TempSchema
 
 
+def _graphql_field_from_attr(attr):
+
+    from flask_boiler import attrs
+    import graphql
+    if attr.__class__ is attrs.attribute.EmbeddedAttribute:
+        e_cls = attr.obj_type
+        e_graphql = _graphql_object_type_from_attributed_class(e_cls)
+        field = graphql.GraphQLField(
+            type_=e_graphql,
+            description=attr.doc
+        )
+        return field
+    elif isinstance(attr, attrs.attribute.AttributeBase):
+        import graphql
+        TYPE_MAP = {
+            int: graphql.GraphQLInt,
+            bool: graphql.GraphQLBoolean,
+            float: graphql.GraphQLFloat,
+            str: graphql.GraphQLString,
+            list: graphql.GraphQLList
+        }
+        field = graphql.GraphQLField(
+            type_=TYPE_MAP[attr.type_cls],
+            description=attr.doc
+        )
+        return field
+    else:
+        raise NotImplementedError
+
+
+def _graphql_object_type_from_attributed_class(cls):
+    """ Make GraphQL schema from a class containing AttributeBase+ objects
+
+    :return:
+    """
+
+    # import_only = getattr(cls.Meta, "import_only", False)
+    # export_only = getattr(cls.Meta, "export_only", False)
+
+    import graphql
+
+    fields = {
+        key: _graphql_field_from_attr(attr)
+        for key, attr in _collect_attrs(cls)
+    }
+
+    graphql_object_type = graphql.GraphQLObjectType(
+        cls.__name__,
+        fields=fields
+    )
+
+    return graphql_object_type
+
+
 def _collect_attrs(cls) -> Iterable[Tuple[str, AttributeBase]]:
     """
     Collect all AttributeBase+ objects in the class and its ancestors.
@@ -55,4 +109,3 @@ def _collect_attrs(cls) -> Iterable[Tuple[str, AttributeBase]]:
     for key in dir(cls):
         if issubclass(getattr(cls, key).__class__, AttributeBase):
             yield (key, getattr(cls, key))
-

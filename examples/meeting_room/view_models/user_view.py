@@ -12,13 +12,13 @@ class UserStore(Store):
 
 class UserViewMixin:
 
-    user_id = attrs.bproperty(export_enabled=False)
-    first_name = attrs.bproperty(import_enabled=False)
-    last_name = attrs.bproperty(import_enabled=False)
-    organization = attrs.bproperty(import_enabled=False)
+    user_id = attrs.bproperty(export_enabled=False, type_cls=str)
+    first_name = attrs.bproperty(import_enabled=False, type_cls=str)
+    last_name = attrs.bproperty(import_enabled=False, type_cls=str)
+    organization = attrs.bproperty(import_enabled=False, type_cls=str)
 
-    hearing_aid_requested = attrs.bproperty(import_enabled=False)
-    meetings = attrs.bproperty(import_enabled=False)
+    hearing_aid_requested = attrs.bproperty(import_enabled=False, type_cls=bool)
+    # meetings = attrs.bproperty(import_enabled=False)
 
     @first_name.getter
     def first_name(self):
@@ -39,16 +39,16 @@ class UserViewMixin:
     @hearing_aid_requested.getter
     def hearing_aid_requested(self):
         return self.store.user.hearing_aid_requested
-
-    @meetings.getter
-    def meetings(self):
-        meetings_generator = Meeting.where(
-            users=("array_contains", str(self.store.user.doc_ref))
-        )
-        return [
-            MeetingSession.get(meeting=meeting).to_dict()
-            for meeting in meetings_generator
-        ]
+    #
+    # @meetings.getter
+    # def meetings(self):
+    #     meetings_generator = Meeting.where(
+    #         users=("array_contains", str(self.store.user.doc_ref))
+    #     )
+    #     return [
+    #         MeetingSession.get(meeting=meeting).to_dict()
+    #         for meeting in meetings_generator
+    #     ]
 
     @classmethod
     def get(cls, user_id, once=False, **kwargs):
