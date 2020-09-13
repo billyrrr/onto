@@ -67,7 +67,7 @@ class SnapshotContainer:
         :param hi_incl:
         :return:
         """
-        start_idx = bisect.bisect_left(self.d[key], lo_excl)
+        start_idx = bisect.bisect_right(self.d[key], lo_excl)
         end_idx = bisect.bisect_right(self.d[key], hi_incl)
-        for ts in self.d[key][start_idx+1:end_idx+1]:
+        for ts in self.d[key][start_idx:end_idx]:
             yield self.store[(ts, key)]
