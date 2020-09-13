@@ -193,7 +193,6 @@ class GraphQLMutationSink(GraphQLSink):
         return name, args
 
 
-
 def op_schema(op_type, schema_all):
     ot = graphql.GraphQLObjectType(
         name=op_type,
