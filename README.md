@@ -30,7 +30,7 @@ practice:
 - You want to build a scalable app that is native to distributed 
     systems. 
 - You want a framework with a higher level of abstraction, so you can 
-    exchange components such as transportion protocols 
+    exchange components such as transportation protocols 
 - You want your code to be readable and clear and written mostly 
     in python, while maintaining compatibility to different APIs. 
 - You have constantly-shifting requirements, and want to have 
@@ -57,8 +57,23 @@ and more to be run on a kubernetes engine (not currently implemented).
 
 ![Ideal Usage](docs/distributed.png)
 
-## Introduction
-boiler is technically MVVM (Model-View-ViewModel), where, 
+## Connectors supported 
+
+Implemented: 
+- REST API (Flask and Flasgger)
+- GraphQL (Starlette)
+- Firestore
+- Firebase Functions
+- JsonRPC (flask-jsonrpc)
+- Leancloud Engine
+- WebSocket (flask socketio)
+
+To be supported: 
+- Flink Table API
+- Kafka
+
+## Design Pattern  
+flask-boiler abstracts to MVVM (Model-View-ViewModel), where, 
 1. Model consists of a transactional database or datastore, and 
 lives in back end. 
 2. ViewModel consists of a distributed state consists of Model and 
