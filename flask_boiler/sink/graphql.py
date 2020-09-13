@@ -52,11 +52,14 @@ class GraphQLSink(Sink):
     def _invoke_mediator(self, *args, func_name, **kwargs):
         fname = self.protocol.fname_of(func_name)
         if fname is None:
-            raise ValueError(f"fail to locate {func_name} for {self.mediator_instance.__class__.__name__}")
+            raise ValueError(
+                f"fail to locate {func_name}"
+                f" for {self.mediator_instance.__class__.__name__}"
+            )
         f = getattr(self.mediator_instance, fname)
         return f(*args, **kwargs)
 
-    def __init__(self, view_model_cls: Type[ViewModel], camelize=True):
+    def __init__(self, view_model_cls: Type[ViewModel], camelize=True, many=False):
         """
 
         :param view_model_cls:
@@ -71,6 +74,7 @@ class GraphQLSink(Sink):
         self.qs = defaultdict(cons)
         self.loop = loop
         self._camelize = camelize
+        self.many = many
         super().__init__()
 
     def _param_to_graphql_arg(self, param: Parameter):
@@ -97,15 +101,38 @@ class GraphQLSink(Sink):
         for name, param in param_d.items():
             yield name, self._param_to_graphql_arg(param)
 
+    op_type = None
+
     def _as_graphql_schema(self):
         from flask_boiler.models.utils import \
             _graphql_object_type_from_attributed_class
         attributed = self.view_model_cls
 
-        graphql_schema = _graphql_object_type_from_attributed_class(attributed)
+        ot = _graphql_object_type_from_attributed_class(attributed)
+        if self.many:
+            ot = graphql.GraphQLList(type_=ot)
 
+        name, args = self._register_op()
+
+        return graph_schema(
+            op_type=self.op_type,
+            name=name,
+            graphql_object_type=ot,
+            args=args
+        )
+
+
+    def start(self):
+        subscription_schema = self._as_graphql_schema()
+        return subscription_schema
+
+
+class GraphQLSubscriptionSink(GraphQLSink):
+
+    op_type = 'Subscription'
+
+    def _register_op(self):
         from gql import query, subscribe
-
         async def f(parent, info, **kwargs):
             # Register topic
             topic_name = self._invoke_mediator(func_name='add_topic', **kwargs)
@@ -116,7 +143,8 @@ class GraphQLSink(Sink):
                 event = await q.get()
                 yield {
                     self.sink_name:
-                    self._invoke_mediator(func_name='on_event', event=event)
+                        self._invoke_mediator(func_name='on_event',
+                                              event=event)
                 }
 
         # name = self.parent().__name__
@@ -124,19 +152,46 @@ class GraphQLSink(Sink):
         name = self.sink_name
         f.__name__ = name
         subscribe(f)
-
         args = dict(self._args_of('add_topic'))
 
-        return graph_schema(
-            op_type='Subscription',
-            name=name,
-            graphql_object_type=graphql_schema,
-            args=args
-        )
+        return name, args
 
-    def start(self):
-        subscription_schema = self._as_graphql_schema()
-        return subscription_schema
+
+class GraphQLQuerySink(GraphQLSink):
+
+    op_type = 'Query'
+
+    def _register_op(self):
+        from gql import query
+
+        async def f(parent, info, **kwargs):
+            res = self._invoke_mediator(func_name='query', **kwargs)
+            return res
+
+        name = self.sink_name
+        f.__name__ = name
+        query(f)
+        args = dict(self._args_of('query'))
+        return name, args
+
+
+class GraphQLMutationSink(GraphQLSink):
+
+    op_type = 'Mutation'
+
+    def _register_op(self):
+        from gql import mutate
+
+        async def f(parent, info, **kwargs):
+            res = self._invoke_mediator(func_name='mutate', **kwargs)
+            return res
+
+        name = self.sink_name
+        f.__name__ = name
+        mutate(f)
+        args = dict(self._args_of('mutate'))
+        return name, args
+
 
 
 def op_schema(op_type, schema_all):
@@ -152,3 +207,8 @@ def op_schema(op_type, schema_all):
         }
     )
     return ot
+
+
+query = GraphQLQuerySink
+mutation = GraphQLMutationSink
+subscription = GraphQLSubscriptionSink

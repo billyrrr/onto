@@ -8,10 +8,10 @@ from flask_boiler.view import Mediator
 class UserGraphQLMediator(Mediator):
 
     from flask_boiler.source import domain_model
-    from flask_boiler.sink.graphql import GraphQLSink
+    from flask_boiler.sink.graphql import subscription
 
     src = domain_model(domain_model_cls=User)
-    subscribe_user_view = GraphQLSink(view_model_cls=UserView)
+    subscribe_user_view = subscription(view_model_cls=UserView)
 
     @subscribe_user_view.triggers.add_topic
     def add_topic(self, user_id: str):
