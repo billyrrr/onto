@@ -39,6 +39,7 @@ class FirestoreSource(Source):
                     raise ValueError
 
     def _call(self, container):
-        for func_name, ref, snapshot in self.delta(container):
-            self._invoke_mediator(
-                func_name=func_name, ref=ref, snapshot=snapshot)
+        with container.lock:
+            for func_name, ref, snapshot in self.delta(container):
+                self._invoke_mediator(
+                    func_name=func_name, ref=ref, snapshot=snapshot)

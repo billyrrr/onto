@@ -22,7 +22,7 @@ from .websocket import ViewMediatorWebsocket as WsMediator
 class Mediator:
 
     source = None
-    sink = None
+    subscribe_user_view = None
 
     @classmethod
     def start(cls):

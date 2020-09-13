@@ -13,11 +13,11 @@ class UserStore(Store):
 class UserViewMixin:
 
     user_id = attrs.bproperty(export_enabled=False, type_cls=str)
-    first_name = attrs.bproperty(import_enabled=False, type_cls=str)
-    last_name = attrs.bproperty(import_enabled=False, type_cls=str)
-    organization = attrs.bproperty(import_enabled=False, type_cls=str)
+    first_name = attrs.bproperty(import_enabled=False, type_cls=str, data_key='firstName')
+    last_name = attrs.bproperty(import_enabled=False, type_cls=str, data_key='lastName')
+    organization = attrs.bproperty(import_enabled=False, type_cls=str, data_key='organization')
 
-    hearing_aid_requested = attrs.bproperty(import_enabled=False, type_cls=bool)
+    hearing_aid_requested = attrs.bproperty(import_enabled=False, type_cls=bool, data_key='hearingAidRequested')
     # meetings = attrs.bproperty(import_enabled=False)
 
     @first_name.getter

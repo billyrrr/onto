@@ -13,6 +13,9 @@ from flask_boiler.context import Context as CTX
 
 
 class DomainModelSource(FirestoreSource):
+    """
+    TODO: limit maxsize
+    """
 
     def __init__(self, domain_model_cls: Type[DomainModel], *args, **kwargs):
         self.domain_model_cls = domain_model_cls
@@ -20,17 +23,19 @@ class DomainModelSource(FirestoreSource):
         super().__init__(query=query)
 
     def _call(self, container):
-        for func_name, ref, snapshot in self.delta(container):
-            obj = self.domain_model_cls.from_snapshot(
-                ref=ref, snapshot=snapshot)
-            self._invoke_mediator(func_name=func_name, obj=obj)
+        with container.lock:
+            for func_name, ref, snapshot in self.delta(container):
+                obj = self.domain_model_cls.from_snapshot(
+                    ref=ref, snapshot=snapshot)
+                self._invoke_mediator(func_name=func_name, obj=obj)
 
 
 class DomainModelTransactionalSource(DomainModelSource):
 
     def _call(self, container):
-        for func_name, ref, snapshot in self.delta(container):
-            self._operation(func_name=func_name, ref=ref, snapshot=snapshot)
+        with container.lock:
+            for func_name, ref, snapshot in self.delta(container):
+                self._operation(func_name=func_name, ref=ref, snapshot=snapshot)
 
     def _operation(self, func_name, ref, snapshot):
         _transaction = CTX.db.firestore_client.transaction()
@@ -44,6 +49,7 @@ class DomainModelTransactionalSource(DomainModelSource):
                 transaction=transaction
             )
         _op(_transaction)
+
 
 class DomainModelPathSource(DomainModelSource):
 

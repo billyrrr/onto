@@ -45,6 +45,18 @@ def _schema_cls_from_attributed_class(cls):
         return TempSchema
 
 
+def _graphql_type_from_py(t: type):
+    import graphql
+    PY_TYPE_MAP_GQL = {
+        int: graphql.GraphQLInt,
+        bool: graphql.GraphQLBoolean,
+        float: graphql.GraphQLFloat,
+        str: graphql.GraphQLString,
+        list: graphql.GraphQLList
+    }
+    return PY_TYPE_MAP_GQL[t]
+
+
 def _graphql_field_from_attr(attr):
 
     from flask_boiler import attrs
@@ -56,21 +68,14 @@ def _graphql_field_from_attr(attr):
             type_=e_graphql,
             description=attr.doc
         )
-        return field
+        return attr.data_key, field
     elif isinstance(attr, attrs.attribute.AttributeBase):
         import graphql
-        TYPE_MAP = {
-            int: graphql.GraphQLInt,
-            bool: graphql.GraphQLBoolean,
-            float: graphql.GraphQLFloat,
-            str: graphql.GraphQLString,
-            list: graphql.GraphQLList
-        }
         field = graphql.GraphQLField(
-            type_=TYPE_MAP[attr.type_cls],
+            type_=_graphql_type_from_py(t=attr.type_cls),
             description=attr.doc
         )
-        return field
+        return attr.data_key, field
     else:
         raise NotImplementedError
 
@@ -86,10 +91,10 @@ def _graphql_object_type_from_attributed_class(cls):
 
     import graphql
 
-    fields = {
-        key: _graphql_field_from_attr(attr)
+    fields = dict(
+        _graphql_field_from_attr(attr)
         for key, attr in _collect_attrs(cls)
-    }
+    )
 
     graphql_object_type = graphql.GraphQLObjectType(
         cls.__name__,

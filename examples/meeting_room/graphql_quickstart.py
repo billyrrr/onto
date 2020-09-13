@@ -1,56 +1,37 @@
 from examples.meeting_room.views.graphql_view import UserGraphQLMediator
+from flask_boiler.sink.graphql import op_schema
 
+schema_all = list()
 
-subscription_schema = UserGraphQLMediator.start()
+schema_all += UserGraphQLMediator.start()
 
-from graphql import GraphQLSchema, GraphQLObjectType, GraphQLField, \
-    GraphQLString
-
-import graphql
-
-args = {
-    'user_id': graphql.GraphQLArgument(graphql.GraphQLString)
-}
-ot = GraphQLObjectType(
-    name=subscription_schema.op_type,
-    fields={
-        subscription_schema.name: graphql.GraphQLField(subscription_schema.graphql_object_type, args=args)
-
-    }
-)
+from graphql import GraphQLSchema
 
 schema = GraphQLSchema(
-    query=GraphQLObjectType(
-        name='Query',
-        fields={
-            'h': GraphQLField(GraphQLString)
-        }
-    ),
-    subscription=ot
+    query=op_schema(op_type='Query', schema_all=schema_all),
+    subscription=op_schema(op_type='Subscription', schema_all=schema_all)
 )
 
 from stargql import GraphQL
 
-
-async def on_startup():
-    pass
-
-
-async def shutdown():
-    pass
-
-
 app = GraphQL(
     schema=schema,
-    on_startup=[on_startup],
-    on_shutdown=[shutdown]
 )
 
+# PYTEST FIXTURES: RETAIN
 from tests.fixtures import CTX
 from examples.meeting_room.tests.fixtures import users, meeting, location, tickets
 
 
 def test_run(users, meeting, location, tickets):
 
-    import uvicorn
-    uvicorn.run(app, port=8080, debug=True)
+    import asyncio
+    loop = asyncio.get_event_loop()
+
+    from uvicorn import Config
+    config = Config(app=app, loop=loop, port=8080, debug=True)
+    from uvicorn import Server
+    server = Server(config)
+    loop.run_until_complete(server.serve())
+
+    # uvicorn.run(app, port=8080, debug=True)

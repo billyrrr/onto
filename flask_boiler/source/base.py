@@ -40,7 +40,11 @@ class Source(SourceBase):
 
     def _invoke_mediator(self, *args, func_name, **kwargs):
         fname = self.protocol.fname_of(func_name)
+        # TODO: fix: listener close invokes unintended on_delete
         if fname is None:
-            raise ValueError(f"fail to locate {func_name} for {self.mediator_instance.__class__.__name__}")
+            raise ValueError(
+                f"fail to locate {func_name}"
+                f" for {self.mediator_instance.__class__.__name__}"
+            )
         f = getattr(self.mediator_instance, fname)
         f(*args, **kwargs)

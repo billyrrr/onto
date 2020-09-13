@@ -23,6 +23,13 @@ class AttributeBase(RootCondition):
         field_cls: Type[fields.Field] = fields.Field
         return field_cls(**self._field_kwargs, attribute=self.name)
 
+    def _get_data_key(self):
+        """
+        TODO: deprecate
+        :return:
+        """
+        return self.data_key
+
     def __set_name__(self, owner, name):
         self.parent = owner
         self.name = name
@@ -49,6 +56,13 @@ class AttributeBase(RootCondition):
             return self
         else:
             raise AttributeError()
+
+    @property
+    def data_key(self):
+        if self._data_key is not None:
+            return self._data_key
+        else:
+            return self.name
 
     def __init__(
             self,
@@ -125,7 +139,10 @@ class AttributeBase(RootCondition):
 
         # Parse data key
         if data_key != _NA:
+            self._data_key = data_key
             field_kwargs["data_key"] = data_key
+        else:
+            self._data_key = None
 
         """
         Code for import (deserialization)

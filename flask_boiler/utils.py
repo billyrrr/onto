@@ -52,6 +52,9 @@ def attr_name_to_firestore_key(s):
         return res
 
 
+camel = attr_name_to_firestore_key
+
+
 firestore_key_to_attr_name = underscore
 
 

@@ -11,13 +11,13 @@ class UserGraphQLMediator(Mediator):
     from flask_boiler.sink.graphql import GraphQLSink
 
     src = domain_model(domain_model_cls=User)
-    sink = GraphQLSink(view_model_cls=UserView)
+    subscribe_user_view = GraphQLSink(view_model_cls=UserView)
 
-    @sink.triggers.add_topic
-    def add_topic(self, user_id=None):
+    @subscribe_user_view.triggers.add_topic
+    def add_topic(self, user_id: str):
         return user_id
 
-    @sink.triggers.on_event
+    @subscribe_user_view.triggers.on_event
     def on_event(self, event: dict):
         return event
 
@@ -26,16 +26,35 @@ class UserGraphQLMediator(Mediator):
     def user_updated(self, obj: User):
         v = UserView.get(user_id=obj.doc_id)
         d = v.to_dict()
+        q = self.subscribe_user_view.qs[obj.doc_id]
 
         import asyncio
         # tell asyncio to enqueue the result
         fut = asyncio.run_coroutine_threadsafe(
-            self.sink.qs[obj.doc_id].put(d), loop=self.sink.loop
+            q.put(d), loop=self.subscribe_user_view.loop
         )
         # wait for the result to be enqueued
-        fut.result()
+        _ = fut.result()
 
     @classmethod
     def start(cls):
         cls.src.start()
-        return cls.sink.start()
+        s = cls.subscribe_user_view.start()
+        from flask_boiler.sink.graphql import graph_schema
+        import graphql
+        liveness = graph_schema(
+            op_type='Query',
+            name='liveness',
+            graphql_object_type=graphql.GraphQLObjectType(
+                name='Liveness',
+                fields={
+                    'alive': graphql.GraphQLField(
+                        graphql.GraphQLBoolean,
+                        resolve=lambda *args, **kwargs: True),
+                }
+            ),
+            args=dict()
+        )
+
+        return [s, liveness]
+
