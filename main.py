@@ -1,5 +1,5 @@
-from flask_boiler.view.query_delta import OnTriggerMixin
-from flask_boiler.context import Context
+from onto.view.query_delta import OnTriggerMixin
+from onto.context import Context
 
 Context.load()
 

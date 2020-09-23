@@ -1,23 +1,23 @@
 import pytest
 from google.cloud.firestore_v1 import DocumentSnapshot, DocumentReference
 
-from flask_boiler.view.query_delta import make_snapshot
+from onto.view.query_delta import make_snapshot
 from .fixtures import CTX
 from .test_domain_model import setup_cities, City, StandardCity
 
-from flask_boiler.query.cmp import v
+from onto.query.cmp import v
 
 
 def test_where():
-    from flask_boiler.query.query import Query
-    from flask_boiler.domain_model import DomainModel
-    from flask_boiler import attrs
+    from onto.query.query import Query
+    from onto.domain_model import DomainModel
+    from onto import attrs
 
     class Foo(DomainModel):
         s = attrs.bproperty()
 
     q = Foo.get_query().where(v.s==1)
-    from flask_boiler.mapper.fields import argument
+    from onto.mapper.fields import argument
     assert q.arguments == [argument(key='s', comparator='==', val=1)]
     q = q._to_firestore_query()
     assert q is not None

@@ -94,7 +94,7 @@ certificate_filename: "<File Name of Certificate JSON>"
 
 In ```__init__``` of your project source root: 
 ```python
-from flask_boiler.context import Context as CTX
+from onto.context import Context as CTX
 
 CTX.load()
 ```
@@ -104,8 +104,8 @@ CTX.load()
 In ```models.py```, create a model, 
 
 ```python
-from flask_boiler.domain_model import DomainModel
-from flask_boiler import attrs
+from onto.domain_model import DomainModel
+from onto import attrs
 
 class City(DomainModel):
 

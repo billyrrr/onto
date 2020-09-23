@@ -3,13 +3,13 @@
 Contains test cases inspired by flasgger (MIT licence)
 See: https://github.com/flasgger/flasgger/blob/master/LICENSE
 """
-from flask_boiler import attrs
+from onto import attrs
 from flask import Flask
 from flasgger import Swagger
 
-from flask_boiler.models.base import Serializable
-from flask_boiler.view import rest_api
-from flask_boiler.view_model import ViewModel
+from onto.models.base import Serializable
+from onto.view import rest_api
+from onto.view_model import ViewModel
 
 
 repo = {
@@ -70,8 +70,8 @@ if __name__ == "__main__":
         documentations. 
     """
 
-    from flask_boiler.config import Config
-    from flask_boiler.context import Context as CTX
+    from onto.config import Config
+    from onto.context import Context as CTX
 
     if not CTX._ready:
         config = Config(
@@ -92,8 +92,8 @@ Reserved for testing; Not part of the example
 
 
 def test_view_example():
-    from flask_boiler.config import Config
-    from flask_boiler.context import Context as CTX
+    from onto.config import Config
+    from onto.context import Context as CTX
 
     if not CTX._ready:
         config = Config(

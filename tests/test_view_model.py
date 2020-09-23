@@ -3,12 +3,12 @@ import time
 from google.cloud.firestore import DocumentReference
 
 from examples.luggage_models import LuggageItem, Luggages
-from flask_boiler import fields, testing_utils
-from flask_boiler.mapper.schema import Schema
-from flask_boiler.domain_model import DomainModel
-from flask_boiler.view_model import ViewModel
-from flask_boiler.collection_mixin import CollectionMixin
-from flask_boiler.models.factory import ClsFactory
+from onto import fields, testing_utils
+from onto.mapper.schema import Schema
+from onto.domain_model import DomainModel
+from onto.view_model import ViewModel
+from onto.collection_mixin import CollectionMixin
+from onto.models.factory import ClsFactory
 
 import pytest
 

@@ -4,21 +4,21 @@ import pytest
 from google.cloud.firestore_v1 import DocumentReference, Transaction
 from testfixtures import compare
 
-from flask_boiler import schema, fields, attrs
-from flask_boiler.context import Context as CTX
-from flask_boiler.config import Config
-from flask_boiler.database import Reference, Snapshot, is_reference
-from flask_boiler.domain_model import DomainModel
-from flask_boiler.models.factory import ClsFactory
-from flask_boiler.firestore_object import FirestoreObject
-from flask_boiler.mapper.helpers import RelationshipReference
-from flask_boiler.primary_object import PrimaryObject
-from flask_boiler.query import run_transaction
+from onto import schema, fields, attrs
+from onto.context import Context as CTX
+from onto.config import Config
+from onto.database import Reference, Snapshot, is_reference
+from onto.domain_model import DomainModel
+from onto.models.factory import ClsFactory
+from onto.firestore_object import FirestoreObject
+from onto.mapper.helpers import RelationshipReference
+from onto.primary_object import PrimaryObject
+from onto.query import run_transaction
 
 
 # Creates a schema for serializing and deserializing to firestore database
-from flask_boiler.primary_object import PrimaryObjectSchema
-from flask_boiler.store.gallery import Gallery
+from onto.primary_object import PrimaryObjectSchema
+from onto.store.gallery import Gallery
 
 
 class TestObjectSchema(PrimaryObjectSchema):
@@ -282,7 +282,7 @@ def test_relationship_not_nested():
     # Saves to firestore "TestObject/testObjId1"
     referenced_obj.save()
 
-    from flask_boiler.primary_object import PrimaryObjectSchema
+    from onto.primary_object import PrimaryObjectSchema
     class MasterObjectSchema(PrimaryObjectSchema):
         # Describes how obj.int_a is read from and stored to a document in firestore
         nested_ref = fields.Relationship(nested=False)
@@ -313,7 +313,7 @@ def test_relationship_nested():
     referenced_obj.int_a = 1
     referenced_obj.int_b = 2
 
-    from flask_boiler.primary_object import PrimaryObjectSchema
+    from onto.primary_object import PrimaryObjectSchema
     class MasterObjectSchemaNested(PrimaryObjectSchema):        # Describes how obj.int_a is read from and stored to a document in firestore
         nested_obj = fields.Relationship(nested=True)
 

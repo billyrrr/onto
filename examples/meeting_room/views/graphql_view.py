@@ -2,13 +2,13 @@ import uvicorn as uvicorn
 from examples.meeting_room.domain_models import User
 
 from examples.meeting_room.view_models import UserView
-from flask_boiler.view import Mediator
+from onto.view import Mediator
 
 
 class UserGraphQLMediator(Mediator):
 
-    from flask_boiler.source import domain_model
-    from flask_boiler.sink.graphql import subscription
+    from onto.source import domain_model
+    from onto.sink.graphql import subscription
 
     src = domain_model(domain_model_cls=User)
     subscribe_user_view = subscription(view_model_cls=UserView)
@@ -40,7 +40,7 @@ class UserGraphQLMediator(Mediator):
     def start(cls):
         cls.src.start()
         s = cls.subscribe_user_view.start()
-        from flask_boiler.sink.graphql import graph_schema
+        from onto.sink.graphql import graph_schema
         import graphql
         liveness = graph_schema(
             op_type='Query',

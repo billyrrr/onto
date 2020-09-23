@@ -1,4 +1,4 @@
-from flask_boiler.context import Context as CTX
+from onto.context import Context as CTX
 if CTX.config is None:
     CTX.load()
 

@@ -1,8 +1,8 @@
 import pytest
 from google.cloud.firestore_v1 import DocumentSnapshot
 
-from flask_boiler.context import Context as CTX
-from flask_boiler.testing_utils import _wait
+from onto.context import Context as CTX
+from onto.testing_utils import _wait
 from tests.utils import _delete_all
 
 from .views import CityView

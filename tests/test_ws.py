@@ -6,8 +6,8 @@ Tests Websocket integration
 import pytest
 from unittest.mock import MagicMock, patch
 
-from flask_boiler import testing_utils
-from flask_boiler.view import WsMediator
+from onto import testing_utils
+from onto.view import WsMediator
 from .color_fixtures import Color, PaletteViewModel, rainbow_vm, color_refs
 from .fixtures import setup_app, CTX
 import flask_socketio

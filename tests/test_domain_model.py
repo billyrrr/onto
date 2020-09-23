@@ -7,12 +7,12 @@ Some examples are inspired by firestore documentations, some copyright
 
 import pytest
 
-from flask_boiler.domain_model import DomainModel
-from flask_boiler.mapper.schema import Schema, BasicSchema
-from flask_boiler import fields, collection_mixin, attrs
+from onto.domain_model import DomainModel
+from onto.mapper.schema import Schema, BasicSchema
+from onto import fields, collection_mixin, attrs
 
 # For pytest, DO NOT DELETE
-from flask_boiler.primary_object import PrimaryObjectSchema
+from onto.primary_object import PrimaryObjectSchema
 from .fixtures import *
 
 from .utils import _delete_all

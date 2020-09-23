@@ -1,5 +1,5 @@
-from flask_boiler.domain_model import DomainModel
-from flask_boiler import attrs
+from onto.domain_model import DomainModel
+from onto import attrs
 
 
 class City(DomainModel):

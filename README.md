@@ -1,4 +1,4 @@
-# flask-boiler
+# onto
 
 [![Build Status](https://travis-ci.com/billyrrr/flask-boiler.svg?branch=master)](https://travis-ci.com/billyrrr/flask-boiler)
 [![Coverage Status](https://coveralls.io/repos/github/billyrrr/flask-boiler/badge.svg?branch=master)](https://coveralls.io/github/billyrrr/flask-boiler?branch=master)
@@ -73,7 +73,7 @@ To be supported:
 - Kafka
 
 ## Design Pattern  
-flask-boiler abstracts to MVVM (Model-View-ViewModel), where, 
+onto abstracts to MVVM (Model-View-ViewModel), where, 
 1. Model consists of a transactional database or datastore, and 
 lives in back end. 
 2. ViewModel consists of a distributed state consists of Model and 
@@ -95,7 +95,7 @@ lives in back end.
 In your project directory, 
 
 ```
-pip install flask-boiler
+pip install onto
 ```
 
 See more in [Quickstart](https://flask-boiler.readthedocs.io/en/latest/quickstart_link.html). 
@@ -125,13 +125,13 @@ without client-side queries and excessive server roundtrip time.
 There is a medium [article](https://medium.com/resolvejs/resolve-redux-backend-ebcfc79bbbea) 
  that explains a similar architecture called "reSolve" architecture. 
 
-See ```examples/meeting_room/view_models``` on how to use flask-boiler 
+See ```examples/meeting_room/view_models``` on how to use onto 
 to expose a "view model" in firestore that can be queried directly 
 by front end without aggregation.  
 
 ### Processor Modes
 
-`flask-boiler` is essentially a framework for source-sink operations: 
+`onto` is essentially a framework for source-sink operations: 
 
 ```
 Source(s) -> Processor -> Sink(s)
@@ -180,7 +180,7 @@ class CityView(ViewModel):
 
 class MeetingSessionGet(Mediator):
 
-    from flask_boiler import source, sink
+    from onto import source, sink
 
     source = source.domain_model(Meeting)
     sink = sink.firestore()  # TODO: check variable resolution order
@@ -234,7 +234,7 @@ app = Flask(__name__)
 
 class MeetingSessionRest(Mediator):
 
-    # from flask_boiler import source, sink
+    # from onto import source, sink
 
     view_model_cls = MeetingSessionC
 
@@ -416,7 +416,7 @@ adding modules such as `flask-sqlalchemy`.
 ### GraphQL
 
 In GraphQL, the fields are evaluated with each query, but 
-flask-boiler evaluates the fields if and only if the 
+onto evaluates the fields if and only if the 
 underlying data source changes. This leads to faster 
 read for data that has not changed for a while. Also, 
 the data source is expected to be consistent, as the 
@@ -424,14 +424,14 @@ field evaluation are triggered after all changes made in
 one transaction to firestore is read. 
 
 GraphQL, however, lets front-end customize the return. You 
-must define the exact structure you want to return in flask-boiler. 
+must define the exact structure you want to return in onto. 
 This nevertheless has its advantage as most documentations 
 of the request and response can be done the same way as REST API. 
 
 ### REST API / Flask
 
 REST API does not cache or store the response. When 
-a view model is evaluated by flask-boiler, the response 
+a view model is evaluated by onto, the response 
 is stored in firestore forever until update or manual removal. 
 
 Flask-boiler controls role-based access with security rules 
@@ -446,7 +446,7 @@ with Firestore, a infinitely scalable NoSQL datastore.
 
 Flask-boiler is declarative, and Redux is imperative. 
 The design pattern of REDUX requires you to write functional programming 
-in domain models, but flask-boiler favors a different approach: 
+in domain models, but onto favors a different approach: 
 ViewModel reads and calculates data from domain models 
 and exposes the attribute as a property getter. (When writing 
 to DomainModel, the view model changes domain model and 
@@ -454,7 +454,7 @@ exposes the operation as a property setter).
 Nevertheless, you can still add function callbacks that are 
 triggered after a domain model is updated, but this 
 may introduce concurrency issues and is not perfectly supported 
-due to the design tradeoff in flask-boiler. 
+due to the design tradeoff in onto. 
 
 
 ### Architecture Diagram: 

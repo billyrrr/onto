@@ -5,7 +5,7 @@ from examples.meeting_room.view_models import MeetingSession, UserView
 from examples.meeting_room.view_models.meeting_session import \
     MeetingSessionMutation
 from examples.meeting_room.views import meeting_session_ops
-from flask_boiler.view import rest_api
+from onto.view import rest_api
 
 app = Flask(__name__)
 

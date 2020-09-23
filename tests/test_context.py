@@ -3,8 +3,8 @@ import pytest
 
 @pytest.mark.skip(reason='Context should be initialized with conftest already')
 def test_firebase_app_context():
-    from flask_boiler import config
-    from flask_boiler import context
+    from onto import config
+    from onto import context
 
     Config = config.Config
 
@@ -21,7 +21,7 @@ def test_firebase_app_context():
 
 @pytest.mark.skip(reason='Context should be initialized with conftest already')
 def test_context_load():
-    from flask_boiler.context import Context as CTX
+    from onto.context import Context as CTX
 
     CTX.load()
 
@@ -29,7 +29,7 @@ def test_context_load():
 
 
 def test_config_comparator():
-    from flask_boiler.config import Config
+    from onto.config import Config
     config = Config.load()
     other_config = Config.load()
     assert config == other_config
@@ -38,7 +38,7 @@ def test_config_comparator():
 def test_errors(monkeypatch):
     # Note: Watch out for state sharing
     # Note: Context may have invalid values when used in other test cases
-    from flask_boiler.context import Context
+    from onto.context import Context
 
     class CertFailError(Exception):
         pass

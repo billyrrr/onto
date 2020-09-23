@@ -1,5 +1,5 @@
-from flask_boiler import schema, fields, domain_model, view_model
-from flask_boiler.models.factory import ClsFactory
+from onto import schema, fields, domain_model, view_model
+from onto.models.factory import ClsFactory
 
 Schema = schema.Schema
 

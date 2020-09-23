@@ -1,9 +1,9 @@
 from datetime import datetime
-from flask_boiler import schema, fields, domain_model, utils, attrs
-from flask_boiler.config import Config
-from flask_boiler.models.mixin import Exportable, NewMixin
-from flask_boiler.models.base import BaseRegisteredModel, Schemed
-from flask_boiler.context import Context as CTX
+from onto import schema, fields, domain_model, utils, attrs
+from onto.config import Config
+from onto.models.mixin import Exportable, NewMixin
+from onto.models.base import BaseRegisteredModel, Schemed
+from onto.context import Context as CTX
 
 
 if not CTX._ready:

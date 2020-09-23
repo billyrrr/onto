@@ -1,12 +1,12 @@
 from google.cloud.firestore_v1 import Query
 
 from examples.fluttergram.domain_models import Post, User
-from flask_boiler.store.business_property_store import BPSchema
-from flask_boiler.store.struct import Struct
+from onto.store.business_property_store import BPSchema
+from onto.store.struct import Struct
 
-from flask_boiler.view import ViewMediatorDeltaDAV
-from flask_boiler import utils, schema, fields, testing_utils
-from flask_boiler import view_model
+from onto.view import ViewMediatorDeltaDAV
+from onto import utils, schema, fields, testing_utils
+from onto import view_model
 # Import the fixtures used by fixtures
 
 

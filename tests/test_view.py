@@ -2,9 +2,9 @@ from itertools import count
 
 import pytest as pytest
 
-from flask_boiler import schema, fields, view_model
+from onto import schema, fields, view_model
 
-from flask_boiler.store.struct import Struct
+from onto.store.struct import Struct
 from tests.color_fixtures import Color, PaletteViewModel, RainbowStoreBpss, color_refs, vm
 from .fixtures import CTX
 

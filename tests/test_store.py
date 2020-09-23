@@ -1,9 +1,9 @@
 def test_init():
 
-    from flask_boiler.store import Store, reference
+    from onto.store import Store, reference
 
-    from flask_boiler.domain_model import DomainModel
-    from flask_boiler import attrs
+    from onto.domain_model import DomainModel
+    from onto import attrs
 
     class U(DomainModel):
         class Meta:

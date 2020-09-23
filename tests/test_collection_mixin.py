@@ -1,6 +1,6 @@
 import pytest
 
-from flask_boiler import collection_mixin, domain_model
+from onto import collection_mixin, domain_model
 from abc import ABC
 from .fixtures import CTX
 

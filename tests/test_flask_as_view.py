@@ -2,7 +2,7 @@ from flask import Flask
 
 from .fixtures import CTX, setup_app
 from .color_fixtures import color_refs, rainbow_vm
-from flask_boiler.view import rest_api
+from onto.view import rest_api
 
 
 def test_rainbow_stuffs(CTX, setup_app, color_refs, rainbow_vm):

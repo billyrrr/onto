@@ -4,15 +4,15 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="flask_boiler",
+    name="onto",
     # Beta release
-    version="0.0.2dev19",
+    version="0.0.1",
     author="Bill Rao",
     author_email="billrao@me.com",
     description="Build reactive back end with ease ",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/billyrrr/flask-boiler",
+    url="https://github.com/billyrrr/onto",
     keywords=["firebase", "firestore", "ORM", "flasgger", "flask",
               "backend", "nosql", "reactive", "framework"],
     packages=setuptools.find_packages(),
@@ -56,6 +56,6 @@ setuptools.setup(
         "ProxyTypes"
     ],
     # entry_points = {
-    #     'console_scripts': ['flask-boiler=scripts.deploy:deploy_all'],
+    #     'console_scripts': ['`onto`=scripts.deploy:deploy_all'],
     # }
 )

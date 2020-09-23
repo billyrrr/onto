@@ -1,4 +1,4 @@
-from flask_boiler import domain_model, attrs
+from onto import domain_model, attrs
 
 
 class LocationBase(domain_model.DomainModel):

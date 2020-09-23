@@ -8,8 +8,8 @@ import json
 import pytest as pytest
 from functools import lru_cache
 
-import flask_boiler.models.base
-from flask_boiler import view_model, schema, fields
+import onto.models.base
+from onto import view_model, schema, fields
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def ModelASchema():
 @pytest.fixture
 @lru_cache(maxsize=1)
 def ModelA(ModelASchema):
-    class ModelA(flask_boiler.models.base.Serializable):
+    class ModelA(onto.models.base.Serializable):
         _schema_cls = ModelASchema
 
     return ModelA
@@ -36,7 +36,7 @@ def test_create_model():
         int_a = fields.Integer(load_from="intA", dump_to="intA")
         int_b = fields.Integer(load_from="intB", dump_to="intB")
 
-    class ModelK(flask_boiler.models.base.Serializable):
+    class ModelK(onto.models.base.Serializable):
         class Meta:
             schema_cls = ModelKSchema
 
@@ -92,7 +92,7 @@ def test__additional_fields(ModelASchema, ModelA):
     assert hasattr(obj_a, "int_a")
     assert not hasattr(obj_a, "int_aa")
 
-    from flask_boiler.models.factory import ClsFactory
+    from onto.models.factory import ClsFactory
     ModelAA = ClsFactory.create(
         name="ModelAA",
         schema=ModelAASchema
@@ -117,7 +117,7 @@ def test_property_fields():
 
     sp = property(fget=fget)
 
-    class ModelAP(flask_boiler.models.base.Serializable):
+    class ModelAP(onto.models.base.Serializable):
         _schema_cls = ModelAPSchema
 
     ModelAP.some_property = sp
@@ -134,7 +134,7 @@ def test_multiple_inheritance(ModelASchema):
     class ModelABSchema(ModelASchema, ModelBSchema):
         pass
 
-    from flask_boiler.models.factory import ClsFactory
+    from onto.models.factory import ClsFactory
     ModelAB = ClsFactory.create(
         name="ModelAB",
         schema=ModelABSchema
@@ -187,7 +187,7 @@ def test_separate_class():
         int_a = schema.fields.Integer(load_from="intA", dump_to="intA")
         int_b = schema.fields.Integer(load_from="intB", dump_to="intB")
 
-    class SModelASerializable(flask_boiler.models.base.Serializable):
+    class SModelASerializable(onto.models.base.Serializable):
         _schema_cls = SModelASchema
 
         def __init__(self, **kwargs):
@@ -222,7 +222,7 @@ def test_many():
         earliest = fields.Raw()
         latest = fields.Raw()
 
-    class TimeRange(flask_boiler.models.base.Serializable):
+    class TimeRange(onto.models.base.Serializable):
         _schema_cls = TimeRangeSchema
 
     t = TimeRange()
@@ -237,7 +237,7 @@ def test_many():
         ranged = m_fields.Dict(fields.Embedded(obj_cls='TimeRange'))
         name = fields.Str()
 
-    class MyPlan(flask_boiler.models.base.Serializable):
+    class MyPlan(onto.models.base.Serializable):
         _schema_cls = MyPlanSchema
 
     d = MyPlanSchema().load({
@@ -258,7 +258,7 @@ def test_embedded():
         earliest = fields.Raw()
         latest = fields.Raw()
 
-    class Target(flask_boiler.models.base.Serializable):
+    class Target(onto.models.base.Serializable):
         _schema_cls = TargetSchema
 
     t = Target()
@@ -269,7 +269,7 @@ def test_embedded():
         target = fields.Embedded(obj_cls="Target")
         name = fields.Str()
 
-    class Plan(flask_boiler.models.base.Serializable):
+    class Plan(onto.models.base.Serializable):
         _schema_cls = PlanSchema
 
     k = Plan.from_dict({
@@ -300,19 +300,19 @@ def test_embedded_many_with_dict():
         habitats = fields.Embedded(obj_cls="Habitat", many=True)
         related_species = fields.Embedded(obj_cls="Species", many=True)
 
-    class Species(flask_boiler.models.base.Serializable):
+    class Species(onto.models.base.Serializable):
         _schema_cls = SpeciesSchema
 
     class EndangeredSpeciesSchema(SpeciesSchema):
         pass
 
-    class EndangeredSpecies(flask_boiler.models.base.Serializable):
+    class EndangeredSpecies(onto.models.base.Serializable):
         _schema_cls = EndangeredSpeciesSchema
 
     class HabitatSchema(schema.BasicSchema):
         habitat_name = fields.Str()
 
-    class Habitat(flask_boiler.models.base.Serializable):
+    class Habitat(onto.models.base.Serializable):
         _schema_cls = HabitatSchema
 
     forests = Habitat.new(habitat_name="Forests")

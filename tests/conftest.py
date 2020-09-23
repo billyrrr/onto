@@ -3,8 +3,8 @@ import pytest
 from tests.utils import _delete_all
 
 def pytest_sessionstart(session):
-    from flask_boiler.context import Context as CTX
-    from flask_boiler.config import Config
+    from onto.context import Context as CTX
+    from onto.config import Config
 
     if CTX.config is None:
         config = Config.load()
@@ -31,7 +31,7 @@ def pytest_sessionstart(session):
 
 
 def pytest_sessionfinish(session, exitstatus):
-    from flask_boiler.context import Context as CTX
+    from onto.context import Context as CTX
 
     if exitstatus == 0:
         _delete_all(CTX, "Orbit")

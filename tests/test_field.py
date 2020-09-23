@@ -2,16 +2,16 @@ from collections import UserDict, UserList
 
 import pytest
 
-from flask_boiler import fields, attrs
-from flask_boiler import schema as fb_schema
+from onto import fields, attrs
+from onto import schema as fb_schema
 from marshmallow import fields as marshmallow_fields, schema
 
 from unittest import mock
 
-from flask_boiler.domain_model import DomainModel
-from flask_boiler.firestore_object import FirestoreObject, \
+from onto.domain_model import DomainModel
+from onto.firestore_object import FirestoreObject, \
     _nest_relationship_import
-from flask_boiler.mapper.helpers import RelationshipReference
+from onto.mapper.helpers import RelationshipReference
 from .fixtures import CTX
 
 
@@ -60,7 +60,7 @@ def test_relationship_many(CTX):
     assert res == [RelationshipReference(nested=False, doc_ref=doc_ref_1),
                    RelationshipReference(nested=False, doc_ref=doc_ref_2)]
 
-    from flask_boiler.models.factory import ClsFactory
+    from onto.models.factory import ClsFactory
     ContainsIterable = ClsFactory.create(
         "ContainsIterable",
         schema=ContainsIterableSchema,
@@ -167,7 +167,7 @@ def test_proxy(CTX):
     doc_ref = CTX.db.ref/'A'/'a'
     doc_ref.set(dict(foo='bar'))
 
-    from flask_boiler.store import Gallery
+    from onto.store import Gallery
     s = Gallery()
 
     from google.cloud.firestore import transactional
@@ -196,7 +196,7 @@ def test_proxy(CTX):
 
 
 def test_local_time():
-    from flask_boiler.mapper.fields import local_time_from_timestamp, timestamp_from_local_time
+    from onto.mapper.fields import local_time_from_timestamp, timestamp_from_local_time
     local_time_str = local_time_from_timestamp(1545062400)
     assert local_time_str == "2018-12-17T08:00:00"
     local_time_timestamp = timestamp_from_local_time("2018-12-17T08:00:00")
@@ -205,8 +205,8 @@ def test_local_time():
 
 # def test_projected():
 #
-#     from flask_boiler.schema import Schema
-#     from flask_boiler import fields
+#     from onto.schema import Schema
+#     from onto import fields
 #
 #     class ArtistSchema(Schema):
 #         id = fields.Integer()

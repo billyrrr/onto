@@ -4,8 +4,8 @@ from examples.meeting_room.view_models import MeetingSession
 from examples.meeting_room.view_models.meeting_session import \
     MeetingSessionMutation
 from ..views import meeting_session_ops
-from flask_boiler import testing_utils
-from flask_boiler.view import rest_api
+from onto import testing_utils
+from onto.view import rest_api
 from .. import view_models
 # Import the fixtures used by fixtures
 from tests.fixtures import CTX, setup_app

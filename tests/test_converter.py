@@ -1,6 +1,6 @@
-from flask_boiler.attrs import attribute
+from onto.attrs import attribute
 
-from flask_boiler.models.base import Serializable
+from onto.models.base import Serializable
 
 
 class H(Serializable):
@@ -24,7 +24,7 @@ def test__schema_cls_from_attributed_class():
     # import asyncio
     # loop = asyncio.get_event_loop()
 
-    from flask_boiler.models.utils import _graphql_object_type_from_attributed_class
+    from onto.models.utils import _graphql_object_type_from_attributed_class
     attributed = H
 
     graphql_schema = _graphql_object_type_from_attributed_class(attributed)
@@ -96,6 +96,6 @@ def test__schema_cls_from_attributed_class():
         on_shutdown=[shutdown]
     )
 
-    import uvicorn
-    uvicorn.run(app, port=8080, debug=True)
+    # import uvicorn
+    # uvicorn.run(app, port=8080, debug=True)
     # return app

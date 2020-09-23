@@ -2,10 +2,10 @@ from collections import OrderedDict
 
 import pytest
 
-import flask_boiler.models.utils
-from flask_boiler import schema
-from flask_boiler.attrs import attribute
-from flask_boiler.models.base import Serializable
+import onto.models.utils
+from onto import schema
+from onto.attrs import attribute
+from onto.models.base import Serializable
 
 
 class G(Serializable):
@@ -15,11 +15,11 @@ class G(Serializable):
 def test__collect_attrs():
     assert isinstance(G.i, attribute.AttributeBase)
 
-    assert list(flask_boiler.models.utils._collect_attrs(G)) == [("i", G.i)]
+    assert list(onto.models.utils._collect_attrs(G)) == [("i", G.i)]
 
 
 def test__schema_cls_from_attributed_class():
-    res = flask_boiler.models.utils._schema_cls_from_attributed_class(G)
+    res = onto.models.utils._schema_cls_from_attributed_class(G)
 
     assert isinstance(res, schema.Schema.__class__)
     schema_obj: schema.Schema = res()

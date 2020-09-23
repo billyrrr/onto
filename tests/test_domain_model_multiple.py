@@ -9,11 +9,11 @@ import pytest
 from google.cloud.firestore import Query, DocumentReference, \
     CollectionReference
 
-from flask_boiler.config import Config
-from flask_boiler.context import Context as CTX
+from onto.config import Config
+from onto.context import Context as CTX
 
-from flask_boiler.domain_model import DomainModel
-from flask_boiler import attrs
+from onto.domain_model import DomainModel
+from onto import attrs
 
 # For pytest, DO NOT DELETE
 from .fixtures import *
@@ -25,7 +25,7 @@ class CityM(DomainModel):
 
     @classmethod
     def _datastore(cls):
-        from flask_boiler.context import Context as CTX
+        from onto.context import Context as CTX
         return CTX.dbs.leancloud
 
     city_name = attrs.bproperty()

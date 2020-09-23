@@ -16,7 +16,7 @@ certificate_filename: "<File Name of Certificate JSON>"
 
 In ```__init__``` of your project source root: 
 ```python
-from flask_boiler.context import Context as CTX
+from onto.context import Context as CTX
 
 CTX.load()
 ```
@@ -26,8 +26,8 @@ In `__init__` of your project source root:
 ```python
 import os
 
-from flask_boiler import context
-from flask_boiler import config
+from onto import context
+from onto import config
 
 Config = config.Config
 
@@ -46,7 +46,7 @@ may be changed later.
 In your project code,
 
 ```python
-from flask_boiler import context
+from onto import context
 
 CTX = context.Context
 

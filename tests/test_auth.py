@@ -5,7 +5,7 @@ import flask
 import pytest
 
 from flask import Flask
-from flask_boiler import auth
+from onto import auth
 
 import flask_restful
 from flask_restful import Resource, ResponseBase

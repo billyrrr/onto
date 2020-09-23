@@ -1,8 +1,8 @@
-# from flask_boiler.store.snapshot_container import SnapshotContainer
-# from flask_boiler.store.struct import Struct
+# from onto.store.snapshot_container import SnapshotContainer
+# from onto.store.struct import Struct
 # from .color_fixtures import Color, PaletteDomainModel
-# from flask_boiler import fields
-# from flask_boiler.store.business_property_store import BusinessPropertyStore, BPSchema
+# from onto import fields
+# from onto.store.business_property_store import BusinessPropertyStore, BPSchema
 # import pytest
 #
 #

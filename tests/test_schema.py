@@ -3,11 +3,11 @@ from unittest import mock, skip
 import pytest
 from testfixtures import compare
 
-import flask_boiler.utils
-from flask_boiler import schema, fields
-from flask_boiler.errors import PropertyEvalError
-from flask_boiler.mapper.schema import Schema, BoilerProperty
-from flask_boiler.models.base import Serializable
+import onto.utils
+from onto import schema, fields
+from onto.errors import PropertyEvalError
+from onto.mapper.schema import Schema, BoilerProperty
+from onto.models.base import Serializable
 
 
 def test__get_instance_vars():
@@ -122,10 +122,10 @@ def test_conversion():
         target instance variable names.
     """
 
-    res = flask_boiler.utils.firestore_key_to_attr_name("intA")
+    res = onto.utils.firestore_key_to_attr_name("intA")
     assert res == "int_a"
 
-    r_res = flask_boiler.utils.attr_name_to_firestore_key("int_a")
+    r_res = onto.utils.attr_name_to_firestore_key("int_a")
     assert r_res == "intA"
 
 
@@ -171,7 +171,7 @@ def test_raw():
 
 
 def test_schema_new():
-    from flask_boiler.primary_object import PrimaryObjectSchema
+    from onto.primary_object import PrimaryObjectSchema
     class CitySchema(PrimaryObjectSchema):
         city_name = fields.Raw(data_key="name")
 

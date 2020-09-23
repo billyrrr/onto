@@ -1,8 +1,8 @@
 from .models import City
-from flask_boiler.context import Context as CTX
-from flask_boiler.view_model import ViewModel, Struct
-from flask_boiler.store import Store, reference
-from flask_boiler import attrs
+from onto.context import Context as CTX
+from onto.view_model import ViewModel, Struct
+from onto.store import Store, reference
+from onto import attrs
 
 
 class CityStore(Store):

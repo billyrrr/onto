@@ -1,5 +1,5 @@
 from examples.meeting_room.views.graphql_view import UserGraphQLMediator
-from flask_boiler.sink.graphql import op_schema
+from onto.sink.graphql import op_schema
 
 schema_all = list()
 

@@ -1,7 +1,7 @@
 import pytest
 from flask import Flask
 
-from flask_boiler import testing_utils
+from onto import testing_utils
 from .fixtures import CTX
 from .color_fixtures import color_refs, ColorSchema, ColorDomainModelBase, \
     Color, rainbow_vm

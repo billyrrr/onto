@@ -193,7 +193,7 @@ with this,
 Declare Models
 ##############
 
-Method 1: flask_boiler.attrs
+Method 1: onto.attrs
 
 .. code-block:: python
 
@@ -215,7 +215,7 @@ Method 1: flask_boiler.attrs
         regions = attrs.bproperty()
 
 
-Method 2: flask_boiler.mapper.schema
+Method 2: onto.mapper.schema
 
 .. code-block:: python
 

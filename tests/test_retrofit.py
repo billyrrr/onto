@@ -2,7 +2,7 @@ import time
 
 from flasgger import SwaggerView
 
-from flask_boiler import retrofit
+from onto import retrofit
 import pytest
 from .fixtures import CTX
 

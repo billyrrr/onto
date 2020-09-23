@@ -1,4 +1,4 @@
-from flask_boiler import fields, schema, domain_model
+from onto import fields, schema, domain_model
 from .. import domain_models
 from tests.fixtures import CTX, setup_app
 from .fixtures import users, tickets, location
@@ -9,7 +9,7 @@ def test_reference(users, tickets, location):
     """ Used as an experiment
     """
 
-    from flask_boiler import attrs
+    from onto import attrs
 
     class ExpMeeting(domain_model.DomainModel):
 

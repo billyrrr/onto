@@ -1,4 +1,4 @@
-from flask_boiler import schema, fields, domain_model, factory
+from onto import schema, fields, domain_model, factory
 
 
 class UserSchema(schema.Schema):

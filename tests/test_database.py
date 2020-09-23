@@ -1,10 +1,10 @@
-from flask_boiler.database.firestore import TargetIdAssigner
-from flask_boiler.query.query import DomainModelQuery
+from onto.database.firestore import TargetIdAssigner
+from onto.query.query import DomainModelQuery
 
 
 def test_reference():
 
-    from flask_boiler.database import Reference
+    from onto.database import Reference
 
     r = Reference()
     a = r.child('a')
@@ -15,7 +15,7 @@ def test_reference():
 
 def test_reference_truediv():
 
-    from flask_boiler.database import Reference
+    from onto.database import Reference
 
     r = Reference()
     a = r / 'a'
@@ -31,7 +31,7 @@ def test_reference_truediv_eq():
     """ Tests that "/=" creates a new Reference object
     """
 
-    from flask_boiler.database import Reference
+    from onto.database import Reference
 
     r = Reference()
     r /= 'a'
@@ -46,7 +46,7 @@ def test_reference_truediv_eq():
 
 def test_deserialize():
 
-    from flask_boiler.database import Reference
+    from onto.database import Reference
 
     r = Reference.from_str(s='a/b')
 
@@ -68,7 +68,7 @@ def test_deserialize():
 
 def test_serialize():
 
-    from flask_boiler.database import Reference
+    from onto.database import Reference
 
     r = Reference()
     a = r.child('a')
@@ -78,8 +78,8 @@ def test_serialize():
 
 
 def test_leancloud():
-    from flask_boiler.database.leancloud import LeancloudDatabase
-    from flask_boiler.database import Snapshot
+    from onto.database.leancloud import LeancloudDatabase
+    from onto.database import Snapshot
 
     ref = LeancloudDatabase.ref/'TODO'/'582570f38ac247004f39c24b'
     snapshot = Snapshot(title='foo', priority='bar')
@@ -97,8 +97,8 @@ def test_target_id_assigner():
 
 
 def test_watch():
-    from flask_boiler.watch import _Watch
-    from flask_boiler.context import Context as CTX
+    from onto.watch import _Watch
+    from onto.context import Context as CTX
     from google.cloud import firestore
 
     def callback(*args, **kwargs):
@@ -127,16 +127,16 @@ def test_watch():
 
     _watch.add_target(target, callback)
 
-    from flask_boiler import testing_utils
+    from onto import testing_utils
 
     testing_utils._wait()
     # TODO: add and test tearDown for _watch
     # Implement close() for listener
 
 def test_listener():
-    from flask_boiler.database.firestore import FirestoreListener, Query
-    from flask_boiler.domain_model import DomainModel
-    from flask_boiler import attrs
+    from onto.database.firestore import FirestoreListener, Query
+    from onto.domain_model import DomainModel
+    from onto import attrs
 
     class S(DomainModel):
 
@@ -150,7 +150,7 @@ def test_listener():
 
     query = DomainModelQuery(parent=S, arguments=[])
 
-    from flask_boiler.source.firestore import FirestoreSource
+    from onto.source.firestore import FirestoreSource
     class M:
         source = FirestoreSource(query=query)
 
@@ -165,14 +165,14 @@ def test_listener():
 
     M.start()
 
-    from flask_boiler import testing_utils
+    from onto import testing_utils
     testing_utils._wait()
 
     testing_utils._wait()
 
 
 def test_snapshot_init_meta():
-    from flask_boiler.database.firestore import FirestoreSnapshot
+    from onto.database.firestore import FirestoreSnapshot
     snapshot = FirestoreSnapshot.from_data_and_meta(
         data=dict(foo='bar'),
         my_arg=1

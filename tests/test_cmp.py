@@ -1,7 +1,7 @@
 import unittest
 
-from flask_boiler.database.firestore import FirestoreDatabase
-from flask_boiler.query import cmp
+from onto.database.firestore import FirestoreDatabase
+from onto.query import cmp
 
 
 class MyTestCase(unittest.TestCase):

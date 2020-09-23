@@ -2,8 +2,8 @@ from google.cloud.firestore_v1 import DocumentSnapshot
 
 from examples.city.forms import CityForm
 from examples.city.views import CityView
-from flask_boiler.view.base import ViewMediatorBase
-from flask_boiler.view_mediator_dav import ViewMediatorDeltaDAV, ProtocolBase
+from onto.view.base import ViewMediatorBase
+from onto.view_mediator_dav import ViewMediatorDeltaDAV, ProtocolBase
 
 
 class CityViewMediator(ViewMediatorDeltaDAV):

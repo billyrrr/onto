@@ -1,11 +1,11 @@
-from flask_boiler.context import Context as CTX
-from flask_boiler.config import Config
+from onto.context import Context as CTX
+from onto.config import Config
 
-from flask_boiler import schema, fields, utils
+from onto import schema, fields, utils
 
-from flask_boiler.firestore_object import FirestoreObject, \
+from onto.firestore_object import FirestoreObject, \
     ClsFactory
-from flask_boiler.primary_object import PrimaryObject
+from onto.primary_object import PrimaryObject
 
 
 if not CTX._ready:

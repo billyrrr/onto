@@ -1,4 +1,4 @@
-from flask_boiler.store import SnapshotContainer
+from onto.store import SnapshotContainer
 
 
 def test_set_with_timestamp():

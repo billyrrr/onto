@@ -1,4 +1,4 @@
-from flask_boiler.source.protocol import Protocol
+from onto.source.protocol import Protocol
 from unittest.mock import patch, call, ANY
 from .fixtures import CTX
 
@@ -19,7 +19,7 @@ def test_register():
 
 
 def test_source(meeting, CTX):
-    from flask_boiler.source.leancloud import BeforeSaveDomainModelSource as dms
+    from onto.source.leancloud import BeforeSaveDomainModelSource as dms
 
     with patch.object(dms, '_invoke_mediator') as mock_method:
         import leancloud

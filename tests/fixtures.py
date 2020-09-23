@@ -11,8 +11,8 @@ def CTX():
     :return:
     """
 
-    from flask_boiler.context import Context as TST_CTX
-    from flask_boiler.config import Config
+    from onto.context import Context as TST_CTX
+    from onto.config import Config
 
     if TST_CTX.config is None:
         config = Config.load()

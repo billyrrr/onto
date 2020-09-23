@@ -3,8 +3,8 @@ from flask import Response, jsonify
 from examples.meeting_room.domain_models import Meeting
 from examples.meeting_room.view_models import MeetingSession
 from examples.meeting_room.view_models.meeting_session import MeetingSessionC
-from flask_boiler.source.rest import RestViewModelSource
-from flask_boiler.view import Mediator
+from onto.source.rest import RestViewModelSource
+from onto.view import Mediator
 
 # class RestMediator(Mediator):
 #
@@ -18,7 +18,7 @@ class ViewModelResponse(Response):
 
 class MeetingSessionRest(Mediator):
 
-    # from flask_boiler import source, sink
+    # from onto import source, sink
 
     view_model_cls = MeetingSessionC
 

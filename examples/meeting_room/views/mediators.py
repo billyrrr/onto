@@ -1,11 +1,11 @@
 from examples.meeting_room.domain_models import Meeting
 from examples.meeting_room.view_models import MeetingSession
-from flask_boiler.query.query import ViewModelQuery
-from flask_boiler.view import Mediator
+from onto.query.query import ViewModelQuery
+from onto.view import Mediator
 
 
 class MeetingSessionPatch(Mediator):
-    from flask_boiler import source, sink
+    from onto import source, sink
 
     source = source.firestore(
         query=ViewModelQuery.patch_query(parent=MeetingSession)
@@ -41,7 +41,7 @@ class MeetingSessionPatch(Mediator):
 
 class MeetingSessionGet(Mediator):
 
-    from flask_boiler import source, sink
+    from onto import source, sink
 
     source = source.domain_model(Meeting)
     sink = sink.firestore()  # TODO: check variable resolution order
@@ -72,14 +72,14 @@ class MeetingSessionLc(MeetingSession):
 
     @classmethod
     def _datastore(cls):
-        from flask_boiler.context import Context as CTX
+        from onto.context import Context as CTX
         return CTX.dbs.leancloud
 
 
 class MeetingSessionShow(Mediator):
 
-    from flask_boiler import source
-    from flask_boiler.sink.leancloud import LcSink
+    from onto import source
+    from onto.sink.leancloud import LcSink
 
     source = source.domain_model(Meeting)
     sink = LcSink()  # TODO: check variable resolution order

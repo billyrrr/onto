@@ -1,13 +1,13 @@
-from flask_boiler import fields
-from flask_boiler.store.store import BPSchema
-from flask_boiler.context import Context as CTX
-from flask_boiler.mapper.schema import Schema
-from flask_boiler.mapper.fields import Integer
-from flask_boiler.domain_model import DomainModel
-from flask_boiler.store.struct import Struct
-from flask_boiler.view.document import ViewMediatorDAV
-from flask_boiler.view_model import ViewModel
-from flask_boiler import testing_utils
+from onto import fields
+from onto.store.store import BPSchema
+from onto.context import Context as CTX
+from onto.mapper.schema import Schema
+from onto.mapper.fields import Integer
+from onto.domain_model import DomainModel
+from onto.store.struct import Struct
+from onto.view.document import ViewMediatorDAV
+from onto.view_model import ViewModel
+from onto import testing_utils
 
 
 class ShardSchema(Schema):
@@ -25,9 +25,9 @@ class ShardsStoreBpss(BPSchema):
     shards = fields.StructuralRef(dm_cls=Shard, many=True)
 
 
-from flask_boiler import attrs
+from onto import attrs
 
-from flask_boiler.database import reference
+from onto.database import reference
 
 
 class CounterView(ViewModel):

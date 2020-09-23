@@ -1,11 +1,11 @@
 from unittest import mock
 
 import pytest
-from flask_boiler.attrs import attribute
-from flask_boiler.attrs.attribute import PropertyAttribute, \
+from onto.attrs import attribute
+from onto.attrs.attribute import PropertyAttribute, \
     ForwardInnerAttribute, Attribute, AttributeBase
 
-from flask_boiler.models.base import Serializable
+from onto.models.base import Serializable
 
 
 def test_binding():

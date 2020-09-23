@@ -2,14 +2,14 @@ import pytest
 
 from examples.meeting_room.domain_models import Meeting, User
 from examples.meeting_room.view_models.meeting_session import MeetingSession
-from flask_boiler.database import Snapshot
-from flask_boiler.view.mutation import PatchMutation
-from flask_boiler.query.query import ViewModelQuery
-from flask_boiler.view.document import \
+from onto.database import Snapshot
+from onto.view.mutation import PatchMutation
+from onto.query.query import ViewModelQuery
+from onto.view.document import \
     ViewMediatorDAV
-from flask_boiler import testing_utils
+from onto import testing_utils
 # Import the fixtures used by fixtures
-from flask_boiler.context import Context
+from onto.context import Context
 from tests.fixtures import CTX
 from .fixtures import *
 from examples.meeting_room.view_models.user_view import UserViewDAV

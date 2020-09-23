@@ -9,19 +9,19 @@ from flask import Flask, jsonify
 from flasgger import Swagger, SwaggerView
 from google.cloud.firestore import DocumentReference
 
-from flask_boiler.view import GenericView
-from flask_boiler import fields
-from flask_boiler.schema import Schema
-from flask_boiler.view_model import ViewModel
-from flask_boiler.domain_model import DomainModel
+from onto.view import GenericView
+from onto import fields
+from onto.schema import Schema
+from onto.view_model import ViewModel
+from onto.domain_model import DomainModel
 from google.cloud import firestore
-from flask_boiler import testing_utils
+from onto import testing_utils
 from functools import partial
 
 from examples.luggage_models import LuggageItem, Luggages
 
-from flask_boiler.config import Config
-from flask_boiler.context import Context as CTX
+from onto.config import Config
+from onto.context import Context as CTX
 
 if __name__ == "__main__":
     config = Config(

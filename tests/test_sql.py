@@ -53,7 +53,7 @@
 #
 #
 # def test_couchdb():
-#     from flask_boiler.context import Context
+#     from onto.context import Context
 #
 #     # import couchdb
 #     # couch: couchdb.Server = Context.dbs.couch
@@ -62,7 +62,7 @@
 #     # doc = {'hello': 'world'}
 #     # db.save(doc)
 #
-#     from flask_boiler.database.couch import CouchDatabase, Reference, Snapshot
+#     from onto.database.couch import CouchDatabase, Reference, Snapshot
 #     db = CouchDatabase()
 #     ref = Reference().child('users').child('userid1').child('bookings').child('bookingid1')
 #     snapshot = Snapshot(hello='world')
@@ -73,7 +73,7 @@
 #
 #
 # def test_couchbase():
-#     from flask_boiler.context import Context
+#     from onto.context import Context
 #
 #     # import couchdb
 #     # couch: couchdb.Server = Context.dbs.couch
@@ -82,7 +82,7 @@
 #     # doc = {'hello': 'world'}
 #     # db.save(doc)
 #
-#     from flask_boiler.database.couchbase import CouchbaseDatabase, Reference, Snapshot
+#     from onto.database.couchbase import CouchbaseDatabase, Reference, Snapshot
 #     db = CouchbaseDatabase()
 #     ref = Reference().child('users').child('userid1').child('bookings').child('bookingid1')
 #     snapshot = Snapshot(hello='world')
