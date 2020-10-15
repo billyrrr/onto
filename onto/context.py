@@ -13,13 +13,9 @@ Usage:
 import logging
 import os
 
-import firebase_admin
-from firebase_admin import credentials
-from google.cloud import firestore
 # from google.cloud import storage
 
 # This import is intended to be accessed with google.cloud.logging.*
-import google.cloud.logging
 
 from celery import Celery
 
@@ -29,7 +25,7 @@ import logging
 from contextvars import ContextVar
 from onto.database import Database, Listener
 
-_transaction_var: ContextVar[firestore.Transaction] = \
+_transaction_var: ContextVar['firestore.Transaction'] = \
     ContextVar('_transaction_var', default=None)
 
 
@@ -48,7 +44,7 @@ class Context:
     """
 
     debug = None
-    firebase_app: firebase_admin.App = None
+    firebase_app: 'firebase_admin.App' = None
     db: Database = None
     config: Config = None
     celery_app: Celery = None
@@ -111,6 +107,7 @@ class Context:
             handler.setFormatter(formatter)
             root.addHandler(handler)
         elif output_choice == 'gcloud-logger':
+            import google.cloud.logging
             logging_client = google.cloud.logging.Client.from_service_account_json(
                 json_credentials_path=certificate_path
             )
@@ -271,6 +268,8 @@ class Context:
                     gapic_version=_GAPIC_LIBRARY_VERSION,
                     user_agent=_ua()
                 )
+
+            from google.cloud import firestore
             client = firestore.Client.from_service_account_json(
                 cert_path, client_info=_client_info())
             from onto.database.firestore import FirestoreDatabase
@@ -339,6 +338,7 @@ class Context:
     @classmethod
     def _reload_credentials(cls, certificate_path):
         try:
+            from firebase_admin import credentials
             cls._cred = credentials.Certificate(certificate_path)
         except Exception as e:
             logging.exception('Error initializing credentials.Certificate')
@@ -348,6 +348,7 @@ class Context:
     @classmethod
     def _reload_firebase_app(cls):
         try:
+            import firebase_admin
             cls.firebase_app = firebase_admin.initialize_app(
                 credential=cls._cred,
                 name=cls.config.APP_NAME,

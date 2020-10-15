@@ -1,7 +1,6 @@
 # from google.cloud.firestore import DocumentReference
 import abc
 
-from google.cloud.firestore import Transaction
 # from google.cloud.firestore_v1 import WriteOption, LastUpdateOption
 
 from onto.common import _NA
@@ -75,7 +74,7 @@ class FirestoreObjectMixin:
         return Snapshot(**self.to_dict())
 
     def save(self,
-             transaction: Transaction=_NA,
+             transaction: 'google.cloud.firestore.Transaction'=_NA,
              doc_ref=None,
              _store=_NA,
              ):
@@ -104,7 +103,7 @@ class FirestoreObjectMixin:
         snapshot = Snapshot(d)
         self._datastore().set(snapshot=snapshot, ref=doc_ref, transaction=transaction)
 
-    def delete(self, transaction: Transaction = _NA) -> None:
+    def delete(self, transaction: 'google.cloud.firestore.Transaction' = _NA) -> None:
         """ Deletes and object from Firestore.
 
         :param transaction: Firestore Transaction

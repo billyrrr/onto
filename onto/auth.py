@@ -5,8 +5,6 @@ Reference: flask-restful docs
 import warnings
 from functools import wraps, partial
 
-import firebase_admin
-from firebase_admin import auth
 from flask import request, Response
 from flask_restful import abort
 
@@ -38,11 +36,13 @@ class AuthVerifyIdTokenFunc:
 
             return mock_auth_verify_id_token(*args, **kwargs)
         else:
+            from firebase_admin import auth
             return auth.verify_id_token(*args, **kwargs)
 
 
 def default_authentication(id_token) -> (str, int):
     auth_verify_id_token = AuthVerifyIdTokenFunc()
+    import firebase_admin.auth
     try:
         # Verify the ID token while checking if the token is revoked by
         # passing check_revoked=True.
