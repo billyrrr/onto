@@ -1,8 +1,18 @@
 from collections import namedtuple
+#
+# def bproperty(*args, **kwargs):
+#     from .attribute import PropertyAttribute
+#     from pony.orm.core import Required
+#     class C(Required, PropertyAttribute):
+#         pass
+#         # def __init__(self, *args, **kwargs):
+#         #     super().__init__(str, *args, **kwargs)
+#     return C(str, *args, **kwargs)
+
 
 from .attribute import AttributeBase, \
-    PropertyAttribute as bproperty, \
     RelationshipAttribute as relation, \
+    PropertyAttribute as bproperty, \
     DictAttribute as bdict, \
     EmbeddedAttribute as embed, \
     ObjectTypeAttribute as object_type, \

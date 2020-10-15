@@ -19,6 +19,11 @@ def _schema_cls_from_attributed_class(cls):
 
     d = dict()
     for key, attr in _collect_attrs(cls):
+        if key == '_pk_':
+            """ ponyorm duplicates primary key field 
+            TODO: make better 
+            """
+            continue
         field = attr._make_field()
         field.load_only = field.load_only or import_only
         field.dump_only = field.dump_only or export_only

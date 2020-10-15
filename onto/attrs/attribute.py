@@ -1,6 +1,8 @@
 import typing
 from functools import partial
 
+from pony.orm.core import Attribute, PrimaryKey
+
 from onto.mapper import fields
 from typing import Type, Callable
 
@@ -13,7 +15,17 @@ class ValueNotProvided:
     pass
 
 
+class TypeClsAsArgMixin:
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 class AttributeBase(RootCondition):
+
+    def __hash__(self):
+        # TODO: debug
+        return id(self)
 
     def _make_field(self) -> fields.Field:
         """
@@ -86,7 +98,8 @@ class AttributeBase(RootCondition):
             requires=_NA,
 
             type_cls=_NA,
-            doc=_NA
+            doc=_NA,
+            **kwargs
 
     ):
         """
@@ -117,7 +130,7 @@ class AttributeBase(RootCondition):
 
         :param type_cls: type for the attribute (no use for now)
         """
-        super().__init__()
+        super().__init__(type_cls, is_required=import_required, **kwargs)
         field_kwargs = dict()
 
         field_kwargs["allow_none"] = True
@@ -222,7 +235,7 @@ class AttributeBase(RootCondition):
         self.type_cls = type_cls
 
 
-class Boolean(AttributeBase):
+class Boolean(AttributeBase, TypeClsAsArgMixin, Attribute):
 
     # def _make_graphql_type(self):
     #     import graphql
@@ -272,7 +285,7 @@ class Boolean(AttributeBase):
     #     return super().__get__(instance, owner)
 
 
-class PropertyAttribute(AttributeBase):
+class PropertyAttributeBase(AttributeBase):
     """
     Ref: https://blog.csdn.net/weixin_43265804/article/details/82863984
         content under CC 4.0
@@ -369,6 +382,10 @@ class PropertyAttribute(AttributeBase):
         return _self
 
 
+class PropertyAttribute(PropertyAttributeBase, TypeClsAsArgMixin, Attribute):
+    pass
+
+
 class DictAttribute(PropertyAttribute):
 
     def __init__(self, **kwargs):
@@ -383,7 +400,7 @@ class DictAttribute(PropertyAttribute):
             **kwargs)
 
 
-class RelationshipAttribute(PropertyAttribute):
+class RelationshipAttribute(PropertyAttributeBase, TypeClsAsArgMixin, Attribute):
 
     def _make_field(self) -> fields.Field:
         """
@@ -415,7 +432,8 @@ class RelationshipAttribute(PropertyAttribute):
     def __init__(self, *, nested=_NA, collection=_NA, dm_cls=_NA, **kwargs):
         # TODO: compare _NA everywhere with "is" rather than "=="
         super().__init__(
-            **kwargs
+            **kwargs,
+            type_cls=dm_cls
         )
         if nested == _NA:
             raise ValueError
@@ -441,7 +459,10 @@ class LocalTimeAttribute(PropertyAttribute):
         return field_cls(**self._field_kwargs, attribute=self.name)
 
 
-class DocRefAttribute(PropertyAttribute):
+class DocRefAttribute(PropertyAttributeBase, TypeClsAsArgMixin, PrimaryKey):
+
+    def __new__(cls, *args, type_cls, **kwargs):
+        return super().__new__(cls, type_cls, *args, type_cls=type_cls, **kwargs)
 
     def _make_field(self) -> fields.Field:
         field_cls = fields.DocRefField

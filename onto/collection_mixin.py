@@ -16,6 +16,22 @@ class CollectionMemberMeta(SerializableMeta):
         return klass
 
 
+from pony.orm import Database
+
+db = Database()
+
+from pony.orm.core import EntityMeta
+class with_pony(EntityMeta, CollectionMemberMeta):
+
+    def __new__(mcs, name, bases, attrs):
+        bases = (*bases, db.Entity,)
+        klass = super().__new__(mcs, name, bases, attrs)
+        return klass
+
+    def __init__(mcs, name, bases, attrs):
+        bases = (*bases, db.Entity,)
+        super().__init__(name, bases, attrs)
+
 
 class CollectionMixin:
 
