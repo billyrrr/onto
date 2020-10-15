@@ -57,7 +57,7 @@ class Context:
     #   when .<flag> is neither set to True, nor set to False.
     # debug = None
     # testing = None
-    _cred = None
+    # _cred = None
     __instance = None
 
     _ready = False
@@ -161,8 +161,6 @@ class Context:
         # os.environ["HTTP_PROXY"] = "https://34.85.42.121:8899"
         # os.environ["HTTPS_PROXY"] = "https://34.85.42.121:8899"
 
-        cls._reload_credentials(cls.config.FIREBASE_CERTIFICATE_JSON_PATH)
-
         """
         Configure logger to output to sys-logger during test 
         and gcloud-logger during staging and etc 
@@ -177,14 +175,10 @@ class Context:
 
         cls._reload_debug_flag(cls.config.DEBUG)
         cls._reload_testing_flag(cls.config.TESTING)
-        cls._reload_firebase_app()
         cls._reload_dbs(cls.config.database)
         default_db_name = cls.config.default_database
         cls._reload_default_db(db_name=default_db_name)
         cls._reload_services(cls.config.services)  # leancloud.engine depends on db
-        cls._reload_celery_app()
-        from onto.database.firestore import FirestoreListener
-        cls.listener = FirestoreListener
 
         cls.logger.info(f"onto.Context has finished "
                         f"loading config: {vars(config)}")
@@ -305,9 +299,10 @@ class Context:
         else:
             raise ValueError
 
-    @staticmethod
-    def create_service(svc_config):
-        if svc_config['type'] == 'engine':
+    @classmethod
+    def create_service(cls, svc_config):
+        service_type = svc_config['type']
+        if service_type == 'engine':
             try:
                 import leancloud
             except ImportError as e:
@@ -315,12 +310,31 @@ class Context:
                                 'importing leancloud module has failed') from e
             engine = leancloud.Engine()
             return engine
+        elif service_type == 'firebase':
+            try:
+                import firebase_admin
+                app_name = svc_config['app_name']
+                storage_bucket_name = svc_config.get('storage_bucket_name', None)
+                if storage_bucket_name is None:
+                    storage_bucket_name = f"{app_name}.appspot.com"
+
+                cred = cls._get_credentials(svc_config['certificate_filename'])
+                return firebase_admin.initialize_app(
+                    credential=cred,
+                    name=app_name,
+                    options={
+                        'storageBucket': storage_bucket_name
+                    }
+                )
+            except Exception as e:
+                logging.exception('Error initializing firebase_app')
+                raise e
+        elif service_type == 'celery':
+            celery_app = Celery('tasks',
+                                    broker='pyamqp://guest@localhost//')
+            return celery_app
         else:
             raise ValueError
-
-    @classmethod
-    def _reload_celery_app(cls):
-        cls.celery_app = Celery('tasks', broker='pyamqp://guest@localhost//')
 
     @classmethod
     def _reload_debug_flag(cls, debug):
@@ -336,25 +350,12 @@ class Context:
         cls.testing = testing
 
     @classmethod
-    def _reload_credentials(cls, certificate_path):
+    def _get_credentials(cls, certificate_path):
         try:
             from firebase_admin import credentials
-            cls._cred = credentials.Certificate(certificate_path)
+            _cred = credentials.Certificate(certificate_path)
+            return _cred
         except Exception as e:
             logging.exception('Error initializing credentials.Certificate')
             raise e
         # TODO delete certificate path in function call
-
-    @classmethod
-    def _reload_firebase_app(cls):
-        try:
-            import firebase_admin
-            cls.firebase_app = firebase_admin.initialize_app(
-                credential=cls._cred,
-                name=cls.config.APP_NAME,
-                options={
-                'storageBucket': cls.config.STORAGE_BUCKET_NAME
-            })
-        except Exception as e:
-            logging.exception('Error initializing firebase_app')
-            raise e

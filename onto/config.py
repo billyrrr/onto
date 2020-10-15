@@ -62,18 +62,10 @@ class ConfigBase:
                 app_name=None, storage_bucket_name=None,
                 database=None, default_database=None, services=None,
                 *args, **kwargs):
-        if certificate_path is not None:
-            cls.FIREBASE_CERTIFICATE_JSON_PATH = certificate_path
-        else:
-            cls.FIREBASE_CERTIFICATE_JSON_PATH = os.path.join(
-                config_jsons_path, certificate_filename)
         cls.TESTING = testing
         cls.DEBUG = debug
         cls.APP_NAME = app_name
-        if storage_bucket_name is not None:
-            cls.STORAGE_BUCKET_NAME = storage_bucket_name
-        else:
-            cls.STORAGE_BUCKET_NAME = f"{app_name}.appspot.com"
+
         cls.database = database if database is not None else dict()
         cls.default_database = default_database
         if services is None:

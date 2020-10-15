@@ -12,7 +12,7 @@ def _delete_all(CTX, collection_name=None, subcollection_name=None):
     :return:
     """
     testing_datastore = CTX.dbs.firestore
-    app_name = CTX.firebase_app.name
+    app_name = CTX.services.firebase.name
     if not app_name.find("testing"):
         raise Exception("Firebase App Name is {}. "
                         "Only app name containing testing is supported"

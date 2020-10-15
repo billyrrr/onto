@@ -18,7 +18,7 @@ class FirestoreSource(Source):
 
     def _register(self):
         from onto.context import Context as CTX
-        CTX.listener.register(query=self.query, source=self)
+        CTX.db.listener.register(query=self.query, source=self)
 
     @classmethod
     def delta(cls, container):
