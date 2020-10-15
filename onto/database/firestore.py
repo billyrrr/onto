@@ -14,6 +14,9 @@ from onto.query.query import Query
 from onto.store.snapshot_container import SnapshotContainer
 from math import inf
 
+
+FirestoreListener = None
+
 class FirestoreReference(Reference):
 
     def is_collection(self):
@@ -45,6 +48,11 @@ class FirestoreReference(Reference):
 class FirestoreDatabase(Database):
 
     firestore_client = None
+
+    @classmethod
+    def listener(cls):
+        return FirestoreListener
+
 
     class Comparators(Database.Comparators):
 
