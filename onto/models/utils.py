@@ -45,7 +45,7 @@ def _schema_cls_from_attributed_class(cls):
         return TempSchema
 
 
-def _graphql_type_from_py(t: type):
+def _graphql_type_from_py(t: type, input=False):
     import graphql
     PY_TYPE_MAP_GQL = {
         int: graphql.GraphQLInt,
@@ -54,24 +54,35 @@ def _graphql_type_from_py(t: type):
         str: graphql.GraphQLString,
         list: graphql.GraphQLList
     }
-    return PY_TYPE_MAP_GQL[t]
+    if t in PY_TYPE_MAP_GQL:
+        return PY_TYPE_MAP_GQL[t]
+    else:
+        if input:
+            return _graphql_object_type_from_attributed_class(t, input=input)
+        else:
+            raise ValueError
 
 
-def _graphql_field_from_attr(attr):
+def _graphql_field_from_attr(attr, input=False):
+    import graphql
+
+    if not input:
+        field_base = graphql.GraphQLField
+    else:
+        field_base = graphql.GraphQLInputField
 
     from onto import attrs
-    import graphql
     if attr.__class__ is attrs.attribute.EmbeddedAttribute:
         e_cls = attr.obj_type
         e_graphql = _graphql_object_type_from_attributed_class(e_cls)
-        field = graphql.GraphQLField(
+        field = field_base(
             type_=e_graphql,
             description=attr.doc
         )
         return attr.data_key, field
     elif isinstance(attr, attrs.attribute.AttributeBase):
         import graphql
-        field = graphql.GraphQLField(
+        field = field_base(
             type_=_graphql_type_from_py(t=attr.type_cls),
             description=attr.doc
         )
@@ -80,7 +91,7 @@ def _graphql_field_from_attr(attr):
         raise NotImplementedError
 
 
-def _graphql_object_type_from_attributed_class(cls):
+def _graphql_object_type_from_attributed_class(cls, input=False):
     """ Make GraphQL schema from a class containing AttributeBase+ objects
 
     :return:
@@ -92,11 +103,16 @@ def _graphql_object_type_from_attributed_class(cls):
     import graphql
 
     fields = dict(
-        _graphql_field_from_attr(attr)
+        _graphql_field_from_attr(attr, input=input)
         for key, attr in _collect_attrs(cls)
     )
 
-    graphql_object_type = graphql.GraphQLObjectType(
+    if not input:
+        base = graphql.GraphQLObjectType
+    else:
+        base = graphql.GraphQLInputObjectType
+
+    graphql_object_type = base(
         cls.__name__,
         fields=fields
     )

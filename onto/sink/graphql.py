@@ -79,14 +79,14 @@ class GraphQLSink(Sink):
 
     def _param_to_graphql_arg(self, param: Parameter):
         from onto.models.utils import _graphql_type_from_py
-        from graphql import GraphQLArgument
+        from graphql import GraphQLArgument, GraphQLInputObjectType
         annotation = param.annotation
         import inspect
         if annotation is inspect._empty:
             raise ValueError('parameter {param} is not annotated'
                              'for conversion to graphql argument')
         # TODO: add notes about `typing.*` not supported
-        gql_field_cls = _graphql_type_from_py(annotation)
+        gql_field_cls = _graphql_type_from_py(annotation, input=True)
         arg = GraphQLArgument(gql_field_cls)  # TODO: set default_value
         return arg
 

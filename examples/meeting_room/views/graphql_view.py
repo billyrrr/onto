@@ -2,6 +2,7 @@ import uvicorn as uvicorn
 from examples.meeting_room.domain_models import User
 
 from examples.meeting_room.view_models import UserView
+from onto import view_model, attrs
 from onto.view import Mediator
 
 
@@ -57,4 +58,31 @@ class UserGraphQLMediator(Mediator):
         )
 
         return [s, liveness]
+
+
+
+class LoginForm(view_model.ViewModel):
+    phone_number = attrs.bproperty(type_cls=str)
+    verification_code = attrs.bproperty(type_cls=str)
+
+
+class LoginRes(view_model.ViewModel):
+    token = attrs.bproperty(type_cls=str)
+
+
+class UserLoginMediator(Mediator):
+
+    from onto.sink.graphql import mutation
+
+    login_user_view = mutation(view_model_cls=LoginRes)
+
+    @login_user_view.triggers.mutate
+    def login(self, form: LoginForm):
+        print(form)
+
+    @classmethod
+    def start(cls):
+        s = cls.login_user_view.start()
+        return [s]
+
 

@@ -1,15 +1,18 @@
-from examples.meeting_room.views.graphql_view import UserGraphQLMediator
+from examples.meeting_room.views.graphql_view import UserGraphQLMediator, UserLoginMediator
 from onto.sink.graphql import op_schema
 
 schema_all = list()
 
 schema_all += UserGraphQLMediator.start()
-
+schema_all += UserLoginMediator.start()
+#
 from graphql import GraphQLSchema
 
 schema = GraphQLSchema(
     query=op_schema(op_type='Query', schema_all=schema_all),
-    subscription=op_schema(op_type='Subscription', schema_all=schema_all)
+    subscription=op_schema(op_type='Subscription', schema_all=schema_all),
+    mutation=op_schema(op_type='Mutation', schema_all=schema_all)
+
 )
 
 from stargql import GraphQL
