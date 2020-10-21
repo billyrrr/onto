@@ -19,15 +19,27 @@ class Reference(collections.UserString):
     example: '/myusername/'
     """
 
-    def __init__(self, _is_empty=True, _s=''):
+    def __init__(self, _s='', *, _is_empty=True):
+        """
+        TODO: make compatible with sequence input
+        :param _s:
+        :param _is_empty:
+        """
+        if not isinstance(_is_empty, bool):
+            import logging
+            logging.error(
+                f'Expected bool, but received {_is_empty} '
+                f'as the value for _is_empty. '
+                'Initialize with Reference.from_str where applicable. '
+            )
         self._is_empty = _is_empty
         super().__init__(_s)
 
     def child(self, s):
         if self._is_empty:
-            return self.__class__(_is_empty=False, _s=s)
+            return self.__class__(_s=s, _is_empty=False)
         else:
-            return self.__class__(_is_empty=False, _s=f'{self}/{s}')
+            return self.__class__(_s=f'{self}/{s}', _is_empty=False)
 
     @classmethod
     def from_str(cls, s: str):

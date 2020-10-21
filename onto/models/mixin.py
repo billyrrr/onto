@@ -216,6 +216,11 @@ class Exportable:
     #     return self._export_as_view_dict()
 
 
+def is_pony(*, klass):
+    from pony.orm.core import Entity
+    return issubclass(klass, Entity)
+
+
 class NewMixin:
     """
     Mixin class for initializing instance variable on creation.
@@ -267,16 +272,7 @@ class NewMixin:
 
         return cls(_with_dict=_with_dict, **d_super)
 
-    def __init__(self, _with_dict=None, **kwargs):
-        """ Private initializer; do not call directly.
-            Use "YourModelClass.new(...)" instead.
-        Needs to be top level
-
-        :param _with_dict:
-        :param kwargs:
-        """
-        if _with_dict is None:
-            _with_dict = dict()
+    def _init_(self, *, _with_dict, _kwargs):
         # TODO: note that obj_type and other irrelevant fields are set; fix
         for key, val in _with_dict.items():
             try:
@@ -289,9 +285,30 @@ class NewMixin:
                 raise ae
             # elif isinstance(getattr(self.__class__, key), property):
             #     setattr(self, key, val)
-
         # TODO: log and throw with extraneous arguments
-        if len(kwargs) != 0:
+        if len(_kwargs) != 0:
             raise ValueError(f'Received extraneous arguments '
-                             f'{kwargs}')
-        super().__init__(**kwargs)
+                             f'{_kwargs}')
+        super().__init__(**_kwargs)
+
+    def _init_pony_(self, *, _with_dict, _kwargs):
+        if len(_kwargs) != 0:
+            raise ValueError(f'Received extraneous arguments '
+                             f'{_kwargs}')
+        super().__init__(**_with_dict, **_kwargs)
+
+    def __init__(self, _with_dict=None, **kwargs):
+        """ Private initializer; do not call directly.
+            Use "YourModelClass.new(...)" instead.
+        Needs to be top level
+
+        :param _with_dict:
+        :param kwargs:
+        """
+        if _with_dict is None:
+            _with_dict = dict()
+        if is_pony(klass=self.__class__):
+            self._init_pony_(_with_dict=_with_dict, _kwargs=kwargs)
+        else:
+            self._init_(_with_dict=_with_dict, _kwargs=kwargs)
+

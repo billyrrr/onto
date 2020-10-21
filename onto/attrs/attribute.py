@@ -1,7 +1,7 @@
 import typing
-from functools import partial
+from functools import partial, lru_cache
 
-from pony.orm.core import Attribute, PrimaryKey
+from pony.orm.core import Attribute, PrimaryKey, Discriminator, Optional
 
 from onto.mapper import fields
 from typing import Type, Callable
@@ -19,6 +19,27 @@ class TypeClsAsArgMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+
+
+class MakePonyAttribute:
+
+    def _make_pony_attribute_cls(self):
+        return Optional
+
+    @lru_cache(maxsize=1)
+    def _make_pony_attribute(self):
+        column_name = self.data_key
+        py_type = self.type_cls
+        is_required = self.import_required
+        _pony_attribute_cls = self._make_pony_attribute_cls()
+        _pony_attribute = _pony_attribute_cls(
+            py_type, is_required=is_required, column=column_name)
+        return _pony_attribute
+
+    @property
+    def _pony_attribute(self):
+        return self._make_pony_attribute()
 
 
 class AttributeBase(RootCondition):
@@ -130,7 +151,7 @@ class AttributeBase(RootCondition):
 
         :param type_cls: type for the attribute (no use for now)
         """
-        super().__init__(type_cls, is_required=import_required, **kwargs)
+        super().__init__(**kwargs)
         field_kwargs = dict()
 
         field_kwargs["allow_none"] = True
@@ -235,7 +256,7 @@ class AttributeBase(RootCondition):
         self.type_cls = type_cls
 
 
-class Boolean(AttributeBase, TypeClsAsArgMixin, Attribute):
+class Boolean(AttributeBase, MakePonyAttribute):
 
     # def _make_graphql_type(self):
     #     import graphql
@@ -382,7 +403,7 @@ class PropertyAttributeBase(AttributeBase):
         return _self
 
 
-class PropertyAttribute(PropertyAttributeBase, TypeClsAsArgMixin, Attribute):
+class PropertyAttribute(PropertyAttributeBase, MakePonyAttribute):
     pass
 
 
@@ -400,7 +421,28 @@ class DictAttribute(PropertyAttribute):
             **kwargs)
 
 
-class RelationshipAttribute(PropertyAttributeBase, TypeClsAsArgMixin, Attribute):
+class RelationshipAttribute(PropertyAttributeBase, MakePonyAttribute):
+
+
+    def _make_pony_attribute_cls(self):
+        from pony.orm.core import Set
+        collection_type = self.collection
+        if collection_type is not None:
+            return Set
+        else:
+            return Optional
+
+
+    @lru_cache(maxsize=1)
+    def _make_pony_attribute(self):
+        # column_name = self.data_key
+        # TODO: Column name has no actual use; so it is not allowed in pony
+        py_type = self.dm_cls
+        is_required = self.import_required
+        _pony_attribute_cls = self._make_pony_attribute_cls()
+        _pony_attribute = _pony_attribute_cls(
+            py_type, is_required=is_required)
+        return _pony_attribute
 
     def _make_field(self) -> fields.Field:
         """
@@ -433,7 +475,6 @@ class RelationshipAttribute(PropertyAttributeBase, TypeClsAsArgMixin, Attribute)
         # TODO: compare _NA everywhere with "is" rather than "=="
         super().__init__(
             **kwargs,
-            type_cls=dm_cls
         )
         if nested == _NA:
             raise ValueError
@@ -459,10 +500,19 @@ class LocalTimeAttribute(PropertyAttribute):
         return field_cls(**self._field_kwargs, attribute=self.name)
 
 
-class DocRefAttribute(PropertyAttributeBase, TypeClsAsArgMixin, PrimaryKey):
+class DocRefAttribute(PropertyAttributeBase, MakePonyAttribute):
 
-    def __new__(cls, *args, type_cls, **kwargs):
-        return super().__new__(cls, type_cls, *args, type_cls=type_cls, **kwargs)
+    def _make_pony_attribute_cls(self):
+        return PrimaryKey
+
+    @lru_cache(maxsize=1)
+    def _make_pony_attribute(self):
+        column_name = self.data_key
+        py_type = self.type_cls
+        _pony_attribute_cls = self._make_pony_attribute_cls()
+        _pony_attribute = _pony_attribute_cls(
+            py_type, column=column_name)
+        return _pony_attribute
 
     def _make_field(self) -> fields.Field:
         field_cls = fields.DocRefField
@@ -525,45 +575,46 @@ class EmbeddedAttribute(PropertyAttribute):
 
 
 
-class ObjectTypeAttribute(PropertyAttribute):
+class ObjectTypeAttribute(PropertyAttributeBase, TypeClsAsArgMixin, Discriminator):
 
     def _make_field(self) -> fields.Field:
         field_cls = fields.ObjectTypeField
-        return field_cls(**self._field_kwargs, attribute=self.name)
+        return field_cls(**self._field_kwargs, attribute=self.name, )
 
     def __init__(self, f_serialize=_NA, f_deserialize=_NA, **kwargs):
         super().__init__(
-            **kwargs
+            **kwargs,
+            column=self.data_key
         )
         self._field_kwargs["serialize"] = f_serialize
         self._field_kwargs["deserialize"] = f_deserialize
 
-
-class Attribute(AttributeBase):
-
-    def __init__(
-            self,
-            *,
-            type_cls=None,
-            **kwargs,
-    ):
-        super().__init__(type_cls=type_cls, **kwargs)
-
-    @typing.overload
-    def __get__(self, instance, owner) -> int:
-        pass
-
-    def __get__(self, instance, owner) -> typing.Any:
-        if instance is None:
-            return self
-        else:
-            return getattr(instance._attribute_store, self.name)
-
-    def __set__(self, instance, value):
-        setattr(instance._attribute_store, self.name, value)
-
-    def __delete__(self, instance):
-        delattr(instance._attribute_store, self.name)
+#
+# class Attribute(AttributeBase):  # TODO: change
+#
+#     def __init__(
+#             self,
+#             *,
+#             type_cls=None,
+#             **kwargs,
+#     ):
+#         super().__init__(type_cls=type_cls, **kwargs)
+#
+#     @typing.overload
+#     def __get__(self, instance, owner) -> int:
+#         pass
+#
+#     def __get__(self, instance, owner) -> typing.Any:
+#         if instance is None:
+#             return self
+#         else:
+#             return getattr(instance._attribute_store, self.name)
+#
+#     def __set__(self, instance, value):
+#         setattr(instance._attribute_store, self.name, value)
+#
+#     def __delete__(self, instance):
+#         delattr(instance._attribute_store, self.name)
 
 
 class ForwardInnerAttribute(PropertyAttribute):

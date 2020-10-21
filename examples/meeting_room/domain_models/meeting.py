@@ -12,7 +12,6 @@ class MeetingBase(domain_model.DomainModel, metaclass=with_pony):
 
 class Meeting(MeetingBase):
 
-
     location = attrs.relation(nested=False, dm_cls='Location')
     users = attrs.relation(nested=False, dm_cls='User',
                            collection=list)
