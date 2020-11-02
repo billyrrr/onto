@@ -333,6 +333,15 @@ class Context:
             celery_app = Celery('tasks',
                                     broker='pyamqp://guest@localhost//')
             return celery_app
+        elif service_type == 'authing':
+            user_pool_id = svc_config['user_pool_id']
+            secret = svc_config['secret']  # TODO: isolate side effect of assignment
+            from authing import Authing
+            authing = Authing({
+                "userPoolId": user_pool_id,
+                "secret": secret,
+            })
+            return authing
         else:
             raise ValueError
 

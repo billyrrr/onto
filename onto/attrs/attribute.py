@@ -64,6 +64,10 @@ class AttributeBase(RootCondition):
         else:
             return self.name
 
+    @property
+    def is_internal(self):
+        return not self.import_enabled and not self.export_enabled
+
     def __init__(
             self,
             *,
@@ -477,20 +481,27 @@ class EmbeddedAttribute(PropertyAttribute):
         field_cls = fields.Embedded
         return field_cls(**self._field_kwargs, attribute=self.name)
 
-    def __init__(self, many=_NA, obj_cls=_NA, **kwargs):
+    def __init__(self, type_cls=_NA, collection=_NA, **kwargs):
+
+        # if many == _NA:
+        #     many = False
+        # self.many = many
+        # self._field_kwargs["many"] = self.many
+
+        if type_cls == _NA:
+            type_cls = None
+        # self.type_cls = obj_cls
+        # self._field_kwargs["obj_type"] = self.dm_cls
+
+        if collection == _NA:
+            collection = None
+        self.collection = collection
+
         super().__init__(
+            type_cls = type_cls,
             **kwargs
         )
 
-        if many == _NA:
-            many = False
-        self.many = many
-        self._field_kwargs["many"] = self.many
-
-        if obj_cls == _NA:
-            obj_cls = None
-        self.dm_cls = obj_cls
-        self._field_kwargs["obj_type"] = self.dm_cls
 
 
 class ObjectTypeAttribute(PropertyAttribute):

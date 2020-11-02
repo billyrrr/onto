@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="onto",
     # Beta release
-    version="0.0.1",
+    version="0.0.2a1",
     author="Bill Rao",
     author_email="billrao@me.com",
     description="Build reactive back end with ease ",
@@ -55,6 +55,19 @@ setuptools.setup(
         "gitpython",
         "ProxyTypes"
     ],
+    extras_require={
+        'firestore': [
+            'google-auth',
+            'google-api-python-client',
+            'firebase-admin>=3.0.0'
+        ],
+        'flink': ['apache-flink'],
+        'couchdb': ['couchdb'],
+        'couchbase': ['couchbase'],
+        'leancloud': ['leancloud'],
+        'celery': ['celery'],
+        'jsonrpc': ['jsonrpcclient[requests]', 'Flask-JSONRPC']
+    }
     # entry_points = {
     #     'console_scripts': ['`onto`=scripts.deploy:deploy_all'],
     # }

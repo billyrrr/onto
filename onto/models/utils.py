@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Iterable, Tuple
 
 from onto.attrs import AttributeBase
@@ -71,19 +72,24 @@ def _graphql_field_from_attr(attr, input=False):
     else:
         field_base = graphql.GraphQLInputField
 
+    if hasattr(attr, 'collection') and attr.collection == list:
+        f = lambda ot: graphql.GraphQLList(ot)
+    else:
+        f = lambda ot: ot
+
     from onto import attrs
     if attr.__class__ is attrs.attribute.EmbeddedAttribute:
-        e_cls = attr.obj_type
+        e_cls = attr.type_cls
         e_graphql = _graphql_object_type_from_attributed_class(e_cls)
         field = field_base(
-            type_=e_graphql,
+            type_=f(e_graphql),
             description=attr.doc
         )
         return attr.data_key, field
     elif isinstance(attr, attrs.attribute.AttributeBase):
         import graphql
         field = field_base(
-            type_=_graphql_type_from_py(t=attr.type_cls),
+            type_=f(_graphql_type_from_py(t=attr.type_cls)),
             description=attr.doc
         )
         return attr.data_key, field
@@ -91,6 +97,7 @@ def _graphql_field_from_attr(attr, input=False):
         raise NotImplementedError
 
 
+@lru_cache(maxsize=None)  # Cached property
 def _graphql_object_type_from_attributed_class(cls, input=False):
     """ Make GraphQL schema from a class containing AttributeBase+ objects
 
@@ -104,7 +111,7 @@ def _graphql_object_type_from_attributed_class(cls, input=False):
 
     fields = dict(
         _graphql_field_from_attr(attr, input=input)
-        for key, attr in _collect_attrs(cls)
+        for key, attr in _collect_attrs(cls) if not attr.is_internal
     )
 
     if not input:
@@ -112,8 +119,14 @@ def _graphql_object_type_from_attributed_class(cls, input=False):
     else:
         base = graphql.GraphQLInputObjectType
 
+    type_name = cls.__name__
+
+    # TODO: maybe add
+    # if input:
+    #     type_name += "Input"
+
     graphql_object_type = base(
-        cls.__name__,
+        type_name,
         fields=fields
     )
 
@@ -123,10 +136,12 @@ def _graphql_object_type_from_attributed_class(cls, input=False):
 def _collect_attrs(cls) -> Iterable[Tuple[str, AttributeBase]]:
     """
     Collect all AttributeBase+ objects in the class and its ancestors.
+    TODO: debug empty iter of length 0
 
     :param cls:
     :return:
     """
     for key in dir(cls):
         if issubclass(getattr(cls, key).__class__, AttributeBase):
-            yield (key, getattr(cls, key))
+            attr = getattr(cls, key)
+            yield (key, attr)

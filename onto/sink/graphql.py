@@ -49,7 +49,14 @@ class GraphQLSink(Sink):
     def mediator_instance(self):
         return self.parent()()
 
-    def _invoke_mediator(self, *args, func_name, **kwargs):
+    def _maybe_deserialize(self, val, annotated_type):
+        from onto.models.base import BaseRegisteredModel
+        if issubclass(annotated_type, BaseRegisteredModel):
+            return annotated_type.from_dict(val)
+        else:
+            return val
+
+    def _f_of_rule(self, func_name):
         fname = self.protocol.fname_of(func_name)
         if fname is None:
             raise ValueError(
@@ -57,7 +64,22 @@ class GraphQLSink(Sink):
                 f" for {self.mediator_instance.__class__.__name__}"
             )
         f = getattr(self.mediator_instance, fname)
-        return f(*args, **kwargs)
+        return f
+
+    def _invoke_mediator(self, *args, func_name, **kwargs):
+        f = self._f_of_rule(func_name=func_name)
+
+        annotation_d = {
+            k: v
+            for k, v in self._parameters_for(f)
+        }
+
+        new_kwargs = {
+            k:self._maybe_deserialize(val=v, annotated_type=annotation_d[k])
+            for k, v in kwargs.items()
+        }
+
+        return f(*args, **new_kwargs)
 
     def __init__(self, view_model_cls: Type[ViewModel], camelize=True, many=False):
         """
@@ -77,29 +99,40 @@ class GraphQLSink(Sink):
         self.many = many
         super().__init__()
 
-    def _param_to_graphql_arg(self, param: Parameter):
+    def _param_to_graphql_arg(self, annotated_type):
         from onto.models.utils import _graphql_type_from_py
         from graphql import GraphQLArgument, GraphQLInputObjectType
-        annotation = param.annotation
-        import inspect
-        if annotation is inspect._empty:
-            raise ValueError('parameter {param} is not annotated'
-                             'for conversion to graphql argument')
         # TODO: add notes about `typing.*` not supported
-        gql_field_cls = _graphql_type_from_py(annotation, input=True)
+        gql_field_cls = _graphql_type_from_py(annotated_type, input=True)
         arg = GraphQLArgument(gql_field_cls)  # TODO: set default_value
         return arg
 
-    def _args_of(self, rule):
+    @staticmethod
+    def _parameters_for(f):
+
+        def _annotation_type_of(param):
+            annotation = param.annotation
+            import inspect
+            if annotation is inspect._empty:
+                raise ValueError(f'parameter {param} is not annotated'
+                                 'for conversion to graphql argument')
+            return annotation
+
         from inspect import signature
-        fname = self.triggers.fname_of(rule)
-        f = getattr(self.parent(), fname)
         sig = signature(f)
         param_d = OrderedDict(sig.parameters.items())
-        param_d.popitem(last=False)  # Pop self argument
+        # param_d.popitem(last=False)  # Pop self argument
         # NOTE: param_d.popitem(last=False) may not always pop self argument
         for name, param in param_d.items():
-            yield name, self._param_to_graphql_arg(param)
+            yield name, _annotation_type_of(param)
+
+    def _args_of_f(self, f):
+        for name, annotated_type in self._parameters_for(f):
+            yield name, self._param_to_graphql_arg(annotated_type=annotated_type)
+
+    def _args_of(self, rule):
+        f = self._f_of_rule(func_name=rule)
+        return self._args_of_f(f=f)
 
     op_type = None
 
@@ -132,7 +165,7 @@ class GraphQLSubscriptionSink(GraphQLSink):
     op_type = 'Subscription'
 
     def _register_op(self):
-        from gql import query, subscribe
+        from gql import subscribe
         async def f(parent, info, **kwargs):
             # Register topic
             topic_name = self._invoke_mediator(func_name='add_topic', **kwargs)
