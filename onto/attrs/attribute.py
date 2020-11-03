@@ -77,6 +77,9 @@ class AttributeBase(RootCondition):
         from copy import deepcopy
         return deepcopy(self)
 
+    def _get_select(self, instance):
+        return getattr(instance, self.name)
+
     def __get__(self, instance, owner):
         """ Only allow attribute object to be invoked "get" on
                 a class, and not an instance.
@@ -348,6 +351,9 @@ class PropertyAttributeBase(AttributeBase):
     # @typing.overload
     # def __get__(self, instance: typing.Any, owner: typing.Any):
     #     ...
+
+    def _get_select(self, instance):
+        return self.fget()
 
     def __get__(self, instance, owner):
         if instance is None:

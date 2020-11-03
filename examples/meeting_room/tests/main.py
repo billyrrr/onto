@@ -1,5 +1,5 @@
 from pony.orm import db_session, sql_debug, select, count
-from pony.orm.core import Entity, left_join
+from pony.orm.core import Entity, left_join, make_query
 from examples.meeting_room.domain_models.location import Location
 
 from onto import attrs
@@ -19,6 +19,45 @@ from pony.orm import raw_sql
 
 
 class InsertMixin:
+
+    @classmethod
+    def select(cls):
+        from onto.models.utils import _collect_attrs
+        from onto.attrs.attribute import PropertyAttributeBase
+
+        def yk(item):
+            for key, attribute in _collect_attrs(cls):
+                # if not attribute.export_enabled:
+                #     continue
+                    # else:
+                    #     res = 'one'
+                    # return res
+                        # return attribute.__get__(item, item.__class__).fget()
+                    # else:
+                    #     return 'one'
+                        # return getattr(item, key)
+                if isinstance(attribute, PropertyAttributeBase) and attribute.fget is not None:
+                    def f(item):
+                        return getattr(cls, key).fget(item)
+                else:
+                    def f(item):
+                        return getattr(item, key)
+                yield f(item)
+
+        def f(item, key, cls):
+            return getattr(cls, key).fget(item)
+
+        def g(item, key):
+            return getattr(item, key)
+
+        def yk(item, cls):
+            return (f(item, 'ct', cls), f(item, 'latlng', cls), f(item, 'status', cls))
+
+        # make_query()
+        gen = select(item for item in cls)
+        # cls.ct.fget(item),
+        res = select(yk(item, cls) for item in gen).get_sql()
+        print(res)
 
     @classmethod
     def _insert_dynamic_table(entity):
@@ -87,9 +126,9 @@ from examples.meeting_room.domain_models import Meeting
 class MeetingTwo(Meeting, InsertMixin):
 
     ct = attrs.integer(type_cls=int)
-    # latlng = attrs.string(type_cls=str)
+    latlng = attrs.string(type_cls=str)
 
-    @property
+    @latlng.getter
     def latlng(self):
         return str(self.location.latitude) + str(self.location.longitude)
 
@@ -99,7 +138,7 @@ class MeetingTwo(Meeting, InsertMixin):
 
     @ct.getter
     def ct(self):
-        return sum(count(1) for t in Ticket if t.attendance)
+        return sum(count(1) for t in self.tickets if t.attendance)
 
 
 
@@ -150,11 +189,21 @@ def meeting():
     print(s)
 
 if __name__ == "__main__":
+
+    import pony.options
+    pony.options.CUT_TRACEBACK = False
+
     from examples.meeting_room.domain_models import Meeting, Location, User, Ticket
     sql_debug(True)  # Output all SQL queries to stdout
 
     db.bind(SQLiteProvider, filename=':memory:', create_db=True)
     db.generate_mapping(check_tables=False, create_tables=True)
+
+    MeetingTwo.select()
+
+    res = select( (m.latlng, m.status) for m in MeetingTwo)
+    res = res.get_sql()
+    print(res)
     meeting()
 
     assert False
