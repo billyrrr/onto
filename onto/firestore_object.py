@@ -327,8 +327,8 @@ class FirestoreObjectValMixin:
 
 
 class FirestoreObject(
-    # FirestoreObjectValMixin,
-    #                   FirestoreObjectMixin,
+    FirestoreObjectValMixin,
+                      FirestoreObjectMixin,
                       Serializable):
 
     @classmethod
