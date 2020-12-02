@@ -199,11 +199,14 @@ if __name__ == "__main__":
     db.bind(SQLiteProvider, filename=':memory:', create_db=True)
     db.generate_mapping(check_tables=False, create_tables=True)
 
-    MeetingTwo.select()
+    m = MeetingTwo.new(doc_id='m2')
+    m.save()
 
-    res = select( (m.latlng, m.status) for m in MeetingTwo)
-    res = res.get_sql()
-    print(res)
-    meeting()
-
-    assert False
+    # MeetingTwo.select()
+    #
+    # res = select( (m.latlng, m.status) for m in MeetingTwo)
+    # res = res.get_sql()
+    # print(res)
+    # meeting()
+    #
+    # assert False

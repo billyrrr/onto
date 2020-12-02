@@ -307,8 +307,7 @@ class NewMixin:
         """
         if _with_dict is None:
             _with_dict = dict()
+        self._init_(_with_dict=_with_dict, _kwargs=kwargs)
         if is_pony(klass=self.__class__):
-            self._init_pony_(_with_dict=_with_dict, _kwargs=kwargs)
-        else:
-            self._init_(_with_dict=_with_dict, _kwargs=kwargs)
+            self._init_pony_(_with_dict=dict(), _kwargs=dict())
 

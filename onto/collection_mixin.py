@@ -2,6 +2,7 @@ from onto.context import Context as CTX
 from google.cloud.firestore import CollectionReference
 
 from onto.database import Reference
+from onto.firestore_object import FirestoreObject
 from onto.models.meta import SerializableMeta
 
 
@@ -19,6 +20,7 @@ class CollectionMemberMeta(SerializableMeta):
 from pony.orm import Database
 
 db = Database()
+
 
 from pony.orm.core import EntityMeta
 class with_pony(EntityMeta, CollectionMemberMeta):
