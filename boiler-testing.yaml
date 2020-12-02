@@ -8,10 +8,10 @@ database:
     default: True
     type: firestore
     certificate_path: "config_jsons/flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"
-  leancloud:
-    type: leancloud
-    app_id: "left out on purpose
-    master_key: "left out on purpose
+#  leancloud:
+#    type: leancloud
+#    app_id: "left out on purpose
+#    master_key: "left out on purpose
 
 #  couch:
 #    type: couch

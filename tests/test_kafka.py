@@ -4,22 +4,41 @@ from subprocess import Popen
 
 from pytest_kafka import (
     make_zookeeper_process, make_kafka_server, make_kafka_consumer,
-    terminate,
+    terminate
 )
 
-ROOT = Path.cwd()
-KAFKA_SCRIPTS = ROOT / 'pytest-kafka-0.4.0' / 'kafka/bin/'
-KAFKA_BIN = str(KAFKA_SCRIPTS / 'kafka-server-start.sh')
-ZOOKEEPER_BIN = str(KAFKA_SCRIPTS / 'zookeeper-server-start.sh')
+#
+# ROOT = Path.cwd()
+# KAFKA_SCRIPTS = ROOT / 'pytest-kafka-0.4.0' / 'kafka/bin/'
+# KAFKA_BIN = str(KAFKA_SCRIPTS / 'kafka-server-start.sh')
+# ZOOKEEPER_BIN = str(KAFKA_SCRIPTS / 'zookeeper-server-start.sh')
 # You can pass a custom teardown function (or parametrise ours). Just don't call it `teardown`
 # or Pytest will interpret it as a module-scoped teardown function.
+
+
+def get_bins():
+    from pathlib import Path
+    ROOT = Path.cwd()
+    KAFKA_SCRIPTS = ROOT / 'kafka/bin/'
+    KAFKA_BIN = str(KAFKA_SCRIPTS / 'kafka-server-start.sh')
+    ZOOKEEPER_BIN = str(KAFKA_SCRIPTS / 'zookeeper-server-start.sh')
+    # You can pass a custom teardown function (or parametrise ours). Just don't call it `teardown`
+    # or Pytest will interpret it as a module-scoped teardown function.
+    return KAFKA_BIN, ZOOKEEPER_BIN
+
+
+KAFKA_BIN, ZOOKEEPER_BIN = get_bins()
+
 teardown_fn = partial(terminate, signal_fn=Popen.kill)
-zookeeper_proc = make_zookeeper_process(ZOOKEEPER_BIN, teardown_fn=teardown_fn)
-kafka_server = make_kafka_server(KAFKA_BIN, 'zookeeper_proc', kafka_port=9092,
-                                 teardown_fn=teardown_fn)
+
+zookeeper_proc = make_zookeeper_process(
+    ZOOKEEPER_BIN, teardown_fn=teardown_fn)
+
+kafka_server = make_kafka_server(
+    KAFKA_BIN, 'zookeeper_proc', kafka_port=9092, teardown_fn=teardown_fn)
+
 kafka_consumer = make_kafka_consumer(
     'kafka_server', seek_to_beginning=True, kafka_topics=['topic'])
-
 
 def test_fixture(kafka_server):
     from kafka import KafkaProducer
@@ -91,4 +110,3 @@ def test__register():
         # from uvicorn import Server
         # server = Server(config)
         # loop.run_until_complete(server.serve())
-
