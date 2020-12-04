@@ -298,14 +298,13 @@ class Context:
             return LeancloudDatabase
         elif db_config['type'] == 'kafka':
             try:
-                import leancloud
+                bootstrap_servers = db_config['bootstrap_servers']
+                from onto.database.kafka import KafkaDatabase
+                KafkaDatabase.bootstrap_servers = bootstrap_servers
+                return KafkaDatabase
             except ImportError as e:
                 raise TypeError('kafka is configured, but '
                                 'importing kafka module has failed') from e
-            bootstrap_servers = db_config['bootstrap_servers']
-            from onto.database.kafka import KafkaDatabase
-            KafkaDatabase.bootstrap_servers = bootstrap_servers
-            return KafkaDatabase
         else:
             raise ValueError
 
