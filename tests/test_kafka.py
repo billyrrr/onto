@@ -1,3 +1,4 @@
+import time
 from functools import partial
 from pathlib import Path
 from subprocess import Popen
@@ -36,9 +37,15 @@ def test_fixture(kafka_server):
     from kafka import KafkaProducer
 
     # assert isinstance(kafka_server, KafkaProducer)
-    kafka_server = KafkaProducer(bootstrap_servers='localhost:9092',
-                                 api_version=(0, 10, 1))
-    kafka_server.send('my-topic', value='hello world!'.encode('utf-8'))
+    time.sleep(5)
+
+    def value_serializer(x):
+        import json
+        return json.dumps(x).encode('utf-8')
+
+    kafka_server = KafkaProducer(bootstrap_servers='localhost:9092', value_serializer=value_serializer)
+    kafka_server.send('SelectedStudent', key='mykey'.encode('utf-8'), value={'hello': 'world'})
+    time.sleep(3)
 
 
 def test_start(kafka_server):
@@ -114,9 +121,19 @@ def test_save_instance(kafka_server):
     pony.options.CUT_TRACEBACK = False
 
     from examples.meeting_room.domain_models import Meeting
-    # sql_debug(True)  # Output all SQL queries to stdout
-    #
-    # db.bind(SQLiteProvider, filename=':memory:', create_db=True)
-    # db.generate_mapping(check_tables=False, create_tables=True)
-    m = Meeting.new(doc_id='mm')
-    m.save()
+    sql_debug(True)  # Output all SQL queries to stdout
+
+    db.bind(SQLiteProvider, filename=':memory:', create_db=True)
+    db.generate_mapping(check_tables=False, create_tables=True)
+    from pony.orm.core import DBSessionContextManager
+    db_session = DBSessionContextManager()
+    time.sleep(5)
+
+    @db_session
+    def f():
+        m = Meeting.new(doc_id='mm')
+        r = Meeting._datastore().kafka_producer().send(topic='meetings', key='hello'.encode('utf-8'), value='world'.encode('utf-8'))
+        m.save()
+        time.sleep(2)
+
+    f()

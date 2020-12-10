@@ -44,7 +44,7 @@ class KafkaDatabase(Database):
     @functools.lru_cache(maxsize=None)
     def kafka_producer(cls) -> kafka.KafkaProducer:
         from kafka import KafkaProducer
-        producer = KafkaProducer(bootstrap_servers=cls.bootstrap_servers)
+        producer = KafkaProducer(bootstrap_servers=[cls.bootstrap_servers])
         return producer
 
     @classmethod

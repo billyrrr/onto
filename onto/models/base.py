@@ -12,6 +12,18 @@ class SimpleStore:
     pass
 
 
+class PonyStore:
+
+    def _set_owner(self, owner):
+        self.parent = owner
+
+    def __getattr__(self, item):
+        _self = self.parent
+        attr = _self._adict_[item]
+        inner = _self._vals_
+        return inner[attr]
+
+
 class BaseRegisteredModel(metaclass=ModelRegistry):
     """
     Ref: https://github.com/faif/python-patterns/blob/master/patterns/behavioral/registry__py3.py
