@@ -295,6 +295,9 @@ class NewMixin:
         if len(_kwargs) != 0:
             raise ValueError(f'Received extraneous arguments '
                              f'{_kwargs}')
+        from onto.models.base import PonyStore
+        self._attrs = PonyStore()
+        self._attrs._set_owner(self)  # TODO: implement garbage collection
         super().__init__(**_with_dict, **_kwargs)
 
     def __init__(self, _with_dict=None, **kwargs):
@@ -307,7 +310,9 @@ class NewMixin:
         """
         if _with_dict is None:
             _with_dict = dict()
-        self._init_(_with_dict=_with_dict, _kwargs=kwargs)
         if is_pony(klass=self.__class__):
-            self._init_pony_(_with_dict=dict(), _kwargs=dict())
+            self._init_pony_(_with_dict=_with_dict, _kwargs=kwargs)
+        else:
+            self._init_(_with_dict=_with_dict, _kwargs=kwargs)
+
 
