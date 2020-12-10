@@ -9,17 +9,22 @@ class MeetingBase(domain_model.DomainModel):
     class Meta:
         collection_name = "meetings"
 
-
-class Meeting(MeetingBase):
-
-    @classmethod
-    def _datastore(cls):
-        from onto.database.kafka import KafkaDatabase
-        return KafkaDatabase
-
     location = attrs.relation(nested=False, dm_cls='Location')
     users = attrs.relation(nested=False, dm_cls='User',
                            collection=list)
     tickets = attrs.relation(nested=False, dm_cls='Ticket',
                              collection=dict)
     status = attrs.bproperty(type_cls=str)
+
+
+class Meeting(MeetingBase, metaclass=with_pony):
+
+    pass
+
+
+# class MeetingIn(MeetingBase):
+#
+#     @classmethod
+#     def _datastore(cls):
+#         from onto.database.kafka import KafkaDatabase
+#         return KafkaDatabase

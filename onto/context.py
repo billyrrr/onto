@@ -305,6 +305,16 @@ class Context:
             except ImportError as e:
                 raise TypeError('kafka is configured, but '
                                 'importing kafka module has failed') from e
+        elif db_config['type'] == 'pony':
+            try:
+                from pony.orm import Database
+                db = Database()
+                from pony.orm.dbproviders.flink import FlinkProvider
+                db.bind(FlinkProvider, filename=':memory:', create_db=True)
+                return db
+            except ImportError as e:
+                raise TypeError('pony is configured, but '
+                                'importing pony module has failed') from e
         else:
             raise ValueError
 

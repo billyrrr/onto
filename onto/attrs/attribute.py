@@ -27,7 +27,7 @@ class MakePonyAttribute:
     def _make_pony_attribute_cls(self):
         return Optional
 
-    @lru_cache(maxsize=1)
+    # @lru_cache(maxsize=None)
     def _make_pony_attribute(self):
         column_name = self.data_key
         py_type = self.type_cls
@@ -438,16 +438,18 @@ class RelationshipAttribute(PropertyAttributeBase, MakePonyAttribute):
         else:
             return Optional
 
-
-    @lru_cache(maxsize=1)
+    # @lru_cache(maxsize=None)
     def _make_pony_attribute(self):
         # column_name = self.data_key
         # TODO: Column name has no actual use; so it is not allowed in pony
         py_type = self.dm_cls
         is_required = self.import_required
+        reverse = self.reverse if isinstance(self.reverse, str) or self.reverse is None else self.reverse.data_key
         _pony_attribute_cls = self._make_pony_attribute_cls()
-        _pony_attribute = _pony_attribute_cls(
-            py_type, is_required=is_required)
+        d = dict(is_required=is_required, reverse=reverse)
+        if self.data_key != self.name:  # TODO: make better
+            d['column'] = self.data_key
+        _pony_attribute = _pony_attribute_cls(py_type, **d)
         return _pony_attribute
 
     def _make_field(self) -> fields.Field:
@@ -477,7 +479,7 @@ class RelationshipAttribute(PropertyAttributeBase, MakePonyAttribute):
         else:
             raise NotImplementedError
 
-    def __init__(self, *, nested=_NA, collection=_NA, dm_cls=_NA, **kwargs):
+    def __init__(self, *, nested=_NA, collection=_NA, dm_cls=_NA, reverse=_NA, **kwargs):
         # TODO: compare _NA everywhere with "is" rather than "=="
         super().__init__(
             **kwargs,
@@ -498,6 +500,10 @@ class RelationshipAttribute(PropertyAttributeBase, MakePonyAttribute):
         self.dm_cls = dm_cls
         self._field_kwargs["obj_type"] = self.dm_cls
 
+        if reverse is _NA:
+            reverse = None
+        self.reverse = reverse
+
 
 class LocalTimeAttribute(PropertyAttribute):
 
@@ -511,7 +517,7 @@ class DocRefAttribute(PropertyAttributeBase, MakePonyAttribute):
     def _make_pony_attribute_cls(self):
         return PrimaryKey
 
-    @lru_cache(maxsize=1)
+    # @lru_cache(maxsize=1)
     def _make_pony_attribute(self):
         column_name = self.data_key
         py_type = self.type_cls
