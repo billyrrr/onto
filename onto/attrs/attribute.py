@@ -1,13 +1,16 @@
 import typing
+from collections import namedtuple
 from functools import partial, lru_cache
 
-from pony.orm.core import Attribute, PrimaryKey, Discriminator, Optional
+from pony.orm.core import Attribute, PrimaryKey, Discriminator, Optional, Required
 
 from onto.mapper import fields
 from typing import Type, Callable
 
 from onto.common import _NA
 from onto.query.cmp import Condition, RootCondition
+
+from functools import cached_property
 
 _ATTRIBUTE_STORE_NAME = "_attrs"
 
@@ -21,11 +24,13 @@ class TypeClsAsArgMixin:
         super().__init__(*args, **kwargs)
 
 
-
 class MakePonyAttribute:
 
     def _make_pony_attribute_cls(self):
-        return Optional
+        if self.import_required:
+            return Required
+        else:
+            return Optional
 
     # @lru_cache(maxsize=None)
     def _make_pony_attribute(self):
@@ -37,9 +42,96 @@ class MakePonyAttribute:
             py_type, is_required=is_required, column=column_name)
         return _pony_attribute
 
-    @property
+    @cached_property
     def _pony_attribute(self):
-        return self._make_pony_attribute()
+        if self.is_concrete:
+            return self._make_pony_attribute()
+        else:
+            return None
+
+    @property
+    def is_collection(self):
+        return self._pony_attribute.is_collection
+
+
+udf = namedtuple('udf', ['f', 'fid', 'd', 'result_pytype'])
+
+
+class MakePonyFunction:
+
+    assigned_ids = set()
+
+    @classmethod
+    def _random_func_id(cls, N=5):
+        import random, string
+        fid = '_onto_udf_' + ''.join(random.choices(string.ascii_lowercase, k=N))
+        if fid in cls.assigned_ids:
+            raise ValueError("Collision")
+        cls.assigned_ids.add(fid)
+        return fid
+
+    @classmethod
+    def register_function(cls, f, type_cls):
+        class Some:
+            pass
+
+        # TODO: add notes about `typing.*` not supported
+
+        # import ast
+        # code = f.__code__
+        import inspect
+        d = list(inspect.getclosurevars(f).unbound)
+
+        def k(*args):
+            _self = Some()
+            for idx in range(len(d)):
+                k = d[idx]
+                v = args[idx]
+                setattr(_self, k, v)
+            _f = f
+            from types import MethodType
+            _f = MethodType(f, _self)
+            return _f()
+
+        fid = cls._random_func_id()
+        udf_obj = udf(f=k, fid=fid, d=d, result_pytype=type_cls)
+        # f_reg.append(udf_obj)
+        return udf_obj
+
+    @staticmethod
+    def _flink_type_mapping(type_cls):
+        from pyflink.table.types import _type_mappings
+        return _type_mappings[type_cls]
+
+    @classmethod
+    def _register_flink_function(cls, udf_obj: udf):
+        from pyflink.table import ScalarFunction, DataTypes
+        from pyflink.table import udf as flink_udf
+        F = type(udf_obj.fid, bases=(ScalarFunction,), dict={
+            'eval': udf_obj.f,
+        })
+        table_env.create_temporary_function(
+            udf_obj.fid,
+            flink_udf(
+                F(),
+                input_types=[cls._flink_type_mapping(v) for _, v in udf_obj.d.items()],  # TODO: ensure order of keys
+                result_type=cls._flink_type_mapping(udf_obj.result_pytype)
+            )
+        )
+        # flink_udf()
+
+#
+# @db.on_connect(provider='flink')
+# def _add_udf(db, connection):
+#     # cursor = connection.cursor()
+#
+#     def create_function(name, num_params, func):
+#         from pony.orm.dbproviders.sqlite import keep_exception
+#         func = keep_exception(func)
+#         connection.create_function(name, num_params, func)
+#
+#     for udf in f_reg:
+#         create_function(udf.fid, len(udf.d), udf.f)
 
 
 class AttributeBase(RootCondition):
@@ -104,6 +196,10 @@ class AttributeBase(RootCondition):
     def is_internal(self):
         return not self.import_enabled and not self.export_enabled
 
+    @property
+    def pytype(self):
+        return self.type_cls
+
     def __init__(
             self,
             *,
@@ -123,6 +219,7 @@ class AttributeBase(RootCondition):
 
             type_cls=_NA,
             doc=_NA,
+            is_concrete=_NA,
             **kwargs
 
     ):
@@ -258,6 +355,10 @@ class AttributeBase(RootCondition):
         self.requires = requires
         self.type_cls = type_cls
 
+        if is_concrete is _NA:
+            is_concrete = False
+        self.is_concrete = is_concrete
+
 
 class Boolean(AttributeBase, MakePonyAttribute):
 
@@ -390,6 +491,7 @@ class PropertyAttributeBase(AttributeBase):
 
     def getter(self, fget):
         _self = self.copy()
+        # fget = _self._register_pony_function(fget)
         _self.fget = fget
         return _self
 
@@ -429,14 +531,13 @@ class DictAttribute(PropertyAttribute):
 
 class RelationshipAttribute(PropertyAttributeBase, MakePonyAttribute):
 
-
     def _make_pony_attribute_cls(self):
         from pony.orm.core import Set
         collection_type = self.collection
         if collection_type is not None:
             return Set
         else:
-            return Optional
+            return super()._make_pony_attribute_cls()
 
     # @lru_cache(maxsize=None)
     def _make_pony_attribute(self):
@@ -504,6 +605,13 @@ class RelationshipAttribute(PropertyAttributeBase, MakePonyAttribute):
             reverse = None
         self.reverse = reverse
 
+    @property
+    def pytype(self):
+        if self.collection is None:
+            return self.dm_cls
+        else:
+            raise TypeError  # TODO: make better
+
 
 class LocalTimeAttribute(PropertyAttribute):
 
@@ -529,6 +637,26 @@ class DocRefAttribute(PropertyAttributeBase, MakePonyAttribute):
     def _make_field(self) -> fields.Field:
         field_cls = fields.DocRefField
         return field_cls(**self._field_kwargs, attribute=self.name)
+
+
+class MultiDocRefAttribute(AttributeBase, MakePonyAttribute):
+
+    def _make_pony_attribute_cls(self):
+        return PrimaryKey
+
+    def __init__(self, *attrs):
+        self.attributes = list(attrs)
+        self.is_concrete = True
+
+    # @lru_cache(maxsize=1)
+    def _make_pony_attribute(self):
+        _pony_attribute_cls = self._make_pony_attribute_cls()
+        _pony_attribute = _pony_attribute_cls(*(attr._pony_attribute for attr in self.attributes))
+        return _pony_attribute
+
+    def _make_field(self) -> fields.Field:
+        field_cls = fields.DocRefField
+        return field_cls(attribute=self.name)
 
 
 class ReferenceAttribute(PropertyAttribute):

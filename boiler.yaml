@@ -1,4 +1,4 @@
 app_name: "flask-boiler-testing"
 debug: True
-testing: False
+testing: True
 certificate_filename: "flask-boiler-testing-firebase-adminsdk-4m0ec-7505aaef8d.json"

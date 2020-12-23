@@ -19,7 +19,6 @@ import os
 
 from celery import Celery
 
-from .config import Config
 import logging
 
 from contextvars import ContextVar
@@ -43,10 +42,12 @@ class Context:
 
     """
 
+    # from onto.config import Config
+
     debug = None
     firebase_app: 'firebase_admin.App' = None
     db: Database = None
-    config: Config = None
+    config = None
     celery_app: Celery = None
     logger: logging.Logger = None
     listener: Listener = None
@@ -123,6 +124,7 @@ class Context:
 
     @classmethod
     def load(cls) -> None:
+        from onto.config import Config
         config = Config.load()
         cls.read(config)
 
@@ -309,8 +311,8 @@ class Context:
             try:
                 from pony.orm import Database
                 db = Database()
-                from pony.orm.dbproviders.flink import FlinkProvider
-                db.bind(FlinkProvider, filename=':memory:', create_db=True)
+                from pony.orm.dbproviders.sqlite import SQLiteProvider
+                db.bind(SQLiteProvider, filename=':memory:', create_db=True)
                 return db
             except ImportError as e:
                 raise TypeError('pony is configured, but '
