@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="onto",
     # Beta release
-    version="0.0.2a2",
+    version="0.0.2a3",
     author="Bill Rao",
     author_email="billrao@me.com",
     description="Build reactive back end with ease ",
@@ -53,7 +53,8 @@ setuptools.setup(
         # "functions-framework",
         # "google-cloud-resource-manager",
         "gitpython",
-        "ProxyTypes"
+        "ProxyTypes",
+        "pony"
     ],
     extras_require={
         'firestore': [

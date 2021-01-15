@@ -1,5 +1,4 @@
 from flask import Blueprint, Flask, abort, Response, make_response, jsonify
-from tornado.routing import Rule
 
 from onto.source.base import Source
 from onto.source.protocol import Protocol
@@ -38,8 +37,9 @@ class RestSource(Source):
         return self.protocol.route(*args, **kwargs)
         # protocol: RestProtocol = self.protocol
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, view_model_cls=None, *args, **kwargs):
         self._mediator_instance = None
+        self._view_model_cls = view_model_cls
         super().__init__(*args, **kwargs)
 
     def emit(self, res):
@@ -62,8 +62,15 @@ class RestSource(Source):
 
 class RestViewModelSource(RestSource):
 
+    @property
+    def view_model_cls(self):
+        if self._view_model_cls is not None:
+            return self._view_model_cls
+        else:
+            return self.mediator_instance.view_model_cls
+
     def start(self, *args, url_prefix=None, **kwargs):
         if url_prefix is None:
-            url_prefix = '/' + self.mediator_instance.view_model_cls._get_collection_name()
+            url_prefix = '/' + self.view_model_cls._get_collection_name()
         return super().start(*args, url_prefix, **kwargs)
 

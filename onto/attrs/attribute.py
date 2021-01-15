@@ -2,7 +2,11 @@ import typing
 from collections import namedtuple
 from functools import partial, lru_cache
 
-from pony.orm.core import Attribute, PrimaryKey, Discriminator, Optional, Required
+try:
+    from pony.orm.core import Attribute, PrimaryKey, Discriminator, Optional, Required
+except ImportError:
+    import warnings
+    warnings.warn("pony import skipped")
 
 from onto.mapper import fields
 from typing import Type, Callable
@@ -27,6 +31,9 @@ class TypeClsAsArgMixin:
 class MakePonyAttribute:
 
     def _make_pony_attribute_cls(self):
+        if self.__class__.__name__ == "Discriminator":
+            # TODO: make better
+            return Discriminator
         if self.import_required:
             return Required
         else:
@@ -517,6 +524,14 @@ class PropertyAttribute(PropertyAttributeBase, MakePonyAttribute):
 
 class DictAttribute(PropertyAttribute):
 
+    # def _make_field(self) -> fields.Field:
+    #     """
+    #     TODO: implement
+    #     :return:
+    #     """
+    #     field_cls: Type[fields.Field] = fields.Dict
+    #     return field_cls(**self._field_kwargs, attribute=self.name)
+
     def __init__(self, **kwargs):
 
         def _dict_initializer(_self):
@@ -694,6 +709,11 @@ class EmbeddedAttribute(PropertyAttribute):
 
     def __init__(self, type_cls=_NA, collection=_NA, **kwargs):
 
+        super().__init__(
+            type_cls = type_cls,
+            **kwargs
+        )
+
         # if many == _NA:
         #     many = False
         # self.many = many
@@ -701,21 +721,20 @@ class EmbeddedAttribute(PropertyAttribute):
 
         if type_cls == _NA:
             type_cls = None
+
         # self.type_cls = obj_cls
         # self._field_kwargs["obj_type"] = self.dm_cls
 
         if collection == _NA:
             collection = None
+        else:
+            self._field_kwargs["many"] = True
         self.collection = collection
 
-        super().__init__(
-            type_cls = type_cls,
-            **kwargs
-        )
 
 
 
-class ObjectTypeAttribute(PropertyAttributeBase, TypeClsAsArgMixin, Discriminator):
+class ObjectTypeAttribute(PropertyAttributeBase, TypeClsAsArgMixin):
 
     def _make_field(self) -> fields.Field:
         field_cls = fields.ObjectTypeField
@@ -724,7 +743,8 @@ class ObjectTypeAttribute(PropertyAttributeBase, TypeClsAsArgMixin, Discriminato
     def __init__(self, f_serialize=_NA, f_deserialize=_NA, **kwargs):
         super().__init__(
             **kwargs,
-            column=self.data_key
+            # TODO: recover
+            # column=self.data_key
         )
         self._field_kwargs["serialize"] = f_serialize
         self._field_kwargs["deserialize"] = f_deserialize
