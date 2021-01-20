@@ -147,12 +147,16 @@ class AttributeBase(RootCondition):
         # TODO: debug
         return id(self)
 
+    def _make_field_cls(self):
+        # Makes marshmallow field cls
+        return fields.Field
+
     def _make_field(self) -> fields.Field:
         """
         TODO: implement
         :return:
         """
-        field_cls: Type[fields.Field] = fields.Field
+        field_cls = self._make_field_cls()
         return field_cls(**self._field_kwargs, attribute=self.name)
 
     def _get_data_key(self):
@@ -227,6 +231,7 @@ class AttributeBase(RootCondition):
             type_cls=_NA,
             doc=_NA,
             is_concrete=_NA,
+            validate=_NA,
             **kwargs
 
     ):
@@ -257,6 +262,7 @@ class AttributeBase(RootCondition):
             call loop)  TODO: implement circular dependency detection
 
         :param type_cls: type for the attribute (no use for now)
+        :param validate: validate arg to pass to marshmallow
         """
         super().__init__(**kwargs)
         field_kwargs = dict()
@@ -365,6 +371,9 @@ class AttributeBase(RootCondition):
         if is_concrete is _NA:
             is_concrete = False
         self.is_concrete = is_concrete
+
+        if validate is not _NA:
+            self._field_kwargs['validate'] = validate
 
 
 class Boolean(AttributeBase, MakePonyAttribute):
@@ -568,12 +577,16 @@ class RelationshipAttribute(PropertyAttributeBase, MakePonyAttribute):
         _pony_attribute = _pony_attribute_cls(py_type, **d)
         return _pony_attribute
 
+    def _make_field_cls(self):
+        # Makes marshmallow field cls
+        return fields.Relationship
+
     def _make_field(self) -> fields.Field:
         """
         TODO: implement
         :return:
         """
-        field_cls = fields.Relationship
+        field_cls = self._make_field_cls()
         one = field_cls(**self._field_kwargs, attribute=self.name)
 
         if self.collection is None:
@@ -630,9 +643,19 @@ class RelationshipAttribute(PropertyAttributeBase, MakePonyAttribute):
 
 class LocalTimeAttribute(PropertyAttribute):
 
+    def _make_field_cls(self):
+        # Makes marshmallow field cls
+        return fields.Localtime
+
     def _make_field(self) -> fields.Field:
-        field_cls = fields.Localtime
+        field_cls = self._make_field_cls()
         return field_cls(**self._field_kwargs, attribute=self.name)
+
+
+class StringAttribute(PropertyAttribute):
+    def _make_field_cls(self):
+        # Makes marshmallow field cls
+        return fields.String
 
 
 class DocRefAttribute(PropertyAttributeBase, MakePonyAttribute):
@@ -649,8 +672,12 @@ class DocRefAttribute(PropertyAttributeBase, MakePonyAttribute):
             py_type, column=column_name)
         return _pony_attribute
 
+    def _make_field_cls(self):
+        # Makes marshmallow field cls
+        return fields.DocRefField
+
     def _make_field(self) -> fields.Field:
-        field_cls = fields.DocRefField
+        field_cls = self._make_field_cls()
         return field_cls(**self._field_kwargs, attribute=self.name)
 
 
@@ -669,15 +696,24 @@ class MultiDocRefAttribute(AttributeBase, MakePonyAttribute):
         _pony_attribute = _pony_attribute_cls(*(attr._pony_attribute for attr in self.attributes))
         return _pony_attribute
 
+
+    def _make_field_cls(self):
+        # Makes marshmallow field cls
+        return fields.DocRefField
+
     def _make_field(self) -> fields.Field:
-        field_cls = fields.DocRefField
+        field_cls = self._make_field_cls()
         return field_cls(attribute=self.name)
 
 
 class ReferenceAttribute(PropertyAttribute):
 
+    def _make_field_cls(self):
+        # Makes marshmallow field cls
+        return fields.StructuralRef
+
     def _make_field(self) -> fields.Field:
-        field_cls = fields.StructuralRef
+        field_cls = self._make_field_cls()
         return field_cls(**self._field_kwargs, attribute=self.name)
 
     def __init__(self, many=_NA, dm_cls=_NA, missing=_NA, **kwargs):
@@ -703,8 +739,12 @@ class ReferenceAttribute(PropertyAttribute):
 
 class EmbeddedAttribute(PropertyAttribute):
 
+    def _make_field_cls(self):
+        # Makes marshmallow field cls
+        return fields.Embedded
+
     def _make_field(self) -> fields.Field:
-        field_cls = fields.Embedded
+        field_cls = self._make_field_cls()
         return field_cls(**self._field_kwargs, attribute=self.name)
 
     def __init__(self, type_cls=_NA, collection=_NA, **kwargs):
@@ -736,9 +776,13 @@ class EmbeddedAttribute(PropertyAttribute):
 
 class ObjectTypeAttribute(PropertyAttributeBase, TypeClsAsArgMixin):
 
+    def _make_field_cls(self):
+        # Makes marshmallow field cls
+        return fields.ObjectTypeField
+
     def _make_field(self) -> fields.Field:
-        field_cls = fields.ObjectTypeField
-        return field_cls(**self._field_kwargs, attribute=self.name, )
+        field_cls = self._make_field_cls()
+        return field_cls(**self._field_kwargs, attribute=self.name)
 
     def __init__(self, f_serialize=_NA, f_deserialize=_NA, **kwargs):
         super().__init__(
