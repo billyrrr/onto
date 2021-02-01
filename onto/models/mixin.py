@@ -127,6 +127,31 @@ class Importable:
         instance = obj_cls.new(**d, **kwargs)  # TODO: fix unexpected arguments
         return instance
 
+    @classmethod
+    def from_dict_special(cls, d, **kwargs):
+        from onto.models.utils import _collect_attrs
+
+        def y(klass):
+            for key, attr in _collect_attrs(klass):
+                from onto.attrs.unit import MonadContext
+                with MonadContext.context().name(key).data_key_from_name():
+                    if attr.descendant_of(('doc_id',)):
+                        yield attr.properties.data_key, attr.name
+
+        special_fields = dict(y(cls))
+        m = {
+            special_fields[k]: d[k]
+            for k, v in d.items()
+            if k in special_fields
+        }
+        d = {
+            k:v
+            for k, v in d.items()
+            if k not in special_fields
+        }
+        return cls.from_dict(d=d, **m, **kwargs)
+
+
 
 class Exportable:
     """
@@ -149,6 +174,8 @@ class Exportable:
 
         def embed_element(val: EmbeddedElement):
             obj = val.obj
+            if obj is None:
+                return None
             return obj._export_as_dict(**kwargs)  # TODO: remove to_save from elsewhere
 
         if isinstance(val, EmbeddedElement):
@@ -217,8 +244,11 @@ class Exportable:
 
 
 def is_pony(*, klass):
-    from pony.orm.core import Entity
-    return issubclass(klass, Entity)
+    try:
+        from pony.orm.core import Entity
+        return issubclass(klass, Entity)
+    except ImportError:
+        return False
 
 
 class NewMixin:

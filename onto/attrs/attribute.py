@@ -342,6 +342,7 @@ class AttributeBase(RootCondition):
                 self.export_required = False
             else:
                 self.export_required = export_required
+
         else:
             # TODO: test code behaviors when both load_only and
             #   dump_only are true

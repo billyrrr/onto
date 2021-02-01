@@ -38,7 +38,7 @@ except ImportError:
 
 class CollectionMixin:
 
-    # _collection_name = None
+    _collection_name = None
 
     @property
     def collection_name(self):

@@ -10,6 +10,7 @@ def users(request, CTX):
     tijuana.last_name = "Furlong"
     tijuana.hearing_aid_requested = True
     tijuana.organization = "UCSD"
+    print(tijuana.to_dict())
     tijuana.save()
 
     thomasina = domain_models.User.new(doc_id="thomasina")

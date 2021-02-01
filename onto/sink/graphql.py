@@ -52,7 +52,7 @@ class GraphQLSink(Sink):
     def _maybe_deserialize(self, val, annotated_type):
         from onto.models.base import BaseRegisteredModel
         if issubclass(annotated_type, BaseRegisteredModel):
-            return annotated_type.from_dict(val)
+            return annotated_type.from_dict_special(val)
         else:
             return val
 
@@ -221,7 +221,7 @@ class GraphQLMutationSink(GraphQLSink):
 
         name = self.sink_name
         f.__name__ = name
-        mutate(f)
+        mutate(f, snake_argument=False)
         args = dict(self._args_of('mutate'))
         return name, args
 

@@ -11,7 +11,11 @@ class UserGraphQLMediator(Mediator):
     from onto.source import domain_model
     from onto.sink.graphql import subscription
 
-    src = domain_model(domain_model_cls=User)
+    # src = domain_model(domain_model_cls=User)
+    from onto.source.kafka import KafkaSource
+    # src = KafkaSource(topic_name='users')
+    from onto.source.mock import MockDomainModelSource
+    src = MockDomainModelSource(User)
     subscribe_user_view = subscription(view_model_cls=UserView)
 
     @subscribe_user_view.triggers.add_topic
@@ -23,23 +27,43 @@ class UserGraphQLMediator(Mediator):
         return event
 
     @src.triggers.on_create
-    @src.triggers.on_update
-    def user_updated(self, obj: User):
-        v = UserView.get(user_id=obj.doc_id)
-        d = v.to_dict()
+    async def user_added(self, obj):
         q = self.subscribe_user_view.qs[obj.doc_id]
+        d = obj.to_dict()
+        await q.put(d)
+        # import asyncio
+        # # tell asyncio to enqueue the result
+        # fut = asyncio.run_coroutine_threadsafe(
+        #     , loop=self.subscribe_user_view.loop
+        # )
+        # # wait for the result to be enqueued
+        # _ = fut.result()
 
-        import asyncio
-        # tell asyncio to enqueue the result
-        fut = asyncio.run_coroutine_threadsafe(
-            q.put(d), loop=self.subscribe_user_view.loop
-        )
-        # wait for the result to be enqueued
-        _ = fut.result()
+    # @src.triggers.on_topic
+    # def user_updated(self, message):
+    #     # v = UserView.get(user_id=obj.doc_id)
+    #     # d = v.to_dict()
+    #     print(message)
+    #     # raise ValueError(str(message))
+    #     # User.from_dict(d=d)
+    #     # q = self.subscribe_user_view.qs[obj.doc_id]
+    #     #
+    #     # import asyncio
+    #     # # tell asyncio to enqueue the result
+    #     # fut = asyncio.run_coroutine_threadsafe(
+    #     #     q.put(d), loop=self.subscribe_user_view.loop
+    #     # )
+    #     # # wait for the result to be enqueued
+    #     # _ = fut.result()
 
     @classmethod
     def start(cls):
-        cls.src.start()
+        # cls.src.start()
+
+        import asyncio
+        loop = asyncio.get_event_loop()
+        cls.src.start(loop=loop)
+
         s = cls.subscribe_user_view.start()
         from onto.sink.graphql import graph_schema
         import graphql
@@ -60,14 +84,39 @@ class UserGraphQLMediator(Mediator):
         return [s, liveness]
 
 
-
 class LoginForm(view_model.ViewModel):
     phone_number = attrs.bproperty(type_cls=str)
     verification_code = attrs.bproperty(type_cls=str)
 
 
+from onto.attrs import attrs
 class LoginRes(view_model.ViewModel):
-    token = attrs.bproperty(type_cls=str)
+    token = attrs.of_type(str)
+
+
+class UserAddMediator(Mediator):
+
+    from onto.sink.graphql import mutation
+
+    login_user_view = mutation(view_model_cls=LoginRes)
+
+    @login_user_view.triggers.mutate
+    def login(self, user_id: str, first_name: str, last_name: str, org: str):
+        user = User.new(
+            doc_id=user_id, first_name=first_name,
+            last_name=last_name, organization=org,
+            hearing_aid_requested=True
+        )
+        user.save()
+
+        return LoginRes.new(
+            token='supposed to be token for user added'
+        )
+
+    @classmethod
+    def start(cls):
+        s = cls.login_user_view.start()
+        return [s]
 
 
 class UserLoginMediator(Mediator):

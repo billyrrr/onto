@@ -1,11 +1,11 @@
 from onto.source.base import Source
 
 
-async def _kafka_subscribe(topic_name):
+async def _kafka_subscribe(topic_name, callback):
     from aiokafka import AIOKafkaConsumer
     consumer = AIOKafkaConsumer(
         topic_name,
-        bootstrap_servers='localhost:9092',
+        bootstrap_servers='10.10.8.140:9092',
         # group_id="my-group"
     )
     # Get cluster layout and join group `my-group`
@@ -14,9 +14,13 @@ async def _kafka_subscribe(topic_name):
     try:
         # Consume messages
         async for msg in consumer:
-            yield msg
+            callback(message=msg)
             # print("consumed: ", msg.topic, msg.partition, msg.offset,
             #       msg.key, msg.value, msg.timestamp)
+    except Exception as e:
+        import warnings
+        warnings.warn(f'Error: {e}')
+        raise ValueError('Interrupted') from e
     finally:
         # Will leave consumer group; perform autocommit if enabled.
         await consumer.stop()
@@ -42,5 +46,6 @@ class KafkaSource(Source):
         )
 
     async def _register(self):
-        async for message in _kafka_subscribe(topic_name=self.topic_name):
-            self._invoke_mediator(func_name='on_topic', message=message)
+        from functools import partial
+        f = partial(self._invoke_mediator, func_name='on_topic')
+        await _kafka_subscribe(topic_name=self.topic_name, callback=f)

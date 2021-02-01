@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="onto",
     # Beta release
-    version="0.0.2a5",
+    version="0.0.3a1",
     author="Bill Rao",
     author_email="billrao@me.com",
     description="Build reactive back end with ease ",
@@ -67,7 +67,8 @@ setuptools.setup(
         'couchbase': ['couchbase'],
         'leancloud': ['leancloud'],
         'celery': ['celery'],
-        'jsonrpc': ['jsonrpcclient[requests]', 'Flask-JSONRPC']
+        'jsonrpc': ['jsonrpcclient[requests]', 'Flask-JSONRPC'],
+        'graphql': ['websockets']
     }
     # entry_points = {
     #     'console_scripts': ['`onto`=scripts.deploy:deploy_all'],

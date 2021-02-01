@@ -4,17 +4,6 @@
 [![Coverage Status](https://coveralls.io/repos/github/billyrrr/flask-boiler/badge.svg?branch=master)](https://coveralls.io/github/billyrrr/flask-boiler?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/flask-boiler/badge/?version=latest)](https://flask-boiler.readthedocs.io/en/latest/?badge=latest)
 
-"boiler": **B**ackend-**O**riginated **I**nstantly-**L**oaded **E**ntity **R**epository 
-
-NOTE: 
-This package is not profiled or checked for memory usage. It is 
-recommended that you use Kubernetes to increase fault tolerance. 
-
-Flask-boiler manages your application state with Firestore. 
-You can create view models that aggregates underlying data 
-sources and store them immediately and permanently in Firestore. 
-As a result, your front end development will be as easy as 
-using Firestore. Flask-boiler is comparable to Spring Web Reactive. 
 
 Demo: 
 
@@ -46,16 +35,9 @@ Quickstart: [Quickstart](https://flask-boiler.readthedocs.io/en/latest/quickstar
 
 API Documentations: [API Docs](https://flask-boiler.readthedocs.io/en/latest/apidoc/flask_boiler.html)
 
-Example of a Project using flask-boiler: [gravitate-backend](https://github.com/billyrrr/gravitate-backend)
+Example of a Project using onto (now named onto): [gravitate-backend](https://github.com/billyrrr/gravitate-backend)
 
 [Related Technologies](https://medium.baqend.com/real-time-databases-explained-why-meteor-rethinkdb-parse-and-firebase-dont-scale-822ff87d2f87)
-
-## Ideal Usage
-
-boiler will compile your python code into flink jobs, web servers, 
-and more to be run on a kubernetes engine (not currently implemented).  
-
-![Ideal Usage](docs/distributed.png)
 
 ## Connectors supported 
 
@@ -72,24 +54,29 @@ To be supported:
 - Flink Table API
 - Kafka
 
-## Design Pattern  
-onto abstracts to MVVM (Model-View-ViewModel), where, 
-1. Model consists of a transactional database or datastore, and 
-lives in back end. 
-2. ViewModel consists of a distributed state consists of Model and 
-    aggregator. It is the main part of boiler. For client-read, 
-    it receives the streams coming in from the Model layer, and 
-    output them as a View to the View layer. For client-write, 
-    it receives the change streams from View 
-    layer, and operate on Model layer to persist the change. 
-    ViewModel lives in the back end, and may be operated as 
-    boiler python code, or compiled as flink jobs in the case of 
-    big data application (to be implemented). 
-3. View is the presentational layer for the back end. It serves 
-    1NF normalized data that are readable to the front end 
-    without further aggregation. Client reads and writes to View. 
-    View should be ephemeral, and can be rebuilt from ViewModel.  
-    View may be a remote system, eg. firestore or leancloud. 
+## What I am currently trying to build
+
+Front end creates mutations in graphql. 
+"Onto" receives the view model, and triggers 
+action on domain model. A method in domain model 
+is called (which lives in Flink Stateful Functions
+runtime). Different domain models communicate to 
+persist a change, and save the output view into Kafka. 
+Another set of system statically interprets "view 
+model definition code" as SQL, 
+and submit jobs with Flink SQL to assemble "view model". 
+Eventually, the 1NF view of the data is sent to Kafka, 
+and eventually delivered to front end in forms of 
+GraphQL Subscription. 
+
+(Write side has Serializable-level consistency, 
+and read side has eventual consistency) 
+
+## What it already does  
+- Serialization and deserialization
+- GraphQL/Flask server 
+- Multiple table join
+- ... 
 
 ## Installation
 In your project directory, 
@@ -98,7 +85,7 @@ In your project directory,
 pip install onto
 ```
 
-See more in [Quickstart](https://flask-boiler.readthedocs.io/en/latest/quickstart_link.html). 
+See more in [Quickstart](https://onto.readthedocs.io/en/latest/quickstart_link.html). 
 
 <!--## Usage-->
 
@@ -149,10 +136,12 @@ Take query as an example,
 ### Declare View Model
 
 ```python
+from onto.attrs import attrs
+
 class CityView(ViewModel):
 
-    name = attrs.bproperty()
-    country = attrs.bproperty()
+    name: str = attrs.nothing
+    country: str = attrs.nothing
 
     @classmethod
     def new(cls, snapshot):
@@ -205,23 +194,6 @@ class MeetingSessionGet(Mediator):
     @classmethod
     def start(cls):
         cls.source.start()
-
-```
-
-### WebSocket View 
-
-```python
-
-class Demo(WsMediator):
-    pass
-
-mediator = Demo(view_model_cls=rainbow_vm,
-                mutation_cls=None,
-                namespace="/palette")
-
-io = flask_socketio.SocketIO(app=app)
-
-io.on_namespace(mediator)
 
 ```
 
@@ -363,53 +335,7 @@ Stateful
 
 [^1]:  A message may be received and processed by multiple consumer, but only one 
 consumer can successfully commit change and mark the event as processed. 
-[^2]:  Scalability is limited by the number of listeners you can attach to the datastore. 
-
-## Advantages
-
-### Decoupled Domain Model and View Model
-Using Firebase Firestore sometimes require duplicated fields
-across several documents in order to both query the data and
-display them properly in front end. Flask-boiler solves this
-problem by decoupling domain model and view model. View model
-are generated and refreshed automatically as domain model
-changes. This means that you will only have to write business
-logics on the domain model without worrying about how the data
-will be displayed. This also means that the View Models can
-be displayed directly in front end, while supporting
-real-time features of Firebase Firestore.
-
-### One-step Configuration
-Rather than configuring the network and different certificate
-settings for your database and other cloud services. All you
-have to do is to enable related services on Google Cloud
-Console, and add your certificate. Flask-boiler configures
-all the services you need, and expose them as a singleton
-Context object across the project.
-
-### Redundancy
-Since all View Models are persisted in Firebase Firestore.
-Even if your App Instance is offline, the users can still
-access a view of the data from Firebase Firestore. Every
-View is also a Flask View, so you can also access the data
-with auto-generated REST API, in case Firebase Firestore is
-not viable.
-
-### Added Safety
-By separating business data from documents that are accessible
-to the front end, you have more control over which data is
-displayed depending on the user's role.
-
-### One-step Documentation
-All ViewModels have automatically generated documentations
-(provided by Flasgger). This helps AGILE teams keep their
-documentations and actual code in sync.
-
-### Fully-extendable
-When you need better performance or relational database
-support, you can always refactor a specific layer by
-adding modules such as `flask-sqlalchemy`.
-
+[^2]:  Scalability is limited by the number of listeners you can attach to the datastore.
 
 ## Comparisons 
 
@@ -434,17 +360,17 @@ REST API does not cache or store the response. When
 a view model is evaluated by onto, the response 
 is stored in firestore forever until update or manual removal. 
 
-Flask-boiler controls role-based access with security rules 
+onto controls role-based access with security rules 
 integrated with Firestore. REST API usually controls these 
 access with a JWT token. 
 
 ### Redux
 
-Redux is implemented mostly in front end. Flask-boiler targets 
+Redux is implemented mostly in front end. onto targets 
 back end and is more scalable, since all data are communicated 
 with Firestore, a infinitely scalable NoSQL datastore. 
 
-Flask-boiler is declarative, and Redux is imperative. 
+onto is declarative, and Redux is imperative. 
 The design pattern of REDUX requires you to write functional programming 
 in domain models, but onto favors a different approach: 
 ViewModel reads and calculates data from domain models 

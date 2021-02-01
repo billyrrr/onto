@@ -1,6 +1,6 @@
 import pytest
 
-from tests.utils import _delete_all
+# from tests.utils import _delete_all
 
 def pytest_sessionstart(session):
     from onto.context import Context as CTX

@@ -1,9 +1,11 @@
 from onto import domain_model, attrs
 # from . import Location, User, Ticket
-from onto.collection_mixin import with_pony, db
+# from onto.collection_mixin import with_pony, db
 
 
-class MeetingBase(domain_model.DomainModel, metaclass=with_pony):
+class MeetingBase(domain_model.DomainModel
+    # , metaclass=with_pony
+                  ):
     doc_ref = attrs.doc_ref(type_cls=str)
 
     class Meta:
@@ -17,7 +19,9 @@ class MeetingBase(domain_model.DomainModel, metaclass=with_pony):
     status = attrs.bproperty(type_cls=str)
 
 
-class Meeting(MeetingBase, metaclass=with_pony):
+class Meeting(MeetingBase,
+              # metaclass=with_pony
+              ):
 
     @classmethod
     def _datastore(cls):

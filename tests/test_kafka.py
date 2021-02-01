@@ -14,7 +14,7 @@ from onto.database.kafka import KafkaDatabase
 def get_bins():
     from pathlib import Path
     ROOT = Path.cwd()
-    KAFKA_SCRIPTS = ROOT / 'kafka/bin/'
+    KAFKA_SCRIPTS = ROOT / 'kafka_2.12-2.7.0/bin/'
     KAFKA_BIN = str(KAFKA_SCRIPTS / 'kafka-server-start.sh')
     ZOOKEEPER_BIN = str(KAFKA_SCRIPTS / 'zookeeper-server-start.sh')
     # You can pass a custom teardown function (or parametrise ours). Just don't call it `teardown`

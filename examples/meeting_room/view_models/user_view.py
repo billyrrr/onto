@@ -1,7 +1,8 @@
 from examples.meeting_room.domain_models.user import User
 from examples.meeting_room.domain_models.meeting import Meeting
 from examples.meeting_room.view_models import MeetingSession
-from onto import view_model, attrs
+from onto import view_model
+from onto.attrs import attrs
 from onto.context import Context as CTX
 from onto.store import Store, reference
 
@@ -12,12 +13,12 @@ class UserStore(Store):
 
 class UserViewMixin:
 
-    user_id = attrs.bproperty(export_enabled=False, type_cls=str)
-    first_name = attrs.bproperty(import_enabled=False, type_cls=str, data_key='firstName')
-    last_name = attrs.bproperty(import_enabled=False, type_cls=str, data_key='lastName')
-    organization = attrs.bproperty(import_enabled=False, type_cls=str, data_key='organization')
+    user_id: str = attrs.of_type(str).optional
+    first_name = attrs.str.data_key('firstName')
+    last_name = attrs.str.data_key('lastName')
+    organization = attrs.str.data_key('organization')
 
-    hearing_aid_requested = attrs.bproperty(import_enabled=False, type_cls=bool, data_key='hearingAidRequested')
+    hearing_aid_requested = attrs.bool.data_key('hearingAidRequested')
     # meetings = attrs.bproperty(import_enabled=False)
 
     @first_name.getter

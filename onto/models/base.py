@@ -151,9 +151,12 @@ class Serializable(Mutable, metaclass=SerializableMeta):
 
     def _init__attrs(self):
         self._attrs = SimpleStore()
-        for key, attr in _collect_attrs(cls=self.__class__):
-            if attr.initialize:
-                attr.initializer(self)
+        from onto.attrs.unit import MonadContext
+        with MonadContext.context().init_options(initialize=False, initializer=None):
+            for key, attr in _collect_attrs(cls=self.__class__):
+                if attr.properties.initialize:
+                    initializer = attr.properties.make_init(name=key)
+                    initializer(self)
 
     def __init__(self, *args, **kwargs):
         self._init__attrs()

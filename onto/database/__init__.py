@@ -176,6 +176,7 @@ class Database:
 
     ref = reference
 
+    # TODO: NOTE: Should be classmethod
     listener = None
 
 

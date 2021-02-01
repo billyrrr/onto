@@ -317,6 +317,9 @@ class Context:
             except ImportError as e:
                 raise TypeError('pony is configured, but '
                                 'importing pony module has failed') from e
+        elif db_config['type'] == 'mock':
+            from onto.database.mock import MockDatabase
+            return MockDatabase
         else:
             raise ValueError
 

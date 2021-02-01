@@ -48,3 +48,14 @@ class Source(SourceBase):
             )
         f = getattr(self.mediator_instance, fname)
         f(*args, **kwargs)
+
+    async def _invoke_mediator_async(self, *args, func_name, **kwargs):
+        fname = self.protocol.fname_of(func_name)
+        # TODO: fix: listener close invokes unintended on_delete
+        if fname is None:
+            raise ValueError(
+                f"fail to locate {func_name}"
+                f" for {self.mediator_instance.__class__.__name__}"
+            )
+        f = getattr(self.mediator_instance, fname)
+        await f(*args, **kwargs)

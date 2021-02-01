@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Iterable, Tuple
 
-from onto.attrs import AttributeBase
+from onto.attrs.attribute_new import AttributeBase
 
 
 def _make_schema_name(cls):
@@ -24,15 +24,68 @@ def _schema_cls_from_attributed_class(cls):
             TODO: make better 
             """
             continue
-        field = attr._make_field()
+
+        try:
+
+            from onto.attrs.unit import MonadContext
+            context = MonadContext.context()
+
+            context = context.marshmallow_capable_base()
+
+            case_conversion = True
+            if hasattr(cls.Meta, "case_conversion"):
+                new_case_conversion = cls.Meta.case_conversion
+                if new_case_conversion is not None:
+                    case_conversion = new_case_conversion
+
+            context = context.name(attr.name).data_key(attr.name)
+
+            annotation = attr.annotation
+            context = context.annotate(annotation)
+
+            from onto.utils import camel
+            transformation = camel if case_conversion else lambda a: a
+            context = context.data_key_from_name(transformation=transformation)
+
+            with context:
+                field = attr.marshmallow_field
+        except Exception as e:
+            raise ValueError(f'Error while making field {key}') from e
         field.load_only = field.load_only or import_only
         field.dump_only = field.dump_only or export_only
         d[key] = field
     if len(d) == 0:
         return None
     else:
+        # TODO: note that inheritance of super.Meta replaces Meta completely
+        # TODO:     as opposed to cls.Meta = super.Meta + cls.Meta
+        if unwrap := getattr(cls.Meta, "unwrap", None):
+
+            from onto.mapper.fields import Field
+            field: Field = d[unwrap]
+            data_key = field.data_key
+
+            from marshmallow.decorators import pre_load, post_dump
+            @pre_load
+            def unwrap_field(self, data, many, **kwargs):
+                if many:
+                    raise ValueError  # TODO: check logics first
+                new_data = {
+                    data_key: data
+                }
+                return new_data
+
+            d['unwrap_field'] = unwrap_field
+
+            @post_dump
+            def wrap_field(self, data, many, **kwargs):
+                if many:
+                    raise ValueError  # TODO: check logics first
+                return data[data_key]  # TODO: check for key error for read only fields
+            d['wrap_field'] = wrap_field
+
         m_meta = {
-            "exclude": getattr(cls.Meta, "exclude", tuple())
+            "exclude": getattr(cls.Meta, "exclude", tuple()),
         }
 
         d["Meta"] = type(
@@ -41,8 +94,9 @@ def _schema_cls_from_attributed_class(cls):
             m_meta
         )
 
-        if hasattr(cls.Meta, "case_conversion"):
-            d["case_conversion"] = cls.Meta.case_conversion
+        # TODO: make better
+        # if hasattr(cls.Meta, "case_conversion"):
+        #     d["case_conversion"] = cls.Meta.case_conversion
 
         schema_base = cls._schema_base if cls._schema_cls is None else cls._schema_cls
 
@@ -114,10 +168,26 @@ def _graphql_object_type_from_attributed_class(cls, input=False):
 
     import graphql
 
-    fields = dict(
-        _graphql_field_from_attr(attr, input=input)
-        for key, attr in _collect_attrs(cls) if not attr.is_internal
-    )
+    from onto.attrs.unit import MonadContext
+
+    def fields_gen():
+        for key, attr in _collect_attrs(cls):
+            # TODO: check to see if .name(key).data_key(key) should be removed
+            if not attr.properties.is_internal:
+                from onto.attrs.unit import MonadContext
+                context = MonadContext.context()
+                context = context.graphql_capable(is_input=input)
+                context = context.name(attr.name)
+
+                annotation = attr.annotation
+                context = context.annotate(annotation)
+
+                context = context.data_key_from_name()
+
+                with context:
+                    yield attr.properties.data_key, attr.graphql_field
+
+    fields = lambda: dict(fields_gen())
 
     if not input:
         base = graphql.GraphQLObjectType
@@ -146,7 +216,10 @@ def _collect_attrs(cls) -> Iterable[Tuple[str, AttributeBase]]:
     :param cls:
     :return:
     """
-    for key in dir(cls):
-        if issubclass(getattr(cls, key).__class__, AttributeBase):
-            attr = getattr(cls, key)
-            yield (key, attr)
+    import inspect
+    from functools import partial
+
+    for key, attr in cls.__attributes.items():
+        # if issubclass(getattr(cls, key)):
+        #     attr = getattr(cls, key)
+        yield key, attr  # attr.bind_class_(_bound_cls=cls, _attr_name=key)

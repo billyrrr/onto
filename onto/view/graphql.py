@@ -130,10 +130,10 @@ def graphql_ot_from_view_model(t: typing.Type[view_model.ViewModel]) -> graphql.
     return ot
 
 
-from kafka import KafkaProducer
-
-# assert isinstance(kafka_server, KafkaProducer)
-kafka_server = KafkaProducer(bootstrap_servers='localhost:9092', api_version=(0, 10, 1))
+# from kafka import KafkaProducer
+#
+# # assert isinstance(kafka_server, KafkaProducer)
+# kafka_server = KafkaProducer(bootstrap_servers='localhost:9092', api_version=(0, 10, 1))
 
 
 class GraphQLMediator(Mediator):
@@ -233,3 +233,27 @@ class GraphQLMediator(Mediator):
         pass
 
 
+class LivenessMediator(Mediator):
+
+    @classmethod
+    def start(cls):
+        # TODO: recover cls.src.start()
+        # cls.src.start()
+        # s = cls.subscribe_user_view.start()
+        from onto.sink.graphql import graph_schema
+        import graphql
+        liveness = graph_schema(
+            op_type='Query',
+            name='liveness',
+            graphql_object_type=graphql.GraphQLObjectType(
+                name='Liveness',
+                fields={
+                    'alive': graphql.GraphQLField(
+                        graphql.GraphQLBoolean,
+                        resolve=lambda *args, **kwargs: True),
+                }
+            ),
+            args=dict()
+        )
+
+        return [liveness]

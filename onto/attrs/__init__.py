@@ -22,4 +22,8 @@ from .attribute import AttributeBase, \
     DocRefAttribute as doc_ref, \
     PropertyAttribute as action
 
+from .attribute_new import AttributeBase
+with AttributeBase._get_root() as attrs:
+    attrs = attrs
+
 # TODO: change import for string and integer

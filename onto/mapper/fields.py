@@ -36,7 +36,7 @@ class Field(fields.Field):
     def __init__(self,
                  *args, missing=None, default=fields.missing_,
                  **kwargs):
-        super().__init__(*args, missing=missing, default=default, **kwargs)
+        super().__init__(*args, default=default, **kwargs)
 
     @property
     def default_value(self):
@@ -72,6 +72,22 @@ class Integer(fields.Integer, Field):
 
     @typing.overload
     def __get__(self, instance, owner) -> typing.Union[Field, int]:
+        """
+        Type hinting
+        """
+        pass
+
+
+class Float(fields.Float, Field):
+    """Field that serializes to an float and deserializes
+            to an float.
+    """
+
+    def __init__(self, missing=float, *args, **kwargs):
+        super().__init__(missing=missing, *args, **kwargs)
+
+    @typing.overload
+    def __get__(self, instance, owner) -> typing.Union[Field, float]:
         """
         Type hinting
         """
