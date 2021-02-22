@@ -12,7 +12,6 @@ import typing
 
 from onto.common import _NA
 
-
 class _ModelRegistry(type):
     """
 
@@ -173,7 +172,45 @@ class MonadContext(Monad, contextlib.ContextDecorator):
 #         return False
 
 
-class DefaultDecoratorMixin:
+class MarshmallowCapableBaseMixin:
+
+    @staticmethod
+    def _customize_field_cls(field_cls, methods):
+        new_field_cls = type('tmp_field', (field_cls,), methods)
+        return new_field_cls
+
+        # if not method_name:
+        #     method_name = unbound_method.__name__
+        # bound_method = unbound_method.__get__(field_obj, field_obj.__class__)
+        # setattr(field_obj, method_name, bound_method)
+
+    @property
+    def _marshmallow_field_constructor(self):
+        def _constructor(_self):
+            methods_overridden = dict(_self._marshmallow_field_override)
+            field_cls = self._customize_field_cls(_self._marshmallow_field_cls, methods_overridden)
+            field_obj = field_cls(
+                **dict(_self._marshmallow_field_kwargs)
+            )
+
+            return field_obj
+        return _constructor
+
+    @property
+    def _marshmallow_field_kwargs(self):
+        yield from ()
+
+    @property
+    def _marshmallow_field_cls(self):
+        from onto.mapper import fields
+        return fields.Field
+
+    @property
+    def _marshmallow_field_override(self):
+        yield from ()
+
+
+class DefaultDecoratorMixin(MarshmallowCapableBaseMixin):
     is_internal = False
 
 
@@ -327,28 +364,6 @@ class Nothing(DecoratorBase):
         return cls.easy_property(*args, **kwargs)
 
 
-
-class MarshmallowCapableBase(DecoratorBase):
-
-    @property
-    def _marshmallow_field_constructor(self):
-        def _constructor(_self):
-            field_cls = _self._marshmallow_field_cls
-            return field_cls(
-                **dict(_self._marshmallow_field_kwargs)
-            )
-        return _constructor
-
-    @property
-    def _marshmallow_field_kwargs(self):
-        yield from ()
-
-    @property
-    def _marshmallow_field_cls(self):
-        from onto.mapper import fields
-        return fields.Field
-
-
 class DefaultValue(DecoratorBase):
 
     def __init__(self, default_value, *args, **kwargs):
@@ -399,8 +414,13 @@ class ExportRequired(DecoratorBase):
 
 
 class Required(ImportRequired, ExportRequired):
-    pass
 
+    # @property
+    # def _graphql_object_type(self):
+    #     import graphql
+    #     # TODO: fix ordering
+    #     return graphql.GraphQLNonNull(self.decorated._graphql_object_type)
+    pass
 
 class Optional(DecoratorBase):
 
@@ -437,6 +457,12 @@ class Internal(DecoratorBase):
     is_internal = True
     import_enabled = False
     export_enabled = False
+
+    @property
+    def _marshmallow_field_kwargs(self):
+        yield from self.decorated._marshmallow_field_kwargs
+        yield 'dump_only', True
+        yield 'load_only', True
 
     @classmethod
     def easy(cls, *args, **kwargs):
@@ -536,15 +562,12 @@ class Int(Integer):
     pass
 
 
-from graphql import GraphQLScalarType
-long_type = GraphQLScalarType('Long')
-
-
 class IntegerTimestamp(Integer):
 
     @property
     def _graphql_object_type(self):
-
+        from graphql import GraphQLScalarType
+        long_type = GraphQLScalarType('Long')
         return long_type
 
 
@@ -717,7 +740,7 @@ class List(OfType):
         )
 
 
-class Name(DecoratorBase):
+class AttributeName(DecoratorBase):
 
     @property
     def _marshmallow_field_kwargs(self):
@@ -752,7 +775,7 @@ class DocId(DecoratorBase):
     @property
     def _graphql_object_type(self):
         import graphql
-        return graphql.GraphQLID
+        return graphql.GraphQLNonNull(graphql.GraphQLID)
 
     @property
     def _graphql_field_kwargs(self):
@@ -809,6 +832,25 @@ class DataKeyFromName(DataKey):
 
 class Enum(DecoratorBase):
     pass
+
+
+class NoneAsMissing(DecoratorBase):
+
+    @property
+    def _marshmallow_field_override(self):
+        yield from self.decorated._marshmallow_field_override
+        def _deserialize(_self, value, attr, data, **kwargs):
+            if value is None:
+                from marshmallow.fields import missing_
+                return missing_
+            else:
+                return super(_self.__class__, _self)._deserialize(value, attr, data, **kwargs)
+        yield ('_deserialize', _deserialize)
+
+    @property
+    def _marshmallow_field_kwargs(self):
+        yield from self.decorated._marshmallow_field_kwargs
+        yield 'allow_none', True
 
 
 class Embed(OfType):
@@ -897,7 +939,16 @@ class GraphqlCapable(DecoratorBase):
     def _graphql_field_cls(self):
         import graphql
         if not self.is_input:
+            from functools import partial
             field_base = graphql.GraphQLField
+            # def resolver(attributed, resolve_info):
+            #     return attributed.graphql_field_resolve(resolve_info)
+                # raise ValueError
+            from onto.helpers.graphql import default_field_resolver
+
+            field_base = partial(
+                field_base,
+                resolve=default_field_resolver)
         else:
             field_base = graphql.GraphQLInputField
         return field_base

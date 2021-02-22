@@ -8,7 +8,6 @@ from typing import TypeVar
 # https://www.geeksforgeeks.org/generating-random-ids-python/
 from functools import partial
 
-from google.cloud.firestore import DocumentSnapshot
 from inflection import camelize, underscore
 
 from onto.common import _NA
@@ -62,7 +61,7 @@ T = TypeVar('T', covariant=True)
 
 
 def snapshot_to_obj(
-        snapshot: DocumentSnapshot, reference: Reference,
+        snapshot: 'google.cloud.firestore.DocumentSnapshot', reference: Reference,
         super_cls: T = None, **kwargs) -> T:
     """ Converts a firestore document snapshot to FirestoreObject
 

@@ -271,8 +271,8 @@ class FirestoreObjectValMixin:
     #         return super()._export_val_view(val)
 
     @classmethod
-    def _import_val(cls, val, transaction=None, _store=None):
-
+    def _import_val(cls, val, transaction=None, partial=False, _store=None):
+        # TODO: note partial is not applied to _nest_relationship_import calls
         if isinstance(val, RelationshipReference):
             if val.nested and val.doc_ref is not None:
                 return _nest_relationship_import(val, _store=_store)
@@ -283,7 +283,7 @@ class FirestoreObjectValMixin:
             else:
                 raise ValueError
         else:
-            return super()._import_val(val, transaction=transaction, _store=_store)
+            return super()._import_val(val, transaction=transaction, partial=partial, _store=_store)
 
     @classmethod
     def _import_from_dict(cls, d, transaction=None, _store=_NA, **kwargs):
@@ -304,6 +304,7 @@ class FirestoreObjectValMixin:
             d,
             _store=_NA,
             transaction=None,
+            partial=False,
             **kwargs):
         """ Deserializes an object from a dictionary.
 
@@ -317,9 +318,9 @@ class FirestoreObjectValMixin:
         obj_cls = resolve_obj_cls(cls=cls, d=d)
 
         schema_obj = obj_cls.get_schema_obj()
-        d = schema_obj.load(d)
+        d = schema_obj.load(d, partial=partial)
 
-        d = cls._import_from_dict(d, _store=_store, transaction=transaction)
+        d = cls._import_from_dict(d, _store=_store, partial=partial, transaction=transaction)
 
         instance = obj_cls.new(**d, **kwargs)
         # TODO: fix unexpected arguments

@@ -5,7 +5,6 @@ from onto.registry import ModelRegistry
 # DEFAULT_FIELDS = {"obj_type", "doc_id", "doc_ref"}
 
 
-
 class SerializableMeta(ModelRegistry):
     """
     Metaclass for serializable models.
@@ -34,6 +33,16 @@ class SerializableMeta(ModelRegistry):
     def __new__(mcs, name, bases, attrs):
         mcs.__collect_attributes(bases, attrs)
         klass = super().__new__(mcs, name, bases, attrs)
+        meta = attrs.get('Meta', None)
+        if hasattr(meta, "schema_cls"):
+            klass._schema_cls = meta.schema_cls
+            # TODO: note difference without the else clause
+        # else:
+        #     klass._schema_cls = None
+        if union := getattr(meta, "union", None):
+            klass._union = meta.union
+        else:
+            klass._union = None
         return klass
 
     def __init__(klass, name, base, ns):
@@ -42,7 +51,7 @@ class SerializableMeta(ModelRegistry):
         __attributes = ns['__attributes']
 
         for attr_name, attr in __attributes.items():
-            __attributes[attr_name] = attr.name(attr_name).parent_klass(parent=klass)
+            __attributes[attr_name] = attr.attribute_name(attr_name).parent_klass(parent=klass)
 
         for attr_name, attr in __attributes.items():
             from onto.attrs.unit import MonadContext
@@ -55,13 +64,6 @@ class SerializableMeta(ModelRegistry):
                 )
                 setattr(klass, attr_name, p)
 
-        meta = klass.Meta
-        if hasattr(meta, "schema_cls"):
-            klass._schema_cls = meta.schema_cls
-
-        attributed = _schema_cls_from_attributed_class(cls=klass)
-        if attributed is not None:
-            klass._schema_cls = attributed
 
         # if hasattr(klass, "Meta"):
         #     Moves Model.Meta.schema_cls to Model._schema_cls

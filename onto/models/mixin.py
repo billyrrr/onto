@@ -47,7 +47,7 @@ class Importable:
     """
 
     @classmethod
-    def _import_val(cls, val, **kwargs):
+    def _import_val(cls, val, partial=False, **kwargs):
         """ IMPORTANT! Note that the code may fail and result in
                 infinite call chain when there is a circular reference.
                 The code is not designed to fail this way, but
@@ -64,20 +64,20 @@ class Importable:
             d = val.d
             obj_cls = val.obj_cls
             # data = {key: val for key, val in d.items()}
-            obj = obj_cls.from_dict(d=d)
+            obj = obj_cls.from_dict(d=d, partial=partial)
             return obj
 
         if isinstance(val, EmbeddedElement):
             return embed_element(val)
         elif is_iterable_but_not_string(val):
             if isinstance(val, list):
-                val_list = [cls._import_val(elem, **kwargs)
+                val_list = [cls._import_val(elem, partial=partial, **kwargs)
                             for elem in val]
                 return val_list
             elif isinstance(val, dict):
                 val_d = dict()
                 for k, v in val.items():
-                    val_d[k] = cls._import_val(v, **kwargs)
+                    val_d[k] = cls._import_val(v, partial=partial, **kwargs)
                 return val_d
             else:
                 raise NotImplementedError
@@ -115,14 +115,14 @@ class Importable:
         return cls._import_val(d, **kwargs)
 
     @classmethod
-    def from_dict(cls, d, transaction=_NA, **kwargs):
+    def from_dict(cls, d, transaction=_NA, partial=False, **kwargs):
 
         obj_cls = resolve_obj_cls(cls=cls, d=d)
 
         schema_obj = obj_cls.get_schema_obj()
-        d = schema_obj.load(d)
+        d = schema_obj.load(d, partial=partial)
 
-        d = cls._import_from_dict(d, transaction=transaction)
+        d = cls._import_from_dict(d, partial=partial, transaction=transaction)
 
         instance = obj_cls.new(**d, **kwargs)  # TODO: fix unexpected arguments
         return instance
@@ -134,7 +134,7 @@ class Importable:
         def y(klass):
             for key, attr in _collect_attrs(klass):
                 from onto.attrs.unit import MonadContext
-                with MonadContext.context().name(key).data_key_from_name():
+                with MonadContext.context().attribute_name(key).data_key_from_name():
                     if attr.descendant_of(('doc_id',)):
                         yield attr.properties.data_key, attr.name
 

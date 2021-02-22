@@ -15,31 +15,31 @@ class SchemaMixin:
 
     case_conversion = True
 
-    def on_bind_field(self, field_name, field_obj):
-        """Hook to modify a field when it is bound to the `Schema`.
-
-        No-op by default.
-        """
-
-        if field_obj.attribute is None:
-            field_obj.attribute = field_name
-
-        if field_obj.data_key is None:
-            if self.case_conversion:
-                default_data_key = self.f(field_obj.attribute)
-            else:
-                default_data_key = field_obj.attribute
-            field_obj.data_key = default_data_key
-
-        # if field_obj.attribute in self.f_mapping:
-        #     raise ValueError
-        # else:
-        #     self.f_mapping[field_obj.attribute] = field_obj.data_key
-        #
-        # if field_obj.data_key in self.g_mapping:
-        #     raise ValueError
-        # else:
-        #     self.g_mapping[field_obj.data_key] = field_obj.attribute
+    # def on_bind_field(self, field_name, field_obj):
+    #     """Hook to modify a field when it is bound to the `Schema`.
+    #
+    #     No-op by default.
+    #     """
+    #
+    #     if field_obj.attribute is None:
+    #         field_obj.attribute = field_name
+    #
+    #     if field_obj.data_key is None:
+    #         if self.case_conversion:
+    #             default_data_key = self.f(field_obj.attribute)
+    #         else:
+    #             default_data_key = field_obj.attribute
+    #         field_obj.data_key = default_data_key
+    #
+    #     # if field_obj.attribute in self.f_mapping:
+    #     #     raise ValueError
+    #     # else:
+    #     #     self.f_mapping[field_obj.attribute] = field_obj.data_key
+    #     #
+    #     # if field_obj.data_key in self.g_mapping:
+    #     #     raise ValueError
+    #     # else:
+    #     #     self.g_mapping[field_obj.data_key] = field_obj.attribute
 
     def __init__(self, *args, **kwargs):
         if "unknown" not in kwargs:
@@ -112,6 +112,14 @@ class SchemaBase(SchemaMixin, marshmallow.Schema):
     @classmethod
     def _get_reserved_fieldnames(cls):
         return set()
+
+    # def get_attribute(self, *args, **kwargs):
+    #     # TODO: note this method automatically falls back to super during AttributeError
+    #     try:
+    #         f = get_attribute_f.get()
+    #         return f(self, *args, **kwargs)
+    #     except LookupError:
+    #         return super().get_attribute(*args, **kwargs)
 
 
 class BasicSchema(SchemaBase):

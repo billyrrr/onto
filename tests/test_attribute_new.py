@@ -187,6 +187,24 @@ def test_domain_model():
     assert res
 
 
+def test_graphql_custom_scalar_type():
+
+    from onto.models.base import Serializable
+    class MyString(Serializable):
+        class Meta:
+            unwrap = 'value'
+
+        value: str = attrs.attrs.nothing
+
+    class A1(DomainModel):
+        message = attrs.attrs.embed(MyString)
+
+    from onto.models.utils import _graphql_object_type_from_attributed_class
+    res = _graphql_object_type_from_attributed_class(A1, input=False)
+    assert str(res) == 'A1'
+    assert A1.from_dict({'value': 'hello'}).message != 'hello'
+
+
 # def test_monad():
 
 

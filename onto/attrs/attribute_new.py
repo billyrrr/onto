@@ -189,7 +189,7 @@ class AttributeMixin(RootCondition, Monad, MonadPrependMixin):
         return deepcopy(self)
 
     def _get_select(self, instance):
-        return getattr(instance, self.name)
+        return getattr(instance, self.properties.name)
 
     def __get__(self, instance, owner):
         """ Only allow attribute object to be invoked "get" on

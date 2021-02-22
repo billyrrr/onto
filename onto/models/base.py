@@ -1,7 +1,9 @@
+import functools
+
 from .meta import SerializableMeta
 from ..registry import ModelRegistry
 from .mixin import Importable, NewMixin, Exportable
-from .utils import _collect_attrs
+from .utils import _collect_attrs, _schema_cls_from_attributed_class
 from onto.mapper.schema import Schema
 
 
@@ -69,6 +71,9 @@ class Schemed(SchemedBase):
     """
     A mixin class for object bounded to a schema for serialization
         and deserialization.
+    TODO: maybe add caching
+    Currently schema is reconstructed at every call to
+        refresh value for different contexts.
     """
 
     _schema_obj = None
@@ -79,10 +84,11 @@ class Schemed(SchemedBase):
     # self._schema_obj = self._schema_cls()
 
     @classmethod
+    @functools.lru_cache(maxsize=None)
     def get_schema_cls(cls):
         """ Returns the Schema class associated with the model class.
         """
-        return cls._schema_cls
+        return _schema_cls_from_attributed_class(cls=cls)
 
     @classmethod
     def get_schema_obj(cls):
@@ -90,12 +96,15 @@ class Schemed(SchemedBase):
                 with the model class
         """
         # Use __dict__ to avoid reading from super class
-        if "_schema_obj" not in cls.__dict__:
-            schema_cls = cls.get_schema_cls()
-            if schema_cls is None:
-                return None
-            cls._schema_obj = schema_cls()
-        return cls._schema_obj
+        # if "_schema_obj" not in cls.__dict__:
+        #     schema_cls = cls.get_schema_cls()
+        #     if schema_cls is None:
+        #         return None
+        #     cls._schema_obj = schema_cls()
+        # return cls._schema_obj
+        _schema_cls = cls.get_schema_cls()
+        _schema_obj = _schema_cls()
+        return _schema_obj
 
     @property
     def schema_cls(self):

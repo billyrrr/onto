@@ -1,6 +1,5 @@
 from onto.context import Context as CTX
 
-from google.cloud import firestore
 
 from functools import wraps
 
@@ -17,6 +16,7 @@ def run_transaction(func):
         # Set transaction context variable
         transaction = CTX.db.transaction()
         token = CTX.transaction_var.set(transaction)
+        from google.cloud import firestore
         @firestore.transactional
         def new_func(transaction: firestore.Transaction):
             return func(*args, **kwargs, transaction=transaction)

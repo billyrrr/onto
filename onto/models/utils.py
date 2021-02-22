@@ -30,7 +30,7 @@ def _schema_cls_from_attributed_class(cls):
             from onto.attrs.unit import MonadContext
             context = MonadContext.context()
 
-            context = context.marshmallow_capable_base()
+            # context = context.marshmallow_capable_base()
 
             case_conversion = True
             if hasattr(cls.Meta, "case_conversion"):
@@ -38,7 +38,7 @@ def _schema_cls_from_attributed_class(cls):
                 if new_case_conversion is not None:
                     case_conversion = new_case_conversion
 
-            context = context.name(attr.name).data_key(attr.name)
+            context = context.attribute_name(key).data_key(key)
 
             annotation = attr.annotation
             context = context.annotate(annotation)
@@ -156,8 +156,21 @@ def _graphql_field_from_attr(attr, input=False):
         raise NotImplementedError
 
 
-@lru_cache(maxsize=None)  # Cached property
-def _graphql_object_type_from_attributed_class(cls, input=False):
+ots = dict()
+
+
+# def _graphql_object_type_from_attributed_class(*args, **kwargs):
+#     res = _graphql_object_type_from_attributed_class(*args, **kwargs)
+#     ots[(args, kwargs)] = res
+#     return res
+
+
+def _get_graphql_ots():
+    return ots
+
+
+@lru_cache(maxsize=None)
+def _graphql_object_type_from_attributed_class(cls, input=False, **kwargs):
     """ Make GraphQL schema from a class containing AttributeBase+ objects
 
     :return:
@@ -170,42 +183,85 @@ def _graphql_object_type_from_attributed_class(cls, input=False):
 
     from onto.attrs.unit import MonadContext
 
-    def fields_gen():
-        for key, attr in _collect_attrs(cls):
-            # TODO: check to see if .name(key).data_key(key) should be removed
-            if not attr.properties.is_internal:
-                from onto.attrs.unit import MonadContext
-                context = MonadContext.context()
-                context = context.graphql_capable(is_input=input)
-                context = context.name(attr.name)
-
-                annotation = attr.annotation
-                context = context.annotate(annotation)
-
-                context = context.data_key_from_name()
-
-                with context:
-                    yield attr.properties.data_key, attr.graphql_field
-
-    fields = lambda: dict(fields_gen())
-
     if not input:
         base = graphql.GraphQLObjectType
     else:
         base = graphql.GraphQLInputObjectType
 
-    type_name = cls.__name__
+    def convert(key, attr):
+        if not attr.properties.is_internal:
+            from onto.attrs.unit import MonadContext
+            context = MonadContext.context()
+            context = context.graphql_capable(is_input=input)
+            context = context.attribute_name(key)
 
-    # TODO: maybe add
-    # if input:
-    #     type_name += "Input"
+            annotation = attr.annotation
+            context = context.annotate(annotation)
 
-    graphql_object_type = base(
-        type_name,
-        fields=fields
-    )
+            context = context.data_key_from_name()
+            context = context.optional
 
-    return graphql_object_type
+            with context:
+                return attr.properties.data_key, attr.graphql_field
+
+    def fields_gen():
+        for key, attr in _collect_attrs(cls):
+            # TODO: check to see if .attribute_name(key).data_key(key) should be removed
+            if ret := convert(key=key, attr=attr):
+                yield ret
+        else:
+            yield from ()
+
+    if unwrap := getattr(cls.Meta, "unwrap", None):
+
+        key, attr = next((k, v) for k, v in _collect_attrs(cls) if k == unwrap)
+        data_key, graphql_field = convert(key=key, attr=attr)
+
+        from graphql import GraphQLScalarType
+        assert isinstance(graphql_field.type, GraphQLScalarType)
+
+        this_type = GraphQLScalarType(
+            cls.__name__,
+            serialize=graphql_field.type.serialize,
+            parse_value=graphql_field.type.parse_value,
+            parse_literal=graphql_field.type.parse_literal,
+        )
+        return this_type
+    else:
+        fields = lambda: dict(fields_gen())
+        type_name = cls.__name__
+
+        if getattr(cls, '_union', None):
+            subclasses = {
+                    klass: _graphql_object_type_from_attributed_class(klass, input=input, interfaces=lambda: [ot])
+                    for klass in cls._get_subclasses()
+                    if klass != cls
+            }
+
+            def resolve_type(__self, value, _type):
+                return subclasses[__self.__class__]  # TODO: make better
+
+            ot = graphql.GraphQLInterfaceType(
+                name=type_name,
+                resolve_type=resolve_type,
+                fields=fields,
+                **kwargs
+            )
+
+        else:
+
+            # TODO: maybe add
+            # if input:
+            #     type_name += "Input"
+
+            ot = base(
+                type_name,
+                fields=fields,
+                **kwargs
+            )
+
+        ots[ot.name] = ot
+        return ot
 
 
 def _collect_attrs(cls) -> Iterable[Tuple[str, AttributeBase]]:
@@ -223,3 +279,5 @@ def _collect_attrs(cls) -> Iterable[Tuple[str, AttributeBase]]:
         # if issubclass(getattr(cls, key)):
         #     attr = getattr(cls, key)
         yield key, attr  # attr.bind_class_(_bound_cls=cls, _attr_name=key)
+    else:
+        yield from ()

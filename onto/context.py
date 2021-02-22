@@ -17,7 +17,6 @@ import os
 
 # This import is intended to be accessed with google.cloud.logging.*
 
-from celery import Celery
 
 import logging
 
@@ -48,7 +47,7 @@ class Context:
     firebase_app: 'firebase_admin.App' = None
     db: Database = None
     config = None
-    celery_app: Celery = None
+    # celery_app: Celery = None
     logger: logging.Logger = None
     listener: Listener = None
 
@@ -354,6 +353,7 @@ class Context:
                 logging.exception('Error initializing firebase_app')
                 raise e
         elif service_type == 'celery':
+            from celery import Celery
             celery_app = Celery('tasks',
                                     broker='pyamqp://guest@localhost//')
             return celery_app

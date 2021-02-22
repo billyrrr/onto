@@ -62,26 +62,26 @@ async def main(schema):
 
 # asyncio.run(main(schema))
 
-
-def _as_graphql_root_schema(attributed):
-    from graphql import GraphQLSchema
-
-    from onto.models.utils import _graphql_object_type_from_attributed_class
-    graphql_ot = _graphql_object_type_from_attributed_class(attributed)
-
-    async def sub(parent, info, **kwargs):
-        pass
-
-    schema = GraphQLSchema(
-        query=graphql_ot,
-        subscription=Subscription
-    )
-
-    from graphql.subscription import create_source_event_stream
-    create_source_event_stream(schema=schema, document=schema.ast_node, )
-    _ = subscribe(schema=schema, subscribe_field_resolver=sub)
-
-    return schema
+#
+# def _as_graphql_root_schema(attributed):
+#     from graphql import GraphQLSchema
+#
+#     from onto.models.utils import _graphql_object_type_from_attributed_class
+#     graphql_ot = _graphql_object_type_from_attributed_class(attributed)
+#
+#     async def sub(parent, info, **kwargs):
+#         pass
+#
+#     schema = GraphQLSchema(
+#         query=graphql_ot,
+#         subscription=Subscription
+#     )
+#
+#     from graphql.subscription import create_source_event_stream
+#     create_source_event_stream(schema=schema, document=schema.ast_node, )
+#     _ = subscribe(schema=schema, subscribe_field_resolver=sub)
+#
+#     return schema
 
 
 class GraphQLSource(Source):

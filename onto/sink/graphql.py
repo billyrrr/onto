@@ -142,6 +142,7 @@ class GraphQLSink(Sink):
         attributed = self.view_model_cls
 
         ot = _graphql_object_type_from_attributed_class(attributed)
+
         if self.many:
             ot = graphql.GraphQLList(type_=ot)
 
@@ -227,12 +228,15 @@ class GraphQLMutationSink(GraphQLSink):
 
 
 def op_schema(op_type, schema_all):
+    from onto.helpers.graphql import default_field_resolver
+
     ot = graphql.GraphQLObjectType(
         name=op_type,
         fields={
             schema.name:
                 graphql.GraphQLField(
                     schema.graphql_object_type,
+                    resolve=default_field_resolver,
                     args=schema.args)
             for schema in schema_all
             if schema.op_type == op_type

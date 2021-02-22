@@ -2,10 +2,7 @@ pytest
 testfixtures
 
 Flask>=0.10
-google-auth
-# google-cloud-datastore>=1.4.0
-google-api-python-client
-firebase-admin>=3.0.0
+
 
 # REST API Framework
 flask_restful
@@ -23,15 +20,11 @@ flasgger
 
 dictdiffer
 
-celery
-
-flask-socketio
 
 iso8601
 
 pyyaml
 
-google-cloud-logging
 
 # functions-framework # for deploying cloud functions TODO: move to dev-requirements.txt
 # TODO: google-cloud-resource-manager may cause errors in resolving modules of google.cloud statically
@@ -42,21 +35,3 @@ google-cloud-logging
 gitpython  # For deploying cloud functions: generate archive
 
 ProxyTypes
-
-# Optional
-apache-flink
-
-# Optional
-couchdb
-
-# Optional
-# couchbase
-#
-# Optional
-leancloud
-
-# Optional
-Flask-JSONRPC
-
-# Optional - jsonrpc sink
-jsonrpcclient[requests]
