@@ -2,7 +2,7 @@ from onto.attrs.unit import Monad, MonadContext
 
 
 def test_monad():
-    r = Monad.get_root()
+    r = Monad._get_root()
     str_optional = r.str.optional
     assert str_optional.properties.type_cls == str
     assert not str_optional.properties.import_required
@@ -15,7 +15,7 @@ def test_monad():
 
 
 def test_monad_inherit():
-    r = Monad.get_root()
+    r = Monad._get_root()
     int_a = r.optional
     assert not hasattr(int_a.properties, 'type_cls')
     assert not int_a.properties.import_required
@@ -26,7 +26,7 @@ def test_monad_inherit():
 
 def test_monad_list():
 
-    r = Monad.get_root()
+    r = Monad._get_root()
     li = r.list(
         value=lambda a: a.str.optional
     ).required
@@ -40,7 +40,7 @@ def test_monad_list():
 
 def test_list_decorate():
 
-    r = Monad.get_root()
+    r = Monad._get_root()
     li2 = r.list(
         value=lambda a: a.optional
     ).required
@@ -55,7 +55,7 @@ def test_list_decorate():
 
 
 def test_list_inherit_complex():
-    r = Monad.get_root()
+    r = Monad._get_root()
     li2 = r.list(
         value=lambda a: a.optional
     ).required

@@ -118,7 +118,7 @@ def _graphql_type_from_py(t: type, input=False):
         return PY_TYPE_MAP_GQL[t]
     else:
         if input:
-            return _graphql_object_type_from_attributed_class(t, input=input)
+            return t.get_graphql_object_type(is_input=input)
         else:
             raise ValueError
 
@@ -139,7 +139,7 @@ def _graphql_field_from_attr(attr, input=False):
     from onto import attrs
     if attr.__class__ is attrs.attribute.EmbeddedAttribute:
         e_cls = attr.type_cls
-        e_graphql = _graphql_object_type_from_attributed_class(e_cls)
+        e_graphql = e_cls.get_graphql_object_type()
         field = field_base(
             type_=f(e_graphql),
             description=attr.doc
@@ -157,6 +157,9 @@ def _graphql_field_from_attr(attr, input=False):
 
 
 ots = dict()
+from collections import defaultdict
+interfaces_of = defaultdict(list)
+implementations_of = defaultdict(list)
 
 
 # def _graphql_object_type_from_attributed_class(*args, **kwargs):
@@ -232,6 +235,8 @@ def _graphql_object_type_from_attributed_class(cls, input=False, **kwargs):
         type_name = cls.__name__
 
         if getattr(cls, '_union', None):
+            for klass in cls._get_subclasses():
+                interfaces_of[klass].append(cls)
             subclasses = {
                     klass: _graphql_object_type_from_attributed_class(klass, input=input, interfaces=lambda: [ot])
                     for klass in cls._get_subclasses()
@@ -267,8 +272,6 @@ def _graphql_object_type_from_attributed_class(cls, input=False, **kwargs):
 def _collect_attrs(cls) -> Iterable[Tuple[str, AttributeBase]]:
     """
     Collect all AttributeBase+ objects in the class and its ancestors.
-    TODO: debug empty iter of length 0
-
     :param cls:
     :return:
     """

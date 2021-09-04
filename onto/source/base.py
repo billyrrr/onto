@@ -58,4 +58,4 @@ class Source(SourceBase):
                 f" for {self.mediator_instance.__class__.__name__}"
             )
         f = getattr(self.mediator_instance, fname)
-        await f(*args, **kwargs)
+        return await f(*args, **kwargs)

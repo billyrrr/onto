@@ -13,9 +13,16 @@ class MockDomainModelSource(Source):
 
     async def _invoke_mediator(self, *, func_name, ref, snapshot):
         obj = self.dm_cls.from_snapshot(ref=ref, snapshot=snapshot)
-        await super()._invoke_mediator_async(func_name=func_name, obj=obj)
+        try:
+            await super()._invoke_mediator_async(func_name=func_name, obj=obj)
+        except Exception as _:
+            import logging
+            logging.exception(f'async _invoke_mediator failed for {func_name} {str(ref)}')
 
-    def start(self, loop):
+    def start(self, loop=None):
+        if loop is None:
+            import asyncio
+            loop = asyncio.get_event_loop()
         self._register(loop=loop)
 
     import asyncio

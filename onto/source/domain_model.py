@@ -4,8 +4,6 @@ DomainModel source:
 """
 from typing import Type
 
-from google.cloud.firestore_v1 import transactional
-
 from onto.database import Reference
 from onto.domain_model import DomainModel
 from onto.source.firestore import FirestoreSource
@@ -39,6 +37,8 @@ class DomainModelTransactionalSource(DomainModelSource):
 
     def _operation(self, func_name, ref, snapshot):
         _transaction = CTX.db.firestore_client.transaction()
+
+        from google.cloud.firestore_v1 import transactional
         @transactional
         def _op(transaction):
             obj = self.domain_model_cls.get(

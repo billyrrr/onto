@@ -1,4 +1,4 @@
-from onto.primary_object import PrimaryObject
+ from onto.primary_object import PrimaryObject
 
 
 class Entity(PrimaryObject):

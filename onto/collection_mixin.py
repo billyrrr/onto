@@ -1,5 +1,5 @@
 from onto.context import Context as CTX
-from google.cloud.firestore import CollectionReference
+# from google.cloud.firestore import CollectionReference
 
 from onto.database import Reference
 from onto.firestore_object import FirestoreObject

@@ -79,7 +79,12 @@ class GraphQLSink(Sink):
             for k, v in kwargs.items()
         }
 
-        return f(*args, **new_kwargs)
+        try:
+            return f(*args, **new_kwargs)
+        except Exception as e:
+            import logging
+            logging.exception('_invoke mediator failed for graphql subscription')
+            return None  # TODO: return something else
 
     def __init__(self, view_model_cls: Type[ViewModel], camelize=True, many=False):
         """
@@ -92,7 +97,9 @@ class GraphQLSink(Sink):
         import asyncio
         loop = asyncio.get_event_loop()
         from functools import partial
-        cons = partial(asyncio.Queue, loop=loop)
+        cons = partial(asyncio.Queue
+                       # , loop=loop
+                       )
         self.qs = defaultdict(cons)
         self.loop = loop
         self._camelize = camelize
@@ -141,7 +148,7 @@ class GraphQLSink(Sink):
             _graphql_object_type_from_attributed_class
         attributed = self.view_model_cls
 
-        ot = _graphql_object_type_from_attributed_class(attributed)
+        ot = attributed.get_graphql_object_type()
 
         if self.many:
             ot = graphql.GraphQLList(type_=ot)
@@ -171,7 +178,8 @@ class GraphQLSubscriptionSink(GraphQLSink):
             # Register topic
             topic_name = self._invoke_mediator(func_name='add_topic', **kwargs)
             # Listen to topic
-            q = self.qs[topic_name]
+            import asyncio
+            q: asyncio.Queue = self.qs[topic_name]
 
             while True:
                 event = await q.get()
@@ -180,6 +188,7 @@ class GraphQLSubscriptionSink(GraphQLSink):
                         self._invoke_mediator(func_name='on_event',
                                               event=event)
                 }
+                q.task_done()
 
         # name = self.parent().__name__
         # f.__name__ = name

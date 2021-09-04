@@ -8,6 +8,6 @@ default_database: mock
 database:
   mock:
     type: mock
-  kafka:
-    type: kafka
-    bootstrap_servers: 127.0.0.1:9092
+#  kafka:
+#    type: kafka
+#    bootstrap_servers: 127.0.0.1:9092

@@ -209,8 +209,13 @@ class MarshmallowCapableBaseMixin:
     def _marshmallow_field_override(self):
         yield from ()
 
+class GraphqlCapableMixin:
 
-class DefaultDecoratorMixin(MarshmallowCapableBaseMixin):
+    @property
+    def _graphql_object_type(self):
+        yield from ()
+
+class DefaultDecoratorMixin(MarshmallowCapableBaseMixin, GraphqlCapableMixin):
     is_internal = False
 
 
@@ -218,6 +223,21 @@ import contextvars
 root_decor = contextvars.ContextVar('root_decor', default=DefaultDecoratorMixin())
 cur_self = contextvars.ContextVar('cur_self', default=None)
 
+def whichever_order(li: list, operation):
+    """
+    Hack: try operation on all permutative orders of li until the one order does not trigger an error
+    """
+    n = len(li)
+    from itertools import permutations
+    errors = list()
+    for t in permutations(li, n):
+        try:
+            new_list = list(t)
+            return operation(new_list)
+        except Exception as e:
+            errors.append(e)
+    else:
+        raise Exception(f'All possible combinations failed {str(errors)}')
 
 class DecoratorBase(metaclass=_ModelRegistry):
     """
@@ -291,6 +311,19 @@ class DecoratorBase(metaclass=_ModelRegistry):
     export_required = False
 
     is_root = False
+
+    @property
+    def graphql_object_type(self):
+        typ = list(self._graphql_object_type)
+        assert len(typ) != 0
+
+        def op(typ):
+            base = typ[0]
+            for elem in typ[1:]:
+                base = elem(base)
+            return base
+
+        return whichever_order(typ, op)
 
 
 # class BindClass_(DecoratorBase):
@@ -415,12 +448,13 @@ class ExportRequired(DecoratorBase):
 
 class Required(ImportRequired, ExportRequired):
 
-    # @property
-    # def _graphql_object_type(self):
-    #     import graphql
-    #     # TODO: fix ordering
-    #     return graphql.GraphQLNonNull(self.decorated._graphql_object_type)
-    pass
+    @property
+    def _graphql_object_type(self):
+        import graphql
+        # TODO: fix ordering
+        yield graphql.GraphQLNonNull
+        yield from self.decorated._graphql_object_type
+    # pass
 
 class Optional(DecoratorBase):
 
@@ -505,14 +539,15 @@ class OfType(DecoratorBase):
         }
         t = self.type_cls
         if t in PY_TYPE_MAP_GQL:
-            return PY_TYPE_MAP_GQL[t]
+            yield PY_TYPE_MAP_GQL[t]
         else:
             raise TypeError(f'Failed to locate graphql type for {t.__class__}')
+        yield from self.decorated._graphql_object_type
 
     @property
     def _graphql_field_kwargs(self):
         yield from self.decorated._graphql_field_kwargs
-        yield 'type_', self._graphql_object_type
+        yield 'type_', self.graphql_object_type
 
     @property
     def _marshmallow_field_cls(self):
@@ -564,11 +599,19 @@ class Int(Integer):
 
 class IntegerTimestamp(Integer):
 
+    _long_type = None
+
+    @classmethod
+    def _get_long_type(cls):
+        if not cls._long_type:
+            from graphql import GraphQLScalarType
+            cls._long_type = GraphQLScalarType('Long')
+        return cls._long_type
+
     @property
     def _graphql_object_type(self):
-        from graphql import GraphQLScalarType
-        long_type = GraphQLScalarType('Long')
-        return long_type
+        yield self._get_long_type()
+        yield from self.decorated._graphql_object_type
 
 
 class Float(OfType):
@@ -735,9 +778,10 @@ class List(OfType):
     @property
     def _graphql_object_type(self):
         import graphql
-        return graphql.GraphQLList(
-            self.list_value.properties._graphql_object_type
+        yield graphql.GraphQLList(
+            self.list_value.properties.graphql_object_type
         )
+        yield from self.decorated._graphql_object_type
 
 
 class AttributeName(DecoratorBase):
@@ -775,12 +819,13 @@ class DocId(DecoratorBase):
     @property
     def _graphql_object_type(self):
         import graphql
-        return graphql.GraphQLNonNull(graphql.GraphQLID)
+        yield graphql.GraphQLNonNull(graphql.GraphQLID)
+        yield from self.decorated._graphql_object_type
 
     @property
     def _graphql_field_kwargs(self):
         yield from self.decorated._graphql_field_kwargs
-        yield 'type_', self._graphql_object_type
+        yield 'type_', self.graphql_object_type
 
     @classmethod
     def easy(cls, *args, **kwargs):
@@ -872,8 +917,9 @@ class Embed(OfType):
         if isinstance(type_cls, str):
             from onto.models.meta import ModelRegistry
             type_cls = ModelRegistry.get_cls_from_name(obj_type_str=type_cls)
-        from onto.models.utils import _graphql_object_type_from_attributed_class
-        return _graphql_object_type_from_attributed_class(type_cls)
+        # from onto.models.utils import _graphql_object_type_from_attributed_class
+        yield type_cls.get_graphql_object_type()
+        yield from self.decorated._graphql_object_type
 
     # @property
     # def _graphql_(self):

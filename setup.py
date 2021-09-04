@@ -54,7 +54,8 @@ setuptools.setup(
         # "google-cloud-resource-manager",
         "gitpython",
         "ProxyTypes",
-        "pony"
+        "pony",
+        "pymonad"
     ],
     extras_require={
         'firestore': [
@@ -68,7 +69,8 @@ setuptools.setup(
         'leancloud': ['leancloud'],
         'celery': ['celery'],
         'jsonrpc': ['jsonrpcclient[requests]', 'Flask-JSONRPC'],
-        'graphql': ['websockets']
+        'graphql': ['websockets'],
+        'rest_api': ['starlette', 'python-multipart']
     }
     # entry_points = {
     #     'console_scripts': ['`onto`=scripts.deploy:deploy_all'],

@@ -1,6 +1,6 @@
 import functools
 
-from .meta import SerializableMeta
+from .meta import SerializableMeta, AttributedMeta
 from ..registry import ModelRegistry
 from .mixin import Importable, NewMixin, Exportable
 from .utils import _collect_attrs, _schema_cls_from_attributed_class
@@ -24,6 +24,22 @@ class PonyStore:
         attr = _self._adict_[item]
         inner = _self._vals_
         return inner[attr]
+
+
+class AttributedMixin(metaclass=AttributedMeta):
+    """ helper to declare mixin classes with attributes
+    Example:
+        class LatLonMixin(AttributedMixin):
+            lat = attrs.float
+            lon = attrs.float
+
+        class Location(LatLonMixin, DomainModel):
+            name = attrs.string
+
+        # Location will have attributes lat, lon, and name.
+
+    """
+    pass
 
 
 class BaseRegisteredModel(metaclass=ModelRegistry):
@@ -54,6 +70,9 @@ class BaseRegisteredModel(metaclass=ModelRegistry):
     def _get_parents(cls):
         return {cls.get_cls_from_name(c_str)
                 for c_str in cls._get_parents_str(cls.__name__)}
+
+    get_parents = _get_parents
+    get_subclasses = _get_subclasses
 
 
 class SchemedBase:
@@ -147,7 +166,105 @@ class Immutable(BaseRegisteredModel, Schemed, NewMixin, Exportable):
     pass
 
 
-class Serializable(Mutable, metaclass=SerializableMeta):
+class GraphqlMixin(BaseRegisteredModel):
+
+    _union = False
+
+    @staticmethod
+    def _convert(key, attr, is_input):
+        if not attr.properties.is_internal:
+            from onto.attrs.unit import MonadContext
+            context = MonadContext.context()
+            context = context.graphql_capable(is_input=is_input)
+            context = context.attribute_name(key)
+
+            annotation = attr.annotation
+            context = context.annotate(annotation)
+
+            context = context.data_key_from_name()
+            context = context.optional
+
+            with context:
+                return attr.properties.data_key, attr.graphql_field
+
+    @classmethod
+    def __fields_gen(cls, is_input):
+        for key, attr in _collect_attrs(cls):
+            # TODO: check to see if .attribute_name(key).data_key(key) should be removed
+            if ret := cls._convert(key=key, attr=attr, is_input=is_input):
+                yield ret
+        else:
+            yield from ()
+
+    @classmethod
+    def _get_union_graphql_interface(cls):
+        """
+        本层
+        """
+        import graphql
+
+        def resolve_type(__self, value, _type):
+            raise NotImplementedError
+
+        fields = lambda: dict(cls.__fields_gen(is_input=is_input))
+        type_name = cls.__name__
+
+        ot = graphql.GraphQLInterfaceType(
+            name=type_name,
+            resolve_type=resolve_type,
+            fields=fields,
+        )
+        return ot
+
+    @classmethod
+    def get_graphql_interfaces(cls):
+        for parent in cls.get_parents():
+            if issubclass(parent, GraphqlMixin):
+                yield from parent.get_graphql_interfaces()
+
+        if cls._union:
+            yield cls._get_union_graphql_interface()
+
+        yield from ()  # Empty case
+
+    @classmethod
+    @functools.lru_cache(maxsize=None)
+    def get_graphql_object_type(cls, is_input=False):
+
+        if unwrap := getattr(cls.Meta, "unwrap", None):
+
+            key, attr = next((k, v) for k, v in _collect_attrs(cls) if k == unwrap)
+            data_key, graphql_field = cls._convert(key=key, attr=attr, is_input=is_input)
+
+            from graphql import GraphQLScalarType
+            assert isinstance(graphql_field.type, GraphQLScalarType)
+
+            this_type = GraphQLScalarType(
+                cls.__name__,
+                serialize=graphql_field.type.serialize,
+                parse_value=graphql_field.type.parse_value,
+                parse_literal=graphql_field.type.parse_literal,
+            )
+            return this_type
+        else:
+            import graphql
+            if not is_input:
+                base = graphql.GraphQLObjectType
+                type_name = cls.__name__
+            else:
+                base = graphql.GraphQLInputObjectType
+                type_name = f'{cls.__name__}Input'
+
+            fields = lambda: dict(cls.__fields_gen(is_input=is_input))
+
+            ot = base(
+                type_name,
+                fields=fields
+            )
+            return ot
+
+
+class Serializable(Mutable, GraphqlMixin, metaclass=SerializableMeta):
 
     class Meta:
         pass

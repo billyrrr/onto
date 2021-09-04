@@ -1,6 +1,6 @@
 import threading
 
-from google.cloud.firestore import DocumentReference
+# from google.cloud.firestore import DocumentReference
 
 from .collection_mixin import CollectionMixin, CollectionMemberMeta
 from .context import Context as CTX
@@ -24,7 +24,7 @@ class PersistableMixin:
             self._structure = struct_d
         # self._structure["vm_type"] = self.__class__.__name__
 
-    def __get_ref(self) -> DocumentReference:
+    def __get_ref(self) -> 'google.cloud.firestore.DocumentReference':
         return CTX.db.collection(self._struct_collection_id) \
             .document(self._structure_id)
 

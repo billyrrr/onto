@@ -6,7 +6,6 @@ from typing import Optional, Tuple
 
 # from google.cloud.firestore import DocumentSnapshot, CollectionReference
 from onto.mapper.fields import argument, OBJ_TYPE_ATTR_NAME
-from google.cloud import firestore
 from . import cmp
 import weakref
 
@@ -127,6 +126,7 @@ class ViewModelQuery(QueryBase):
             cur_where = db.firestore_client.collection_group(self.ref.last)
         else:
             q = db._doc_ref_from_ref(self.ref)
+            from google.cloud import firestore
             cur_where = firestore.Query(parent=q)
         if len(self.arguments) != 0:
             raise ValueError

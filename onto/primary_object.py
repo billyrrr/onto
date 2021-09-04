@@ -1,6 +1,6 @@
 import warnings
 
-from google.cloud.firestore_v1 import Transaction
+# from google.cloud.firestore_v1 import Transaction
 
 from onto.collection_mixin import CollectionMixin, CollectionMemberMeta
 from onto.firestore_object import FirestoreObject
@@ -128,7 +128,7 @@ class PrimaryObject(FirestoreObject, QueryMixin, CollectionMixin,
 
     @classmethod
     def get(cls, *, doc_ref_str=None, doc_ref=None, doc_id=None,
-            transaction: Transaction=None):
+            transaction: 'google.cloud.firestore_v1.Transaction'=None):
         """ Returns the instance from doc_id.
 
         :param doc_ref_str: DocumentReference path string

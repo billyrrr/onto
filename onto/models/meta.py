@@ -5,20 +5,17 @@ from onto.registry import ModelRegistry
 # DEFAULT_FIELDS = {"obj_type", "doc_id", "doc_ref"}
 
 
-class SerializableMeta(ModelRegistry):
-    """
-    Metaclass for serializable models.
-    """
-
+class AttributedMeta(type):
     @classmethod
     def __collect_attributes(mcs, bases, attrs) -> None:
         attrs['__attributes'] = dict()
 
         for base in bases:
-            if isinstance(base, SerializableMeta):
+            if isinstance(base, AttributedMeta):
+                base_attributes = base.__dict__['__attributes']
                 attrs['__attributes'] = dict(
                     list(attrs['__attributes'].items()) +
-                    list(base.__dict__['__attributes'].items())
+                    list(base_attributes.items())  # TODO: debug use case for overridden attribute from super
                 )
 
         def is_attribute(a):
@@ -32,6 +29,16 @@ class SerializableMeta(ModelRegistry):
 
     def __new__(mcs, name, bases, attrs):
         mcs.__collect_attributes(bases, attrs)
+        klass = super().__new__(mcs, name, bases, attrs)
+        return klass
+
+
+class SerializableMeta(AttributedMeta, ModelRegistry):
+    """
+    Metaclass for serializable models.
+    """
+
+    def __new__(mcs, name, bases, attrs):
         klass = super().__new__(mcs, name, bases, attrs)
         meta = attrs.get('Meta', None)
         if hasattr(meta, "schema_cls"):
