@@ -784,6 +784,24 @@ class List(OfType):
         yield from self.decorated._graphql_object_type
 
 
+class Enum(OfType):
+
+    from enum import Enum as _Enum
+
+    def __init__(self, enum_cls: typing.Type[_Enum], *args, **kwargs):
+        self._enum_cls = enum_cls
+        super().__init__(*args, type_cls=str, **kwargs)
+
+    @property
+    def _graphql_object_type(self):
+        import graphql
+        yield graphql.GraphQLEnumType(
+            self._enum_cls.__name__,
+            values=self._enum_cls
+        )
+        yield from self.decorated._graphql_object_type
+
+
 class AttributeName(DecoratorBase):
 
     @property
@@ -873,10 +891,6 @@ class DataKeyFromName(DataKey):
             transformation = camel
         self._transformation = transformation
         super().__init__(*args, **kwargs)
-
-
-class Enum(DecoratorBase):
-    pass
 
 
 class NoneAsMissing(DecoratorBase):
@@ -980,24 +994,6 @@ class GraphqlCapable(DecoratorBase):
     def __init__(self, *args, is_input, **kwargs):
         self.is_input = is_input
         super().__init__(*args, **kwargs)
-
-    @property
-    def _graphql_field_cls(self):
-        import graphql
-        if not self.is_input:
-            from functools import partial
-            field_base = graphql.GraphQLField
-            # def resolver(attributed, resolve_info):
-            #     return attributed.graphql_field_resolve(resolve_info)
-                # raise ValueError
-            from onto.helpers.graphql import default_field_resolver
-
-            field_base = partial(
-                field_base,
-                resolve=default_field_resolver)
-        else:
-            field_base = graphql.GraphQLInputField
-        return field_base
 
     @property
     def _graphql_field_kwargs(self):

@@ -55,7 +55,8 @@ setuptools.setup(
         "gitpython",
         "ProxyTypes",
         "pony",
-        "pymonad"
+        "pymonad",
+        "aiokafka",
     ],
     extras_require={
         'firestore': [

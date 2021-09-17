@@ -1,3 +1,4 @@
+import enum
 import typing
 from collections import namedtuple
 from functools import partial, lru_cache
@@ -288,7 +289,28 @@ class AttributeBase(PropertyMixin, AttributeMixin):
         arguments = dict(self.properties._graphql_field_kwargs)
         # args = [arguments['type_']]
         # del arguments['type_']
-        field = self.properties._graphql_field_cls(
+        import graphql
+        if not self.properties.is_input:
+            from functools import partial
+            field_base = graphql.GraphQLField
+
+            def resolve_info(obj, context):
+                value = getattr(obj, self.properties.name)
+                if isinstance(value, enum.Enum):
+                    value = value.value
+                return value
+
+            # def resolver(attributed, resolve_info):
+            #     return attributed.graphql_field_resolve(resolve_info)
+                # raise ValueError
+            from onto.helpers.graphql import default_field_resolver
+
+            field_base = partial(
+                field_base,
+                resolve=resolve_info)
+        else:
+            field_base = graphql.GraphQLInputField
+        field = field_base(
             # *args,
             **arguments
         )

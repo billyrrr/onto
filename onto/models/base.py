@@ -170,6 +170,19 @@ class GraphqlMixin(BaseRegisteredModel):
 
     _union = False
 
+    def graphql_field_resolve(self, info: 'GraphQLResolveInfo', *args):
+        from graphql import GraphQLResolveInfo
+        info: GraphQLResolveInfo
+        field_name = info.field_name
+        return self.graphql_representation.get(field_name, None)
+
+    import functools
+
+    @property
+    @functools.lru_cache(maxsize=None)
+    def graphql_representation(self):
+        return self.to_dict()
+
     @staticmethod
     def _convert(key, attr, is_input):
         if not attr.properties.is_internal:
