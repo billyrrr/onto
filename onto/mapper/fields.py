@@ -162,23 +162,27 @@ class DocIdField(fields.Function, Field):
             else:
                 return res
 
-        # def deserialize(value):
-        #     """ deserialize: A callable from which to retrieve the value.
-        #     The function must take a single argument ``value`` which is the value
-        #     to be deserialized. It can also optionally take a ``context`` argument,
-        #     which is a dictionary of context variables passed to the deserializer.
-        #     If no callable is provided then ```value``` will be passed through
-        #     unchanged.
-        #
-        #     :param value:
-        #     :return:
-        #     """
-        #     return value[self.data_key]
+        def deserialize(value):
+            """ deserialize: A callable from which to retrieve the value.
+            The function must take a single argument ``value`` which is the value
+            to be deserialized. It can also optionally take a ``context`` argument,
+            which is a dictionary of context variables passed to the deserializer.
+            If no callable is provided then ```value``` will be passed through
+            unchanged.
+
+            :param value:
+            :return:
+            """
+            data_key = self.data_key
+            if data_key not in value:
+                return fields.missing_
+            else:
+                return value[data_key]
 
         super().__init__(
             *args,
             serialize=serialize,
-            deserialize=None,
+            deserialize=deserialize,
             **kwargs
         )
 

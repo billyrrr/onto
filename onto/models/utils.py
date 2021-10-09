@@ -139,7 +139,7 @@ def _graphql_field_from_attr(attr, input=False):
     from onto import attrs
     if attr.__class__ is attrs.attribute.EmbeddedAttribute:
         e_cls = attr.type_cls
-        e_graphql = e_cls.get_graphql_object_type()
+        e_graphql = e_cls.get_graphql_object_type(is_input=input)
         field = field_base(
             type_=f(e_graphql),
             description=attr.doc

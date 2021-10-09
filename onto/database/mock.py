@@ -18,6 +18,16 @@ class MockReference(Reference):
 
 class MockDatabase(Database):
 
+    class Comparators(Database.Comparators):
+
+        eq = lambda a, b: a == b
+        gt = lambda a, b: a > b
+        ge = lambda a, b: a >= b
+        lt = lambda a, b: a < b
+        le = lambda a, b: a <= b
+        contains = lambda a, b: a.has(b)  # TODO; check
+        _in = lambda a, b: a in b
+
     @classmethod
     def listener(cls):
         return MockListener
@@ -48,6 +58,14 @@ class MockDatabase(Database):
         """
         del cls.d[str(ref)]
 
+    @classmethod
+    def query(cls, q):
+        qualifier = q._to_qualifier()
+        for k, v in cls.d.items():
+            if qualifier(v):
+                yield k, v
+        yield from ()
+
 
 class MockListener(Listener):
     from asyncio.queues import Queue
@@ -77,3 +95,4 @@ class MockListener(Listener):
         async for ref, snapshot in cls._sub(col):
             await source._invoke_mediator(
                 func_name='on_create', ref=ref, snapshot=snapshot)
+

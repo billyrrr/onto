@@ -32,3 +32,5 @@ class MockDomainModelSource(Source):
         _awaitable = self.dm_cls._datastore().listener().listen(col=self.dm_cls._get_collection_name(), source=self)
         _ = loop.create_task(_awaitable)
 
+    def get_all(self):
+        return self.dm_cls._datastore().listener().get_all(col=self.dm_cls._get_collection_name())

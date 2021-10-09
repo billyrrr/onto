@@ -855,6 +855,28 @@ class DocId(DecoratorBase):
         return fields.DocIdField
 
 
+
+class NodeId(DecoratorBase):
+    """
+    For GraphQL ID
+    """
+
+    @property
+    def _graphql_object_type(self):
+        import graphql
+        yield graphql.GraphQLNonNull(graphql.GraphQLID)
+        yield from self.decorated._graphql_object_type
+
+    @property
+    def _graphql_field_kwargs(self):
+        yield from self.decorated._graphql_field_kwargs
+        yield 'type_', self.graphql_object_type
+
+    @classmethod
+    def easy(cls, *args, **kwargs):
+        return cls.easy_property(*args, **kwargs)
+
+
 class DataKey(DecoratorBase):
 
     @property
@@ -932,7 +954,7 @@ class Embed(OfType):
             from onto.models.meta import ModelRegistry
             type_cls = ModelRegistry.get_cls_from_name(obj_type_str=type_cls)
         # from onto.models.utils import _graphql_object_type_from_attributed_class
-        yield type_cls.get_graphql_object_type()
+        yield type_cls.get_graphql_object_type(is_input=self.is_input)
         yield from self.decorated._graphql_object_type
 
     # @property

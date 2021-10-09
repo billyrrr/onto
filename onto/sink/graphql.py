@@ -148,7 +148,7 @@ class GraphQLSink(Sink):
             _graphql_object_type_from_attributed_class
         attributed = self.view_model_cls
 
-        ot = attributed.get_graphql_object_type()
+        ot = attributed.get_graphql_object_type(is_input=False)
 
         if self.many:
             ot = graphql.GraphQLList(type_=ot)
@@ -226,7 +226,7 @@ class GraphQLMutationSink(GraphQLSink):
         from gql import mutate
 
         async def f(parent, info, **kwargs):
-            res = self._invoke_mediator(func_name='mutate', **kwargs)
+            res = await self._invoke_mediator(func_name='mutate', **kwargs)
             return res
 
         name = self.sink_name

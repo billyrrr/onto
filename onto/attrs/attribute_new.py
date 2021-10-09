@@ -295,7 +295,7 @@ class AttributeBase(PropertyMixin, AttributeMixin):
             field_base = graphql.GraphQLField
 
             def resolve_info(obj, context):
-                value = getattr(obj, self.properties.name)
+                value = getattr(obj, self.properties.name, None)
                 if isinstance(value, enum.Enum):
                     value = value.value
                 return value

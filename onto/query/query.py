@@ -160,6 +160,22 @@ class DomainModelQuery(QueryBase):
         return self.__class__(
             ref=self.ref, parent=self.parent, arguments=arguments)
 
+    def _to_qualifier(self):
+        """ Returns a greedy qualifier. Performance aside, it should work.
+        """
+        condition = self.parent.get_obj_type_condition()
+        arguments = [ condition, *self.arguments ]
+        def qualifier(snapshot):
+            for (key, comparator, val) in arguments:
+                if key not in snapshot:
+                    continue
+                a = snapshot[key]
+                if not comparator(a, val):
+                    return False
+            return True
+        return qualifier
+
+
     def _to_firestore_query(self):
         """ Returns a query with parent=cls._get_collection(), and
                 limits to obj_type of subclass of cls.

@@ -73,7 +73,7 @@ def snapshot_to_obj(
     # if not snapshot.exists:
     #     return None
 
-    d = snapshot.to_dict()
+    d = snapshot.to_dict() if not isinstance(snapshot, dict) else snapshot  # TODO: improve
     obj_cls = super_cls
 
     if "obj_type" in d:
