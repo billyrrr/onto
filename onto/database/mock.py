@@ -43,7 +43,7 @@ class MockDatabase(Database):
 
     @classmethod
     def get(cls, ref: Reference, transaction=_NA):
-        return cls.d[str(ref)]
+        return Snapshot(cls.d[str(ref)])
 
     update = set
     create = set
@@ -63,7 +63,7 @@ class MockDatabase(Database):
         qualifier = q._to_qualifier()
         for k, v in cls.d.items():
             if qualifier(v):
-                yield k, v
+                yield MockReference.from_str(k), Snapshot(v)
         yield from ()
 
 
