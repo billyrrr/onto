@@ -14,7 +14,6 @@ from collections import namedtuple
 graph_schema = namedtuple('graph_schema', ['op_type', 'name', 'graphql_object_type', 'args'])
 import graphql
 
-
 class GraphQLSink(Sink):
 
     _protocol_cls = Protocol
@@ -121,8 +120,10 @@ class GraphQLSink(Sink):
             annotation = param.annotation
             import inspect
             if annotation is inspect._empty:
-                raise ValueError(f'parameter {param} is not annotated'
-                                 'for conversion to graphql argument')
+                import warnings
+                warnings.warn(f'parameter {param} is not annotated'
+                                 ' for conversion to graphql argument')
+                return None
             return annotation
 
         from inspect import signature
@@ -131,11 +132,15 @@ class GraphQLSink(Sink):
         # param_d.popitem(last=False)  # Pop self argument
         # NOTE: param_d.popitem(last=False) may not always pop self argument
         for name, param in param_d.items():
-            yield name, _annotation_type_of(param)
+            typ = _annotation_type_of(param)
+            if typ is not None:
+                yield name, typ
+        yield from ()
 
     def _args_of_f(self, f):
         for name, annotated_type in self._parameters_for(f):
             yield name, self._param_to_graphql_arg(annotated_type=annotated_type)
+        yield from ()
 
     def _args_of(self, rule):
         f = self._f_of_rule(func_name=rule)
@@ -169,7 +174,7 @@ class GraphQLSink(Sink):
     
     @staticmethod
     def _get_user(info):
-        return info.context.request.user
+        return info.context['request'].user
 
 
 class GraphQLSubscriptionSink(GraphQLSink):
@@ -179,8 +184,16 @@ class GraphQLSubscriptionSink(GraphQLSink):
     def _register_op(self):
         from gql import subscribe
         async def f(parent, info, **kwargs):
+            kwargs = {
+                'user': self._get_user(info),
+                'info': info
+            }
             # Register topic
-            topic_name = self._invoke_mediator(func_name='add_topic', **kwargs)
+            topic_name = await self._invoke_mediator(func_name='add_topic', **kwargs)
+
+            # Perform before_subscription
+            await self._invoke_mediator(func_name='before_subscription', **kwargs)
+
             # Listen to topic
             import asyncio
             q: asyncio.Queue = self.qs[topic_name]
@@ -190,7 +203,7 @@ class GraphQLSubscriptionSink(GraphQLSink):
                 yield {
                     self.sink_name:
                         self._invoke_mediator(func_name='on_event',
-                                              event=event)
+                                              event=event, **kwargs)
                 }
                 q.task_done()
 
@@ -211,9 +224,12 @@ class GraphQLQuerySink(GraphQLSink):
     def _register_op(self):
         from gql import query
         extra_args = set()
-        if '__user' in extra_args:
-            kwargs = {__user: self._get_user(info), **kwargs}
+
         async def f(parent, info, **kwargs):
+            kwargs = {
+                'user': self._get_user(info),
+                'info': info
+            }
             res = await self._invoke_mediator(func_name='query', **kwargs)
             return res
 
@@ -221,9 +237,6 @@ class GraphQLQuerySink(GraphQLSink):
         f.__name__ = name
         query(f)
         args = dict(self._args_of('query'))
-        if '__user' in args:
-            extra_args.add('__user')
-        args = {k: v for k, v in args.items() if not str(k).startswith('__')}
         return name, args
 
 
@@ -236,8 +249,10 @@ class GraphQLMutationSink(GraphQLSink):
 
         extra_args = set()
         async def f(parent, info, **kwargs):
-            if '__user' in extra_args:
-                kwargs = { __user: self._get_user(info), **kwargs }
+            kwargs = {
+                'user': self._get_user(info),
+                'info': info
+            }
             res = await self._invoke_mediator(func_name='mutate', **kwargs)
             return res
 
@@ -245,10 +260,6 @@ class GraphQLMutationSink(GraphQLSink):
         f.__name__ = name
         mutate(f, snake_argument=False)
         args = dict(self._args_of('mutate'))
-        if '__user' in args:
-            extra_args.add('__user')
-        # TODO: NOTE: __ fields are filtered out
-        args = { k: v for k, v in args.items() if not str(k).startswith('__')}
         return name, args
 
 
