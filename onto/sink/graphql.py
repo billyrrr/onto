@@ -74,7 +74,7 @@ class GraphQLSink(Sink):
         }
 
         new_kwargs = {
-            k:self._maybe_deserialize(val=v, annotated_type=annotation_d[k])
+            k:self._maybe_deserialize(val=v, annotated_type=annotation_d[k]) if k in annotation_d else v
             for k, v in kwargs.items()
         }
 
@@ -186,7 +186,8 @@ class GraphQLSubscriptionSink(GraphQLSink):
         async def f(parent, info, **kwargs):
             kwargs = {
                 'user': self._get_user(info),
-                'info': info
+                'info': info,
+                **kwargs,
             }
             # Register topic
             topic_name = await self._invoke_mediator(func_name='add_topic', **kwargs)
@@ -228,7 +229,8 @@ class GraphQLQuerySink(GraphQLSink):
         async def f(parent, info, **kwargs):
             kwargs = {
                 'user': self._get_user(info),
-                'info': info
+                'info': info,
+                **kwargs,
             }
             res = await self._invoke_mediator(func_name='query', **kwargs)
             return res
@@ -251,7 +253,8 @@ class GraphQLMutationSink(GraphQLSink):
         async def f(parent, info, **kwargs):
             kwargs = {
                 'user': self._get_user(info),
-                'info': info
+                'info': info,
+                **kwargs
             }
             res = await self._invoke_mediator(func_name='mutate', **kwargs)
             return res

@@ -39,7 +39,9 @@ class AttributedMixin(metaclass=AttributedMeta):
         # Location will have attributes lat, lon, and name.
 
     """
-    pass
+    @classmethod
+    def attrs(cls):
+        return cls.__attributes
 
 
 class BaseRegisteredModel(metaclass=ModelRegistry):

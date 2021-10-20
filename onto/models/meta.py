@@ -27,6 +27,8 @@ class AttributedMeta(type):
                 attrs['__attributes'][attr_name] = a
                 del attrs[attr_name]
 
+        attrs['x'] = lambda attr_name: attrs['__attributes'][attr_name]
+
     def __new__(mcs, name, bases, attrs):
         mcs.__collect_attributes(bases, attrs)
         klass = super().__new__(mcs, name, bases, attrs)
