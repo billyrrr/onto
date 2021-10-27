@@ -181,6 +181,10 @@ class GraphQLSubscriptionSink(GraphQLSink):
 
     op_type = 'Subscription'
 
+    @staticmethod
+    def _get_user(info):
+        return info.context.socket.user
+
     def _register_op(self):
         from gql import subscribe
         async def f(parent, info, **kwargs):
