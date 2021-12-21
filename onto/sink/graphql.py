@@ -66,7 +66,19 @@ class GraphQLSink(Sink):
         return f
 
     def _invoke_mediator(self, *args, func_name, **kwargs):
-        f = self._f_of_rule(func_name=func_name)
+
+        async def trivial():
+            """
+            A trivial function to prevent calling await on None
+            """
+            return None
+
+        try:
+            f = self._f_of_rule(func_name=func_name)
+        except ValueError as e:
+            import logging
+            logging.exception('mediator not located')
+            return trivial()
 
         annotation_d = {
             k: v
@@ -83,7 +95,8 @@ class GraphQLSink(Sink):
         except Exception as e:
             import logging
             logging.exception('_invoke mediator failed for graphql subscription')
-            return None  # TODO: return something else
+
+            return trivial() # TODO: return something else
 
     def __init__(self, view_model_cls: Type[ViewModel], camelize=True, many=False):
         """
@@ -183,7 +196,7 @@ class GraphQLSubscriptionSink(GraphQLSink):
 
     @staticmethod
     def _get_user(info):
-        return info.context.socket.user
+        return info.context.user
 
     def _register_op(self):
         from gql import subscribe

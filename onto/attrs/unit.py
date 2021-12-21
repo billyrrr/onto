@@ -9,6 +9,7 @@ import contextlib
 from collections import defaultdict
 
 import typing
+from functools import cached_property
 
 from onto.common import _NA
 
@@ -325,6 +326,7 @@ class DecoratorBase(metaclass=_ModelRegistry):
 
         return whichever_order(typ, op)
 
+# _vals_
 
 # class BindClass_(DecoratorBase):
 #
@@ -410,7 +412,7 @@ class DefaultValue(DecoratorBase):
     @property
     def _marshmallow_field_kwargs(self):
         yield from self.decorated._marshmallow_field_kwargs
-        yield 'default_value', self.default_value
+        yield 'missing', self.default_value
 
 # class DefaultParamsMixin:
 #     import_enabled = True
@@ -552,11 +554,17 @@ class OfType(DecoratorBase):
     @property
     def _marshmallow_field_cls(self):
         from onto.mapper import fields
+        from marshmallow import fields as marshmallow_fields
+        from datetime import date, time, datetime, timedelta
         PY_TYPE_MARSHMALLOW_FIELD = {
             str: fields.String,
             int: fields.Integer,
             float: fields.Float,
-            bool: fields.Boolean
+            bool: fields.Boolean,
+            date: marshmallow_fields.Date,
+            time: marshmallow_fields.Time,
+            timedelta: marshmallow_fields.TimeDelta,
+            datetime: marshmallow_fields.DateTime
         }
         t = self.type_cls
 
@@ -567,6 +575,42 @@ class OfType(DecoratorBase):
             # raise TypeError(f'Failed to locate marshmallow field def for {t}')
 
 
+class Pony(DecoratorBase):
+    @classmethod
+    def easy(cls, *args, **kwargs):
+        return cls.easy_property(*args, **kwargs)
+
+    def __init__(self, *args, **kwargs):
+        self.is_pony = True
+        super().__init__(*args, **kwargs)
+
+    def _make_pony_attribute_cls(self):
+        from pony.orm import Discriminator, Required, Optional
+        if self.decorated.__class__.__name__ == "Discriminator":
+            # TODO: make better
+            return Discriminator
+        if self.decorated.import_required:
+            return Required
+        else:
+            return Optional
+
+    # @lru_cache(maxsize=None)
+    def _make_pony_attribute(self):
+        column_name = self.decorated.data_key
+        py_type = self.decorated.type_cls
+        is_required = self.decorated.import_required
+        _pony_attribute_cls = self._make_pony_attribute_cls()
+        _pony_attribute = _pony_attribute_cls(
+            py_type, is_required=is_required, column=column_name)
+        return _pony_attribute
+
+    @cached_property
+    def _pony_attribute(self):
+        return self._make_pony_attribute()
+
+    @property
+    def is_collection(self):
+        return self._pony_attribute.is_collection
 
 
 class String(OfType):

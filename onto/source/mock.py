@@ -27,10 +27,14 @@ class MockDomainModelSource(Source):
 
     import asyncio
 
+    def _get_awaitable(self):
+        return self.dm_cls._datastore().listener().listen(col=self.dm_cls._get_collection_name(), source=self)
+
     def _register(self, loop: asyncio.BaseEventLoop):
         from onto.context import Context as CTX
-        _awaitable = self.dm_cls._datastore().listener().listen(col=self.dm_cls._get_collection_name(), source=self)
+        _awaitable = self._get_awaitable()
         _ = loop.create_task(_awaitable)
+
 
     def get_all(self):
         return self.dm_cls._datastore().listener().get_all(col=self.dm_cls._get_collection_name())

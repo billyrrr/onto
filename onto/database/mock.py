@@ -70,6 +70,10 @@ class MockDatabase(Database):
 class MockListener(Listener):
     from asyncio.queues import Queue
     from collections import defaultdict
+    #
+    # def create_queue():
+    #     from onto.context import Context as CTX
+
     qs = defaultdict(Queue)
 
     @classmethod

@@ -2,6 +2,10 @@ from onto.source.rest import Source, RestProtocol
 
 
 class StarletteConnector(Source):
+    """
+    @some_connector.triggers.route('/callback', ('POST',))
+    async def some_method(self, request):
+    """
 
     _protocol_cls = RestProtocol
 

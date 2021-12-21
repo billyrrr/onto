@@ -34,7 +34,7 @@ class Field(fields.Field):
     """
 
     def __init__(self,
-                 *args, missing=None, default=fields.missing_,
+                 *args, default=fields.missing_,
                  **kwargs):
         super().__init__(*args, default=default, **kwargs)
 

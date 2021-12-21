@@ -291,7 +291,8 @@ class Serializable(Mutable, GraphqlMixin, metaclass=SerializableMeta):
     _schema_base = Schema
 
     def _init__attrs(self):
-        self._attrs = SimpleStore()
+        if not getattr(self, '_attrs', None):
+            self._attrs = SimpleStore()
         from onto.attrs.unit import MonadContext
         with MonadContext.context().init_options(initialize=False, initializer=None):
             for key, attr in _collect_attrs(cls=self.__class__):
