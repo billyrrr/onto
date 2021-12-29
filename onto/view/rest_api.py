@@ -405,7 +405,10 @@ class ViewMediator(ViewMediatorBase):
             def get(self, *args, **kwargs):
                 instance = _self.view_model_cls.get(*args, **kwargs)
                 # time.sleep(1)  # TODO: delete after implementing sync
-                return jsonify(instance.to_view_dict())
+                if isinstance(instance, dict):
+                    return jsonify(instance)
+                else:
+                    return jsonify(instance.to_view_dict())
 
         return GetView
 

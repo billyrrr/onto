@@ -291,7 +291,7 @@ class NewMixin:
             else:
                 if field.required:
                     raise errors.DefaultNotAllowedError
-                v = field.default_value
+                v = getattr(field, 'default_value', None)
                 if v != fields.allow_missing:
                     _with_dict[key] = v
 
