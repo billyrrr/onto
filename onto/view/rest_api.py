@@ -13,6 +13,8 @@ class ParamsParams(Serializable):
     page_size = attrs.int
     current = attrs.int
 
+    def append_conditions(self, q):
+        return q
 
 class Sort(Serializable):
     foo = attrs.string
@@ -457,12 +459,13 @@ class ViewMediator(ViewMediatorBase):
                 params_d = json.loads(params_str)
                 sort_d = json.loads(sort_str)
                 filter_d = json.loads(filter_str)
-                params = Params.from_dict({
+                params_cls = getattr( _self.view_model_cls, 'params', Params )
+                params = params_cls.from_dict({
                     'params': params_d,
                     'sort': sort_d,
                     'filter': filter_d,
                 })
-                result = list(_self.view_model_cls.get_many())
+                result = list(_self.view_model_cls.get_many(params=params))
                 paginated = _self.paginated_query_cls.new(
                     data=result,
                     total=0,
