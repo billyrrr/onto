@@ -133,6 +133,26 @@ class ViewMediator(ViewMediatorBase):
         )
         self.rule_view_cls_mapping[(rule, 'POST')] = list_post_view
 
+    def add_list_post_many(self, rule=None, list_post_view=None):
+        """
+        Add POST operation for resource to many instances to a list
+                of instances
+
+        :param rule: flask url rule
+        :param list_post_view: Flask View
+        :return:
+        """
+        if list_post_view is None:
+            list_post_view = self._default_list_post_many_view()
+        name = self.view_model_cls.__name__ + "ListPostManyView"
+        assert rule is not None
+        self.app.add_url_rule(
+            rule,
+            view_func=list_post_view.as_view(name=name),
+            methods=['POST']
+        )
+        self.rule_view_cls_mapping[(rule, 'POST')] = list_post_view
+
     def add_instance_put(self, rule=None, instance_put_view=None):
         """
         Add POST operation for resource to add an instance to a list
@@ -238,6 +258,54 @@ class ViewMediator(ViewMediatorBase):
                     from flask import Response
                     return Response(status=204)
         return PostView
+
+    def _default_list_post_many_view(_self):
+        """ Returns a default flask view to handle POST to a list of instances
+
+        """
+
+        class PostManyView(SwaggerView):
+
+            tags = [_self.default_tag]
+
+            description = "Adds many instances to a list "
+
+            responses = {
+                    204: {
+                        "description": description,
+                        "schema": None
+                    }
+                }
+
+            parameters = [
+                    {
+                        "name": "doc_id",
+                        "in": "path",
+                        "type": "string",
+                        "required": True,
+                    },
+                {
+                    "name": "body",
+                    "in": "body",
+                    "required": True,
+                    "schema": {
+                        'type': 'array',
+                        'items': _self.view_model_cls.get_schema_cls(),
+                    }
+                }
+                ]
+
+            def post(self, *args, **kwargs):
+                obj = _self.mutation_cls.mutate_create_many(
+                    **kwargs,
+                    data=request.json
+                )
+                if obj is not None:
+                    return jsonify(obj.to_dict())
+                else:
+                    from flask import Response
+                    return Response(status=204)
+        return PostManyView
 
     def _default_instance_patch_view(_self):
         """ Returns a default flask view to handle PATCH to an instance
