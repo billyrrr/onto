@@ -1,11 +1,22 @@
 from onto.source.base import Source
 
 
-async def _kafka_subscribe(topic_name, callback):
+async def _kafka_subscribe(topic_name, callback, bootstrap_servers='kafka.default.svc.cluster.local:9092'):
     from aiokafka import AIOKafkaConsumer
+
+    def key_deserializer(v: bytes):
+        return v.decode("utf-8")
+
+    def value_deserializer(v: bytes):
+        import json
+        s = v.decode('utf-8')
+        return json.loads(s)
+
     consumer = AIOKafkaConsumer(
         topic_name,
-        bootstrap_servers='10.10.8.140:9092',
+        bootstrap_servers=bootstrap_servers,
+        key_deserializer=key_deserializer,
+        value_deserializer=value_deserializer
         # group_id="my-group"
     )
     # Get cluster layout and join group `my-group`
@@ -14,7 +25,7 @@ async def _kafka_subscribe(topic_name, callback):
     try:
         # Consume messages
         async for msg in consumer:
-            callback(message=msg)
+            await callback(message=msg)
             # print("consumed: ", msg.topic, msg.partition, msg.offset,
             #       msg.key, msg.value, msg.timestamp)
     except Exception as e:
@@ -47,5 +58,5 @@ class KafkaSource(Source):
 
     async def _register(self):
         from functools import partial
-        f = partial(self._invoke_mediator, func_name='on_topic')
+        f = partial(self._invoke_mediator_async, func_name='on_topic')
         await _kafka_subscribe(topic_name=self.topic_name, callback=f)

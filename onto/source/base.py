@@ -21,7 +21,7 @@ class Source(SourceBase):
 
     _protocol_cls = Protocol
 
-    def __init__(self):
+    def __init__(self) -> object:
         """ Initializes a ViewMediator to declare protocols that
                 are called when the results of a query change. Note that
                 mediator.start must be called later.

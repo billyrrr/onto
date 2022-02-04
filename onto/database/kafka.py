@@ -36,35 +36,38 @@ class KafkaReference(Reference):
         return str(self)
 
 
-class KafkaDatabase(Database):
+class KafkaReadDatabase(Database):
+
+    @classmethod
+    def listener(cls):
+        from onto.database.utils import GenericListener
+        return GenericListener
 
     bootstrap_servers = None
 
-    @classmethod
-    @functools.lru_cache(maxsize=None)
-    def kafka_producer(cls) -> kafka.KafkaProducer:
-        from kafka import KafkaProducer
-        producer = KafkaProducer(bootstrap_servers=[cls.bootstrap_servers])
-        return producer
+    d = dict()
 
     @classmethod
-    def set(cls, ref: Reference, snapshot: Snapshot, transaction=_NA,
-            **kwargs):
-        d = snapshot.to_dict()
-        import json
-        s = json.dumps(d)
-        b = s.encode(encoding='utf-8')
-        bk = ref.id.encode(encoding='utf-8')
-        cls.kafka_producer().send(topic=ref.collection, key=bk, value=b, **kwargs)
+    def _onto_set(cls, ref: Reference, snapshot: Snapshot, transaction=_NA):
+        cls.d[str(ref)] = snapshot.to_dict()
+        cls.listener()._pub(reference=ref, snapshot=snapshot)
+
+    @classmethod
+    def get(cls, ref: Reference, transaction=_NA):
+        return Snapshot(cls.d[str(ref)])
 
     update = set
     create = set
 
     @classmethod
     def delete(cls, ref: Reference, transaction=_NA):
-        cls.kafka_producer().send(topic=ref.collection, key=ref.id, value=None)
+        """ Note: this only deletes one instance that has _doc_id == ref.last
 
-    ref = KafkaReference()
+        :param ref:
+        :param transaction:
+        :return:
+        """
+        del cls.d[str(ref)]
 
 
 class KafkaSnapshot(Snapshot):

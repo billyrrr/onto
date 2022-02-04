@@ -118,7 +118,8 @@ class GraphQLSink(Sink):
         self.many = many
         super().__init__()
 
-    def _param_to_graphql_arg(self, annotated_type):
+    @staticmethod
+    def _param_to_graphql_arg(annotated_type):
         from onto.models.utils import _graphql_type_from_py
         from graphql import GraphQLArgument, GraphQLInputObjectType
         # TODO: add notes about `typing.*` not supported
@@ -245,10 +246,17 @@ class GraphQLQuerySink(GraphQLSink):
 
         async def f(parent, info, **kwargs):
             kwargs = {
-                'user': self._get_user(info),
                 'info': info,
                 **kwargs,
             }
+
+            try:
+                user = self._get_user(info)
+                kwargs['user'] = user
+            except:
+                import logging
+                logging.error('未能解析user，可能是没有装载 AuthMiddleware；程序将继续执行以兼容不需要用户的测试代码')
+
             res = await self._invoke_mediator(func_name='query', **kwargs)
             return res
 

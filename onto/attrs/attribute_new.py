@@ -294,10 +294,14 @@ class AttributeBase(PropertyMixin, AttributeMixin):
             from functools import partial
             field_base = graphql.GraphQLField
 
-            def resolve_info(obj, context):
+            from graphql import GraphQLResolveInfo
+            def resolve_info(obj, context: GraphQLResolveInfo, **kwargs):
                 value = getattr(obj, self.properties.name, None)
                 if isinstance(value, enum.Enum):
                     value = value.value
+                elif isinstance(value, Callable):
+                    f = value
+                    value = f(obj, **kwargs)
                 return value
 
             # def resolver(attributed, resolve_info):

@@ -1,6 +1,5 @@
 import contextlib
 
-
 # Attribute
 # - Serialization/Deserialization instructions
 # - Validation
@@ -12,6 +11,7 @@ import typing
 from functools import cached_property
 
 from onto.common import _NA
+
 
 class _ModelRegistry(type):
     """
@@ -36,7 +36,7 @@ class _ModelRegistry(type):
         if new_cls.__name__ in mcs._REGISTRY:
             raise ValueError(
                 "Class with name {} is declared more than once. "
-                .format(new_cls.__name__)
+                    .format(new_cls.__name__)
             )
         mcs._REGISTRY[new_cls.__name__] = new_cls
 
@@ -90,11 +90,11 @@ class Monad:
 
     # def __mul__(cls, cls_b):
     #     import types
-        # cls_r = types.new_class(
-        #     name=cls.__name__ + cls_b.__name__,
-        #     bases=(cls, cls_b),
-        # )
-        # return cls_r
+    # cls_r = types.new_class(
+    #     name=cls.__name__ + cls_b.__name__,
+    #     bases=(cls, cls_b),
+    # )
+    # return cls_r
 
     @property
     def properties(self):
@@ -130,6 +130,7 @@ class Monad:
 
         def output_wrapper(decorated):
             return self_cls(decor=decorated)
+
         try:
             f = decorator_cls.easy(decor=decor, output_wrapper=output_wrapper)
         except AttributeError:
@@ -143,7 +144,6 @@ class Monad:
 
 
 class MonadContext(Monad, contextlib.ContextDecorator):
-
     stack = list()
 
     @classmethod
@@ -151,11 +151,13 @@ class MonadContext(Monad, contextlib.ContextDecorator):
         return cls(decor=root_decor.get())
 
     def __enter__(self):
-        self.stack.append( root_decor.set(self.decor) )
+        self.stack.append(root_decor.set(self.decor))
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         root_decor.reset(self.stack.pop())
         return False
+
+
 #
 #
 # class CurSelfContext(contextlib.ContextDecorator):
@@ -195,6 +197,7 @@ class MarshmallowCapableBaseMixin:
             )
 
             return field_obj
+
         return _constructor
 
     @property
@@ -210,19 +213,23 @@ class MarshmallowCapableBaseMixin:
     def _marshmallow_field_override(self):
         yield from ()
 
+
 class GraphqlCapableMixin:
 
     @property
     def _graphql_object_type(self):
         yield from ()
 
+
 class DefaultDecoratorMixin(MarshmallowCapableBaseMixin, GraphqlCapableMixin):
     is_internal = False
 
 
 import contextvars
+
 root_decor = contextvars.ContextVar('root_decor', default=DefaultDecoratorMixin())
 cur_self = contextvars.ContextVar('cur_self', default=None)
+
 
 def whichever_order(li: list, operation):
     """
@@ -239,6 +246,7 @@ def whichever_order(li: list, operation):
             errors.append(e)
     else:
         raise Exception(f'All possible combinations failed {str(errors)}')
+
 
 class DecoratorBase(metaclass=_ModelRegistry):
     """
@@ -326,6 +334,7 @@ class DecoratorBase(metaclass=_ModelRegistry):
 
         return whichever_order(typ, op)
 
+
 # _vals_
 
 # class BindClass_(DecoratorBase):
@@ -360,7 +369,7 @@ class Annotate(DecoratorBase):
                     if origin is list:
                         if arguments := typing.get_args(annotation):
                             element_type = next(iter(arguments))
-                            if element_type in (str, bool, float, int, ):
+                            if element_type in (str, bool, float, int,):
                                 decorated = List(value=lambda a: a.of_type(element_type), decorated=decorated)
                     else:
                         decorated = OfType(type_cls=origin, decorated=decorated)
@@ -381,7 +390,6 @@ class BranchHead(DecoratorBase):
 
 
 class Nothing(DecoratorBase):
-
     """
     Use attr.nothing
 
@@ -392,7 +400,6 @@ class Nothing(DecoratorBase):
     A.b and A.c points to the same AttributeBase object, and
         b.name == c.name == 'c'
     """
-
 
     @classmethod
     def easy(cls, *args, **kwargs):
@@ -414,13 +421,13 @@ class DefaultValue(DecoratorBase):
         yield from self.decorated._marshmallow_field_kwargs
         yield 'missing', self.default_value
 
+
 # class DefaultParamsMixin:
 #     import_enabled = True
 #     export_enabled = True
 
 
 class ImportRequired(DecoratorBase):
-
     import_required = True
 
     @property
@@ -458,8 +465,8 @@ class Required(ImportRequired, ExportRequired):
         yield from self.decorated._graphql_object_type
     # pass
 
-class Optional(DecoratorBase):
 
+class Optional(DecoratorBase):
     import_required = False
     export_required = False
 
@@ -642,7 +649,6 @@ class Int(Integer):
 
 
 class IntegerTimestamp(Integer):
-
     _long_type = None
 
     @classmethod
@@ -677,6 +683,7 @@ class Bool(OfType):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, type_cls=bool, **kwargs)
 
+
 #
 # import contextvars
 # current_self = contextvars.ContextVar('current_self', default=list())  # TODO: note mutable default
@@ -699,6 +706,7 @@ class Getter(DecoratorBase):
         def fget(_self_obj):
             inner = getattr(_self_obj, _ATTRIBUTE_STORE_NAME)
             return getattr(inner, name)
+
         return fget
 
     def __init__(self, fget=_NA, *args, **kwargs):
@@ -718,6 +726,7 @@ class Setter(DecoratorBase):
         def fset(_self_obj, value):
             inner = getattr(_self_obj, _ATTRIBUTE_STORE_NAME)
             return setattr(inner, name, value)
+
         return fset
 
     def __init__(self, fset=_NA, *args, **kwargs):
@@ -737,6 +746,7 @@ class Deleter(DecoratorBase):
         def fdel(_self_obj):
             inner = getattr(_self_obj, _ATTRIBUTE_STORE_NAME)
             return delattr(inner, name)
+
         return fdel
 
     def __init__(self, fdel=_NA, *args, **kwargs):
@@ -777,12 +787,12 @@ class EasyInit(Init):
         def _init(_self_obj):
             inner = getattr(_self_obj, _ATTRIBUTE_STORE_NAME)
             return setattr(inner, name, self._easy_initializer(_self_obj))
+
         return _init
 
     def __init__(self, easy_initializer, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._easy_initializer = easy_initializer
-
 
 
 class Dict(Init):
@@ -791,6 +801,7 @@ class Dict(Init):
         def _dict_initializer(_self):
             attr_name = self.name  # TODO: fix
             setattr(_self, attr_name, dict())
+
         super().__init__(
             *args,
             initializer=_dict_initializer,
@@ -829,7 +840,6 @@ class List(OfType):
 
 
 class Enum(OfType):
-
     from enum import Enum as _Enum
 
     def __init__(self, enum_cls: typing.Type[_Enum], *args, **kwargs):
@@ -872,6 +882,7 @@ class DocId(DecoratorBase):
         """
         Dispatch to subclass when required
         """
+
         def fget(self):
             return self.doc_ref.id
 
@@ -897,7 +908,6 @@ class DocId(DecoratorBase):
     def _marshmallow_field_cls(self):
         from onto.mapper import fields
         return fields.DocIdField
-
 
 
 class NodeId(DecoratorBase):
@@ -964,12 +974,14 @@ class NoneAsMissing(DecoratorBase):
     @property
     def _marshmallow_field_override(self):
         yield from self.decorated._marshmallow_field_override
+
         def _deserialize(_self, value, attr, data, **kwargs):
             if value is None:
                 from marshmallow.fields import missing_
                 return missing_
             else:
                 return super(_self.__class__, _self)._deserialize(value, attr, data, **kwargs)
+
         yield ('_deserialize', _deserialize)
 
     @property
@@ -1085,7 +1097,27 @@ class Doc(DecoratorBase):
         yield 'description', self.doc
 
 
+class Executable(Getter):
+    """
+    可以被执行的 attribute 用于 graphql
+    """
+
+    def __init__(self, f=_NA, *args, **kwargs):
+        self._f = f
+        super().__init__(lambda *_: f, *args, **kwargs)
+
+    def _make_graphql_args(self):
+        from onto.sink.graphql import GraphQLSink
+        parameters = GraphQLSink._parameters_for(self._f)
+        for name, annotated_type in parameters:
+            yield name, GraphQLSink._param_to_graphql_arg(annotated_type=annotated_type)
+        yield from ()
+
+    @property
+    def _graphql_field_kwargs(self):
+        yield from self.decorated._graphql_field_kwargs
+        yield 'args', dict(self._make_graphql_args())
+
+
 class AsRoot(DecoratorBase):
-
     is_root = True
-
