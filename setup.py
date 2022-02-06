@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="onto",
     # Beta release
-    version="0.0.5a5",
+    version="0.0.5b1",
     author="Bill Rao",
     author_email="billrao@me.com",
     description="Build reactive back end with ease ",
