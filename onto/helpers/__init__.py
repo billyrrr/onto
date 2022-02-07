@@ -26,3 +26,12 @@ def make_variable(name, **kwargs):
     class InlineContextVariable(ContextVariable):
         var = contextvars.ContextVar(name, **kwargs)
     return InlineContextVariable
+
+
+def unpack_dict(d):
+    import inspect
+    from onto.helpers.unpack_tuple_ported import get_assigned_name
+    names = get_assigned_name(inspect.currentframe().f_back)
+    for name in names:
+        yield d[name]
+    yield from ()
