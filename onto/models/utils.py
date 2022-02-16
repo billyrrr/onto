@@ -47,6 +47,10 @@ def _schema_cls_from_attributed_class(cls):
             transformation = camel if case_conversion else lambda a: a
             context = context.data_key_from_name(transformation=transformation)
 
+            if getattr(cls.Meta, 'is_sorter', False):
+                context = context.string
+                # context = context.data_key(key)
+
             with context:
                 field = attr.marshmallow_field
         except Exception as e:

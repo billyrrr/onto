@@ -18,10 +18,14 @@ class ParamsParams(Serializable):
 
 class Sort(Serializable):
     foo = attrs.string
+    def append_conditions(self, q):
+        return q
 
 
 class Filter(Serializable):
     foo = attrs.string
+    def append_conditions(self, q):
+        return q
 
 
 class Params(Serializable):
@@ -520,7 +524,7 @@ class ViewMediator(ViewMediatorBase):
             def get(self):
                 from flask import request
                 params_str = request.args.get('params', '{}')
-                sort_str = request.args.get('sort', '{}')
+                sort_str = request.args.get('sorter', '{}')
                 filter_str = request.args.get('filter', '{}')
                 import json
 
