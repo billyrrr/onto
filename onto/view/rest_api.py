@@ -1,3 +1,4 @@
+from collections import namedtuple
 from functools import cached_property
 
 from flasgger import SwaggerView
@@ -32,6 +33,9 @@ class Params(Serializable):
     params = attrs.embed(ParamsParams)
     sort = attrs.embed(Sort)
     filter = attrs.embed(Filter)
+
+
+PaginatedResponse = namedtuple('PaginatedResponse', ['success', 'data', 'total'], defaults=[True, None, None])
 
 
 class ViewMediator(ViewMediatorBase):
@@ -71,7 +75,8 @@ class ViewMediator(ViewMediatorBase):
             (Serializable,),
             {
                 'total': attrs.integer,
-                'data': attrs.list(value=attrs.embed(_self.view_model_cls))
+                'data': attrs.list(value=attrs.embed(_self.view_model_cls)),
+                'success': attrs.bool
             }
         )
 
@@ -537,10 +542,21 @@ class ViewMediator(ViewMediatorBase):
                     'sort': sort_d,
                     'filter': filter_d,
                 })
-                result = list(_self.view_model_cls.get_many(params=params))
+
+                res = _self.view_model_cls.get_many(params=params)
+                from collections import namedtuple
+                if isinstance(res, PaginatedResponse):
+                    data = res.data
+                    total = res.total
+                    success = res.success
+                else:
+                    data = list(res)
+                    total = 0
+                    success = True
                 paginated = _self.paginated_query_cls.new(
-                    data=result,
-                    total=0,
+                    data=data,
+                    total=total,
+                    success=success
                 )
                 from flask import jsonify
                 return jsonify(paginated.to_dict())
