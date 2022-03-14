@@ -877,17 +877,17 @@ class ParentKlass(DecoratorBase):
 
 class DocId(DecoratorBase):
 
-    @classmethod
-    def new(cls, *args, **kwargs):
-        """
-        Dispatch to subclass when required
-        """
-
-        def fget(self):
-            return self.doc_ref.id
-
-        inner = Getter(fget, *args, **kwargs)
-        return cls(decorated=inner)
+    # @classmethod
+    # def new(cls, *args, **kwargs):
+    #     """
+    #     Dispatch to subclass when required
+    #     """
+    #
+    #     def fget(self):
+    #         return self.doc_ref.id
+    #
+    #     inner = Getter(fget, *args, **kwargs)
+    #     return cls(decorated=inner)
 
     @property
     def _graphql_object_type(self):
