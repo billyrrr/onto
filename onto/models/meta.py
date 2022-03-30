@@ -65,11 +65,12 @@ class SerializableMeta(AttributedMeta, ModelRegistry):
         for attr_name, attr in __attributes.items():
             from onto.attrs.unit import MonadContext
             with MonadContext.context().getter().setter().deleter():
+                # print(attr.properties.data_key)
                 p = property(
                     fget=getattr(attr, 'fget', None),
                     fset=getattr(attr, 'fset', None),
                     fdel=getattr(attr, 'fdel', None),
-                    doc=getattr(attr, 'doc', None)
+                    doc=getattr(attr, 'doc', None) or getattr(attr.properties, 'data_key', None)
                 )
                 setattr(klass, attr_name, p)
 
