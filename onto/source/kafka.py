@@ -39,15 +39,16 @@ async def _kafka_subscribe(topic_name, callback, bootstrap_servers='kafka.defaul
 
 class KafkaSource(Source):
 
-    def __init__(self, topic_name):
+    def __init__(self, topic_name, bootstrap_servers='kafka.default.svc.cluster.local:9092', **kwargs):
         """ Initializes a ViewMediator to declare protocols that
                 are called when the results of a query change. Note that
                 mediator.start must be called later.
 
         :param query: a listener will be attached to this query
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.topic_name = topic_name
+        self.bootstrap_servers = bootstrap_servers
 
     def start(self, loop):
         import asyncio
@@ -59,4 +60,25 @@ class KafkaSource(Source):
     async def _register(self):
         from functools import partial
         f = partial(self._invoke_mediator_async, func_name='on_topic')
-        await _kafka_subscribe(topic_name=self.topic_name, callback=f)
+        await _kafka_subscribe(topic_name=self.topic_name, callback=f, bootstrap_servers=self.bootstrap_servers)
+
+
+class KafkaDomainModelSource(KafkaSource):
+
+    def __init__(self, *, dm_cls, **kwargs, ):
+        self.dm_cls = dm_cls
+        super().__init__(**kwargs)
+
+
+    async def _invoke_mediator_async(self, *, func_name, message: 'ConsumerRecord'):
+        k = message.key
+        v = message.value
+        obj = self.dm_cls.from_dict(v)
+        obj.doc_id = k
+        try:
+            await super()._invoke_mediator_async(func_name=func_name, obj=obj)
+        except Exception as _:
+            import logging
+            logging.exception(f'async _invoke_mediator failed for {func_name} {str(k)}')
+
+

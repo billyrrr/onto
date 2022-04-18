@@ -74,7 +74,7 @@ class Context:
         TODO: call Logger.setLevel(...)  with level specified by user
         """
         cls.logger = logging.getLogger()
-        cls.logger.setLevel(level=logging.DEBUG)
+        cls.logger.setLevel(level=logging.ERROR)
 
     # @staticmethod
     # def _logger_type(logger):

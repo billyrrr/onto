@@ -57,6 +57,8 @@ class MockDatabase(Database):
         :return:
         """
         del cls.d[str(ref)]
+        cls.listener()._pub(reference=ref, snapshot=None)
+
 
     @classmethod
     def query(cls, q):

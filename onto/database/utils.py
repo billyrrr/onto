@@ -26,10 +26,15 @@ class GenericListener(Listener):
             except Exception as e:
                 from onto.context import Context as CTX
                 CTX.logger.exception(f"a task in the queue has failed {item}")
-            cls.qs[col].task_done()
+            # cls.qs[col].task_done()
 
     @classmethod
     async def listen(cls, col, source):
         async for ref, snapshot in cls._sub(col):
-            await source._invoke_mediator(
-                func_name='on_create', ref=ref, snapshot=snapshot)
+            if snapshot is not None:
+                await source._invoke_mediator(
+                    func_name='on_create', ref=ref, snapshot=snapshot)
+            else:
+                # delete
+                await source._invoke_mediator(
+                    func_name='on_delete', ref=ref, snapshot=snapshot)

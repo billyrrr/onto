@@ -177,7 +177,8 @@ class DocIdField(fields.Function, Field):
             if data_key not in value:
                 return fields.missing_
             else:
-                return value[data_key]
+                return value
+                # return value[data_key]
 
         super().__init__(
             *args,

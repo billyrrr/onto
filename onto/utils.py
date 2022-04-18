@@ -16,8 +16,8 @@ from onto.database import Reference
 from onto.registry import ModelRegistry
 
 
-def random_id():
-    random_id_str = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+def random_id(n=32):
+    random_id_str = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(n)])
     return random_id_str
 
 
