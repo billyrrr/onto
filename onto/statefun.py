@@ -20,7 +20,7 @@ async def do_init(obj_cls: type, method_call: dict, storage: Context.storage) ->
     storage.__d = __d
 
 
-async def do_method(obj_cls: type, method_call: dict, storage: Context.storage) -> None:
+async def do_method(obj_cls: type, method_call: dict, storage: Context.storage, doc_id: str) -> None:
     __d = storage.__d
     if not __d:
         raise "NULL 未初始化的对象不可调用 method"
@@ -31,7 +31,11 @@ async def do_method(obj_cls: type, method_call: dict, storage: Context.storage) 
     function_name = method_call['f']
     parameters = method_call['parameters']
     f = getattr(obj, function_name)
-    f(**parameters)
+    import inspect
+    if inspect.iscoroutinefunction(f):
+        await f(**parameters)
+    else:
+        f(**parameters)
 
     d: dict = obj.to_dict()
     import json
@@ -46,7 +50,7 @@ async def make_call(dm_cls: type, context: Context, message: Message, topic: str
     if function_call['invocation_type'] == 'ClassMethod':
         await do_init(dm_cls, method_call=function_call, storage=context.storage)
     elif function_call['invocation_type'] == 'Method':
-        await do_method(dm_cls, method_call=function_call, storage=context.storage)
+        await do_method(dm_cls, method_call=function_call, storage=context.storage, doc_id=message.target_id)
     elif function_call['invocation_type'] == 'DoNoOpEmit':
         """
         emit a view
@@ -64,6 +68,7 @@ async def make_call(dm_cls: type, context: Context, message: Message, topic: str
 
 async def send_one(s, topic):
     """ TODO: optimize """
+    from aiokafka import AIOKafkaProducer
     producer = AIOKafkaProducer(bootstrap_servers='kafka.kafka.svc.cluster.local:9092')
     # Get cluster layout and initial topic/partition leadership information
     await producer.start()

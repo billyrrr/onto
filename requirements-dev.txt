@@ -53,3 +53,5 @@ jsonrpcclient[requests]
 google-cloud-logging
 
 apache-flink-statefun==3.2.0
+
+aiokafka

@@ -6,8 +6,8 @@ Some examples are inspired by firestore documentations, some copyright
 """
 
 import pytest
-from google.cloud.firestore import Query, DocumentReference, \
-    CollectionReference
+# from google.cloud.firestore import Query, DocumentReference, \
+#     CollectionReference
 
 from onto.config import Config
 from onto.context import Context as CTX

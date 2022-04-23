@@ -173,12 +173,13 @@ class DocIdField(fields.Function, Field):
             :param value:
             :return:
             """
-            data_key = self.data_key
-            if data_key not in value:
-                return fields.missing_
-            else:
-                return value
-                # return value[data_key]
+            return value
+            # data_key = self.data_key
+            # if data_key not in value:
+            #     return fields.missing_
+            # else:
+            #     return value
+            #     # return value[data_key]
 
         super().__init__(
             *args,
