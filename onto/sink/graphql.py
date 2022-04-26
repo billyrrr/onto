@@ -1,5 +1,7 @@
+import asyncio
 import weakref
 from collections import defaultdict, OrderedDict
+from functools import partial
 from inspect import Parameter
 from typing import Type
 
@@ -112,11 +114,23 @@ class GraphQLSink(Sink):
         cons = partial(asyncio.Queue
                        # , loop=loop
                        )
-        self.qs = defaultdict(cons)
+
+        from onto.sink.utils import Broker
+        self.broker = Broker()
         self.loop = loop
         self._camelize = camelize
         self.many = many
         super().__init__()
+
+    @property
+    def qs(self):
+        raise TypeError(
+            """
+            qs is deprecated.
+            instead of ``` self.sink.qs[topic_name] = item ```, use:
+            ```await self.sink.publish(topic_name, item) ```
+            """
+        )
 
     @staticmethod
     def _param_to_graphql_arg(annotated_type):
@@ -181,7 +195,6 @@ class GraphQLSink(Sink):
             args=args
         )
 
-
     def start(self):
         subscription_schema = self._as_graphql_schema()
         return subscription_schema
@@ -199,6 +212,15 @@ class GraphQLSubscriptionSink(GraphQLSink):
     def _get_user(info):
         return info.context.user
 
+    async def publish(self, *args, **kwargs):
+        return await self.broker.publish(*args, **kwargs)
+
+    def start(self, loop):
+        _ = asyncio.run_coroutine_threadsafe(
+            self.broker.source_while_loop(), loop=loop
+        )
+        return super().start()
+
     def _register_op(self):
         from gql import subscribe
         async def f(parent, info, **kwargs):
@@ -213,18 +235,16 @@ class GraphQLSubscriptionSink(GraphQLSink):
             # Perform before_subscription
             await self._invoke_mediator(func_name='before_subscription', **kwargs)
 
-            # Listen to topic
-            import asyncio
-            q: asyncio.Queue = self.qs[topic_name]
+            from onto.utils import random_id
+            sub_id = random_id()
 
-            while True:
-                event = await q.get()
+            self.broker.bind(pub_id=topic_name, sub_id=sub_id)
+            async for event in self.broker.sink_while_loop(sub_id=sub_id):
                 yield {
                     self.sink_name:
                         self._invoke_mediator(func_name='on_event',
                                               event=event, **kwargs)
                 }
-                q.task_done()
 
         # name = self.parent().__name__
         # f.__name__ = name

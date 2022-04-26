@@ -1,3 +1,5 @@
+import logging
+
 from onto.source.base import Source
 
 
@@ -30,7 +32,7 @@ async def _kafka_subscribe(topic_name, callback, bootstrap_servers='kafka.defaul
             #       msg.key, msg.value, msg.timestamp)
     except Exception as e:
         import warnings
-        warnings.warn(f'Error: {e}')
+        logging.exception('invoke kafka failed')
         raise ValueError('Interrupted') from e
     finally:
         # Will leave consumer group; perform autocommit if enabled.
@@ -74,7 +76,7 @@ class KafkaDomainModelSource(KafkaSource):
         k = message.key
         v = message.value
         obj = self.dm_cls.from_dict(v)
-        obj.doc_id = k
+        # obj.doc_id = k
         try:
             await super()._invoke_mediator_async(func_name=func_name, obj=obj)
         except Exception as _:
