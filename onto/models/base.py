@@ -123,9 +123,9 @@ class Schemed(SchemedBase):
         #         return None
         #     cls._schema_obj = schema_cls()
         # return cls._schema_obj
-        _schema_cls = cls.get_schema_cls()
-        _schema_obj = _schema_cls()
-        return _schema_obj
+        if _schema_cls := cls.get_schema_cls():
+            _schema_obj = _schema_cls()
+            return _schema_obj
 
     @property
     def schema_cls(self):

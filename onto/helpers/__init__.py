@@ -1,6 +1,8 @@
 import contextlib
 import contextvars
 
+from inflection import camelize
+
 
 class ContextVariable(contextlib.ContextDecorator):
     stack = list()
@@ -34,4 +36,13 @@ def unpack_dict(d):
     names = get_assigned_name(inspect.currentframe().f_back)
     for name in names:
         yield d[name]
+    yield from ()
+
+
+def unpack_dict_decamelize(d):
+    import inspect
+    from onto.helpers.unpack_tuple_ported import get_assigned_name
+    names = get_assigned_name(inspect.currentframe().f_back)
+    for name in names:
+        yield d[camelize(name, uppercase_first_letter=False)]
     yield from ()

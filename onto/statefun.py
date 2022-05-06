@@ -1,4 +1,5 @@
 from statefun import make_json_type, Context, Message, kafka_egress_message
+from onto.models.base import Serializable
 
 METHOD_TYPE = make_json_type(typename="example/Method")
 
@@ -8,6 +9,8 @@ EGRESS_RECORD_TYPE = make_json_type(typename="io.statefun.playground/EgressRecor
 async def do_classmethod(obj_cls: type, classmethod_call):
     function_name = classmethod_call['f']
     parameters = classmethod_call['parameters']
+    for k, v in classmethod_call.get('serializable_parameters', dict()).items():
+        parameters[k] = Serializable.from_dict(v)
     f = getattr(obj_cls, function_name)
     return f(**parameters)
 
@@ -30,12 +33,42 @@ async def do_method(obj_cls: type, method_call: dict, storage: Context.storage, 
 
     function_name = method_call['f']
     parameters = method_call['parameters']
+    for k, v in method_call.get('serializable_parameters', dict()).items():
+        parameters[k] = Serializable.from_dict(v)
     f = getattr(obj, function_name)
     import inspect
     if inspect.iscoroutinefunction(f):
         await f(**parameters)
     else:
         f(**parameters)
+
+    d: dict = obj.to_dict()
+    import json
+    __d = json.dumps(d)
+    storage.__d = __d
+
+
+async def do_raw(obj_cls: type, method_call: dict, storage: Context.storage, context: Context, message: Message) -> None:
+    """
+    context and message passthrough as __context__ and __message__
+    """
+    __d = storage.__d
+    if not __d:
+        raise "NULL 未初始化的对象不可调用 method"
+    import json
+    d: dict = json.loads(__d)
+    obj = obj_cls.from_dict(d)
+
+    function_name = method_call['f']
+    parameters = method_call['parameters']
+    for k, v in method_call.get('serializable_parameters', dict()).items():
+        parameters[k] = Serializable.from_dict(v)
+    f = getattr(obj, function_name)
+    import inspect
+    if inspect.iscoroutinefunction(f):
+        await f(**parameters, __context__=context, __message__=message)
+    else:
+        f(**parameters, __context__=context, __message__=message)
 
     d: dict = obj.to_dict()
     import json
@@ -56,6 +89,14 @@ async def make_call(dm_cls: type, context: Context, message: Message, topic: str
         emit a view
         """
         pass
+    elif function_call['invocation_type'] == 'RawMethod':
+        await do_raw(
+            dm_cls,
+            method_call=function_call,
+            storage=context.storage,
+            context=context,
+            message=message
+        )
     else:
         raise
     context.send_egress(kafka_egress_message(
@@ -100,6 +141,15 @@ class StatefunProxy:
         )
 
     @classmethod
+    def raw_method_of(cls, dm_cls: type, target_id: str):
+        return cls(
+            wrapped=dm_cls,
+            target_id=target_id,
+            invocation_type='RawMethod',
+            topic=f'{dm_cls.__name__.casefold()}-calls-1'
+        )
+
+    @classmethod
     def classmethod_of(cls, dm_cls: type, target_id: str):
         return cls(
             wrapped=dm_cls,
@@ -117,13 +167,16 @@ class StatefunProxy:
             topic=f'{dm_cls.__name__.casefold()}-calls-1'
         )
 
+
+
     def __getattr__(self, name):
 
         async def make_call(**kwargs):
             print(self.invocation_type)
             print(f'id: {self.target_id} f: {name} parameters: {kwargs}')
-
-            res = dict(f=name, parameters=kwargs, invocation_type=self.invocation_type)
+            serializable_parameters = {k:v.to_dict() for k, v in kwargs.items() if isinstance(v, Serializable) }
+            regular_parameters = {k:v for k, v in kwargs.items() if not isinstance(v, Serializable) }
+            res = dict(f=name, parameters=regular_parameters, serializable_parameters=serializable_parameters, invocation_type=self.invocation_type)
             import json
             s = json.dumps(res)
             await send_one(s, self.topic)
