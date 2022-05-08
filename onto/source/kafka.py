@@ -11,8 +11,14 @@ async def _kafka_subscribe(topic_name, callback, bootstrap_servers='kafka.defaul
 
     def value_deserializer(v: bytes):
         import json
-        s = v.decode('utf-8')
-        return json.loads(s)
+        if v is None:
+            """
+            tombstone
+            """
+            return None
+        else:
+            s = v.decode('utf-8')
+            return json.loads(s)
 
     consumer = AIOKafkaConsumer(
         topic_name,
