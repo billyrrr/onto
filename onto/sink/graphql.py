@@ -53,6 +53,8 @@ class GraphQLSink(Sink):
     def _maybe_deserialize(self, val, annotated_type):
         from onto.models.base import BaseRegisteredModel
         if issubclass(annotated_type, BaseRegisteredModel):
+            if isinstance(val, annotated_type):
+                return val  # user: User already deserialized
             return annotated_type.from_dict_special(val)
         else:
             return val
