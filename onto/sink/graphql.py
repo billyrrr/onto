@@ -5,6 +5,7 @@ from functools import partial
 from inspect import Parameter
 from typing import Type
 
+from onto.helpers import make_variable
 from onto.source.protocol import Protocol
 from onto.view_model import ViewModel
 
@@ -15,6 +16,16 @@ from collections import namedtuple
 
 graph_schema = namedtuple('graph_schema', ['op_type', 'name', 'graphql_object_type', 'args'])
 import graphql
+
+graphql_context = make_variable('graphql_context', default=None)
+
+
+def get_info() -> 'GraphQLResolveInfo':
+    return graphql_context.get()
+
+
+def get_user(info: 'GraphQLResolveInfo'):
+    return info.context['request'].user
 
 class GraphQLSink(Sink):
 
@@ -200,10 +211,9 @@ class GraphQLSink(Sink):
     def start(self):
         subscription_schema = self._as_graphql_schema()
         return subscription_schema
-    
-    @staticmethod
-    def _get_user(info):
-        return info.context['request'].user
+
+    _get_user = staticmethod(get_user)
+
 
 
 class GraphQLSubscriptionSink(GraphQLSink):
@@ -303,7 +313,8 @@ class GraphQLMutationSink(GraphQLSink):
                 'info': info,
                 **kwargs
             }
-            res = await self._invoke_mediator(func_name='mutate', **kwargs)
+            with graphql_context(info):
+                res = await self._invoke_mediator(func_name='mutate', **kwargs)
             return res
 
         name = self.sink_name
