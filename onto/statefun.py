@@ -107,7 +107,7 @@ async def make_call(dm_cls: type, context: Context, message: Message, topic: str
     )
 
 
-async def send_one(s, topic):
+async def send_one(s, topic, target_id: str):
     """ TODO: optimize """
     from aiokafka import AIOKafkaProducer
     producer = AIOKafkaProducer(bootstrap_servers='kafka.kafka.svc.cluster.local:9092')
@@ -115,7 +115,7 @@ async def send_one(s, topic):
     await producer.start()
     try:
         # Produce message
-        await producer.send_and_wait(topic, value=s.encode('utf-8'), key='a3'.encode('utf-8'))
+        await producer.send_and_wait(topic, value=s.encode('utf-8'), key=target_id.encode('utf-8'))
     except Exception as e:
         raise
     finally:
@@ -179,7 +179,7 @@ class StatefunProxy:
             res = dict(f=name, parameters=regular_parameters, serializable_parameters=serializable_parameters, invocation_type=self.invocation_type)
             import json
             s = json.dumps(res)
-            await send_one(s, self.topic)
+            await send_one(s, self.topic, target_id=self.target_id)
 
         return make_call
 
