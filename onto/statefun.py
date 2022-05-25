@@ -2,6 +2,7 @@ from statefun import make_json_type, Context, Message, kafka_egress_message
 from onto.models.base import Serializable
 
 METHOD_TYPE = make_json_type(typename="example/Method")
+EVENT_TYPE = make_json_type(typename="example/Event")
 
 EGRESS_RECORD_TYPE = make_json_type(typename="io.statefun.playground/EgressRecord")
 
@@ -23,10 +24,33 @@ async def do_init(obj_cls: type, method_call: dict, storage: Context.storage) ->
     storage.__d = __d
 
 
+async def do_event(obj_cls: type, event: dict, storage: Context.storage, doc_id: str) -> None:
+    __d = storage.__d
+    if not __d:
+        raise TypeError("NULL 未初始化的对象不可调用 do_event")
+    import json
+    d: dict = json.loads(__d)
+    obj = obj_cls.from_dict(d)
+
+    name: str = event['name']  # name = 'rule-hello-world'
+    function_name = '_'.join(name.split('-')[1:])  # function_name = 'hello_world'
+    f = getattr(obj, function_name)
+    import inspect
+    if inspect.iscoroutinefunction(f):
+        await f(event)
+    else:
+        f(event)
+
+    d: dict = obj.to_dict()
+    import json
+    __d = json.dumps(d)
+    storage.__d = __d
+
+
 async def do_method(obj_cls: type, method_call: dict, storage: Context.storage, doc_id: str) -> None:
     __d = storage.__d
     if not __d:
-        raise "NULL 未初始化的对象不可调用 method"
+        raise TypeError("NULL 未初始化的对象不可调用 method")
     import json
     d: dict = json.loads(__d)
     obj = obj_cls.from_dict(d)
@@ -54,7 +78,7 @@ async def do_raw(obj_cls: type, method_call: dict, storage: Context.storage, con
     """
     __d = storage.__d
     if not __d:
-        raise "NULL 未初始化的对象不可调用 method"
+        raise TypeError("NULL 未初始化的对象不可调用 method")
     import json
     d: dict = json.loads(__d)
     obj = obj_cls.from_dict(d)
@@ -74,6 +98,23 @@ async def do_raw(obj_cls: type, method_call: dict, storage: Context.storage, con
     import json
     __d = json.dumps(d)
     storage.__d = __d
+
+
+async def make_event_call(dm_cls: type, context: Context, message: Message, topic: str):
+    """
+    React to event
+    """
+    if not message.is_type(EVENT_TYPE):
+        raise TypeError('需要是 EVENT_TYPE')
+    event = message.as_type(EVENT_TYPE)
+    await do_event(dm_cls, event=event, storage=context.storage, doc_id=message.target_id)
+
+    context.send_egress(kafka_egress_message(
+        typename='com.example/domain-egress',
+        topic=topic,
+        key=context.address.id,
+        value=context.storage.__d)
+    )
 
 
 async def make_call(dm_cls: type, context: Context, message: Message, topic: str):
