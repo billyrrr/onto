@@ -47,7 +47,16 @@ async def do_event(obj_cls: type, event: dict, storage: Context.storage, doc_id:
     storage.__d = __d
 
 
-async def do_method(obj_cls: type, method_call: dict, storage: Context.storage, doc_id: str) -> None:
+async def do_method(obj_cls: type, method_call: dict, storage: Context.storage, doc_id: str, should_persist: bool) -> None:
+    """
+    Invoke a method on the instance
+
+    :param obj_cls: target class
+    :param method_call: call configuration
+    :param storage: statefun storage object
+    :param doc_id: instance doc_id (will not be read. doc_id is spawned from dictionary representation)
+    :param should_persist: if True, persist the change and emit a view
+    """
     __d = storage.__d
     if not __d:
         raise TypeError("NULL 未初始化的对象不可调用 method")
@@ -66,13 +75,14 @@ async def do_method(obj_cls: type, method_call: dict, storage: Context.storage, 
     else:
         f(**parameters)
 
-    d: dict = obj.to_dict()
-    import json
-    __d = json.dumps(d)
-    storage.__d = __d
+    if should_persist:
+        d: dict = obj.to_dict()
+        import json
+        __d = json.dumps(d)
+        storage.__d = __d
 
 
-async def do_raw(obj_cls: type, method_call: dict, storage: Context.storage, context: Context, message: Message) -> None:
+async def do_raw(obj_cls: type, method_call: dict, storage: Context.storage, context: Context, message: Message, should_persist: bool) -> None:
     """
     context and message passthrough as __context__ and __message__
     """
@@ -94,10 +104,11 @@ async def do_raw(obj_cls: type, method_call: dict, storage: Context.storage, con
     else:
         f(**parameters, __context__=context, __message__=message)
 
-    d: dict = obj.to_dict()
-    import json
-    __d = json.dumps(d)
-    storage.__d = __d
+    if should_persist:
+        d: dict = obj.to_dict()
+        import json
+        __d = json.dumps(d)
+        storage.__d = __d
 
 
 async def make_event_call(dm_cls: type, context: Context, message: Message, topic: str):
@@ -121,10 +132,12 @@ async def make_call(dm_cls: type, context: Context, message: Message, topic: str
     if not message.is_type(METHOD_TYPE):
         raise TypeError('需要是 METHOD_TYPE')
     function_call = message.as_type(METHOD_TYPE)
+    # If true, persist the change
+    should_persist = function_call.get('should_persist', True)
     if function_call['invocation_type'] == 'ClassMethod':
         await do_init(dm_cls, method_call=function_call, storage=context.storage)
     elif function_call['invocation_type'] == 'Method':
-        await do_method(dm_cls, method_call=function_call, storage=context.storage, doc_id=message.target_id)
+        await do_method(dm_cls, method_call=function_call, storage=context.storage, doc_id=message.target_id, should_persist=should_persist)
     elif function_call['invocation_type'] == 'DoNoOpEmit':
         """
         emit a view
@@ -136,16 +149,18 @@ async def make_call(dm_cls: type, context: Context, message: Message, topic: str
             method_call=function_call,
             storage=context.storage,
             context=context,
-            message=message
+            message=message,
+            should_persist=should_persist
         )
     else:
         raise
-    context.send_egress(kafka_egress_message(
-        typename='com.example/domain-egress',
-        topic=topic,
-        key=context.address.id,
-        value=context.storage.__d)
-    )
+    if should_persist:
+        context.send_egress(kafka_egress_message(
+            typename='com.example/domain-egress',
+            topic=topic,
+            key=context.address.id,
+            value=context.storage.__d)
+        )
 
 
 async def send_one(s, topic, target_id: str):
@@ -166,11 +181,12 @@ async def send_one(s, topic, target_id: str):
 
 class StatefunProxy:
 
-    def __init__(self, wrapped, target_id: str, invocation_type: str, topic: str):
+    def __init__(self, wrapped, target_id: str, invocation_type: str, topic: str, should_persist: bool = True):
         self.wrapped = wrapped
         self.target_id = target_id
         self.invocation_type = invocation_type
         self.topic = topic
+        self.should_persist = should_persist
 
     @classmethod
     def method_of(cls, dm_cls: type, target_id: str):
@@ -217,7 +233,13 @@ class StatefunProxy:
             print(f'id: {self.target_id} f: {name} parameters: {kwargs}')
             serializable_parameters = {k:v.to_dict() for k, v in kwargs.items() if isinstance(v, Serializable) }
             regular_parameters = {k:v for k, v in kwargs.items() if not isinstance(v, Serializable) }
-            res = dict(f=name, parameters=regular_parameters, serializable_parameters=serializable_parameters, invocation_type=self.invocation_type)
+            res = dict(
+                f=name,
+                parameters=regular_parameters,
+                serializable_parameters=serializable_parameters,
+                invocation_type=self.invocation_type,
+                should_persist=self.should_persist,
+            )
             import json
             s = json.dumps(res)
             await send_one(s, self.topic, target_id=self.target_id)
