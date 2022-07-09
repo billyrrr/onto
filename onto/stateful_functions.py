@@ -1,3 +1,8 @@
+from contextvars import ContextVar
+from typing import Callable, Union
+
+from onto.helpers import make_variable
+import statefun
 from statefun import make_json_type, Context, Message, kafka_egress_message
 from onto.models.base import Serializable
 
@@ -5,6 +10,9 @@ METHOD_TYPE = make_json_type(typename="example/Method")
 EVENT_TYPE = make_json_type(typename="example/Event")
 
 EGRESS_RECORD_TYPE = make_json_type(typename="io.statefun.playground/EgressRecord")
+
+statefun_context_var: Union[ContextVar[statefun.Context], Callable] = make_variable('statefun_context', default=None)
+statefun_message_var: Union[ContextVar[statefun.Message], Callable] = make_variable('statefun_message', default=None)
 
 
 async def do_classmethod(obj_cls: type, classmethod_call):
@@ -129,38 +137,39 @@ async def make_event_call(dm_cls: type, context: Context, message: Message, topi
 
 
 async def make_call(dm_cls: type, context: Context, message: Message, topic: str):
-    if not message.is_type(METHOD_TYPE):
-        raise TypeError('需要是 METHOD_TYPE')
-    function_call = message.as_type(METHOD_TYPE)
-    # If true, persist the change
-    should_persist = function_call.get('should_persist', True)
-    if function_call['invocation_type'] == 'ClassMethod':
-        await do_init(dm_cls, method_call=function_call, storage=context.storage)
-    elif function_call['invocation_type'] == 'Method':
-        await do_method(dm_cls, method_call=function_call, storage=context.storage, doc_id=message.target_id, should_persist=should_persist)
-    elif function_call['invocation_type'] == 'DoNoOpEmit':
-        """
-        emit a view
-        """
-        pass
-    elif function_call['invocation_type'] == 'RawMethod':
-        await do_raw(
-            dm_cls,
-            method_call=function_call,
-            storage=context.storage,
-            context=context,
-            message=message,
-            should_persist=should_persist
-        )
-    else:
-        raise
-    if should_persist:
-        context.send_egress(kafka_egress_message(
-            typename='com.example/domain-egress',
-            topic=topic,
-            key=context.address.id,
-            value=context.storage.__d)
-        )
+    with statefun_context_var(context), statefun_message_var(message):
+        if not message.is_type(METHOD_TYPE):
+            raise TypeError('需要是 METHOD_TYPE')
+        function_call = message.as_type(METHOD_TYPE)
+        # If true, persist the change
+        should_persist = function_call.get('should_persist', True)
+        if function_call['invocation_type'] == 'ClassMethod':
+            await do_init(dm_cls, method_call=function_call, storage=context.storage)
+        elif function_call['invocation_type'] == 'Method':
+            await do_method(dm_cls, method_call=function_call, storage=context.storage, doc_id=message.target_id, should_persist=should_persist)
+        elif function_call['invocation_type'] == 'DoNoOpEmit':
+            """
+            emit a view
+            """
+            pass
+        elif function_call['invocation_type'] == 'RawMethod':
+            await do_raw(
+                dm_cls,
+                method_call=function_call,
+                storage=context.storage,
+                context=context,
+                message=message,
+                should_persist=should_persist
+            )
+        else:
+            raise
+        if should_persist:
+            context.send_egress(kafka_egress_message(
+                typename='com.example/domain-egress',
+                topic=topic,
+                key=context.address.id,
+                value=context.storage.__d)
+            )
 
 
 async def send_one(s, topic, target_id: str):

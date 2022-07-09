@@ -1,4 +1,4 @@
- from onto.primary_object import PrimaryObject
+from onto.primary_object import PrimaryObject
 
 
 class Entity(PrimaryObject):
@@ -12,6 +12,7 @@ class Entity(PrimaryObject):
         return CTX.db
 
 
+import stateful_functions
 import statefun
 
 functions = statefun.StatefulFunctions()
@@ -27,19 +28,19 @@ def register_root_entity(entity):
     functions.register()
 
 
-def method_invoked(context, call_event: CallEvent):
-    state = context.state('_internal_state').unpack(InternalState)
-    if not state:
-        state = SeenCount()
-        state.seen = 1
-    else:
-        state.seen += 1
-    context.state('seen_count').pack(state)
-
-    response = compute_greeting(greet_request.name, state.seen)
-
-    egress_message = kafka_egress_record(topic="greetings", key=greet_request.name, value=response)
-    context.pack_and_send_egress("example/greets", egress_message)
+# def method_invoked(context, call_event: CallEvent):
+#     state = context.state('_internal_state').unpack(InternalState)
+#     if not state:
+#         state = SeenCount()
+#         state.seen = 1
+#     else:
+#         state.seen += 1
+#     context.state('seen_count').pack(state)
+#
+#     response = compute_greeting(greet_request.name, state.seen)
+#
+#     egress_message = kafka_egress_record(topic="greetings", key=greet_request.name, value=response)
+#     context.pack_and_send_egress("example/greets", egress_message)
 
 
 class MethodSerializer:
