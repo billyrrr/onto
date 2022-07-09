@@ -35,7 +35,7 @@ class Params(Serializable):
     filter = attrs.embed(Filter)
 
 
-PaginatedResponse = namedtuple('PaginatedResponse', ['success', 'data', 'total'], defaults=[True, None, None])
+PaginatedResponse = namedtuple('PaginatedResponse', ['success', 'data', 'total', 'extra'], defaults=[True, None, None, None])
 
 
 class ViewMediator(ViewMediatorBase):
@@ -76,7 +76,8 @@ class ViewMediator(ViewMediatorBase):
             {
                 'total': attrs.integer,
                 'data': attrs.list(value=attrs.embed(_self.view_model_cls)),
-                'success': attrs.bool
+                'success': attrs.bool,
+                'extra': attrs.attribute_name('extra').data_key("extra").dict().default_value(dict)
             }
         )
 
@@ -549,6 +550,7 @@ class ViewMediator(ViewMediatorBase):
                     data = res.data
                     total = res.total
                     success = res.success
+                    extra = res.extra
                 else:
                     data = list(res)
                     total = 0
@@ -556,7 +558,8 @@ class ViewMediator(ViewMediatorBase):
                 paginated = _self.paginated_query_cls.new(
                     data=data,
                     total=total,
-                    success=success
+                    success=success,
+                    extra=extra
                 )
                 from flask import jsonify
                 return jsonify(paginated.to_dict())
