@@ -555,6 +555,7 @@ class ViewMediator(ViewMediatorBase):
                     data = list(res)
                     total = 0
                     success = True
+                    extra = None
                 paginated = _self.paginated_query_cls.new(
                     data=data,
                     total=total,
