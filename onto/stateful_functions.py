@@ -21,7 +21,11 @@ async def do_classmethod(obj_cls: type, classmethod_call):
     for k, v in classmethod_call.get('serializable_parameters', dict()).items():
         parameters[k] = Serializable.from_dict(v)
     f = getattr(obj_cls, function_name)
-    return f(**parameters)
+    import inspect
+    if inspect.iscoroutinefunction(f):
+        return await f(**parameters)
+    else:
+        return f(**parameters)
 
 
 async def do_init(obj_cls: type, method_call: dict, storage: Context.storage) -> None:

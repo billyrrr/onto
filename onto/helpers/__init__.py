@@ -3,20 +3,22 @@ import contextvars
 
 from inflection import camelize
 
+from asyncio.locks import Lock
 
 class ContextVariable(contextlib.ContextDecorator):
-    stack = list()
-    var: contextvars.ContextVar = None
+    var: contextvars.ContextVar = None  # ABSTRACT
 
     def __init__(self, next_var):
         self.next_var = next_var
+        self.prev_var = None
 
     def __enter__(self):
         # TODO: not atomic when multithreading
-        self.stack.append(self.var.set(self.next_var))
+        prev_var = self.var.set(self.next_var)
+        self.prev_var = prev_var
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.var.reset(self.stack.pop())
+        self.var.reset(self.prev_var)
         return False
 
     @classmethod

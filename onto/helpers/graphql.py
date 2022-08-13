@@ -11,6 +11,8 @@ def default_field_resolver(source, info, **args):
     """
     # Ensure source is a value for which property access is acceptable.
     field_name = info.field_name
+    if source is None:
+        raise ValueError
     value = (
         source.get(field_name)
         if isinstance(source, dict)
