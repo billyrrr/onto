@@ -1,3 +1,4 @@
+import logging
 from contextvars import ContextVar
 from typing import Callable, Union
 
@@ -194,12 +195,13 @@ async def send_one(s, topic, target_id: str):
 
 class StatefunProxy:
 
-    def __init__(self, wrapped, target_id: str, invocation_type: str, topic: str, should_persist: bool = True):
+    def __init__(self, wrapped, target_id: str, invocation_type: str, topic: str, should_persist: bool = True, target_typename=None):
         self.wrapped = wrapped
         self.target_id = target_id
         self.invocation_type = invocation_type
         self.topic = topic
         self.should_persist = should_persist
+        self.target_typename = target_typename
 
     @classmethod
     def method_of(cls, dm_cls: type, target_id: str):
@@ -237,26 +239,62 @@ class StatefunProxy:
             topic=f'{dm_cls.__name__.casefold()}-calls-1'
         )
 
-
-
-    def __getattr__(self, name):
+    def _get_make_call_kafka(self, name):
 
         async def make_call(**kwargs):
-            print(self.invocation_type)
-            print(f'id: {self.target_id} f: {name} parameters: {kwargs}')
-            serializable_parameters = {k:v.to_dict() for k, v in kwargs.items() if isinstance(v, Serializable) }
-            regular_parameters = {k:v for k, v in kwargs.items() if not isinstance(v, Serializable) }
-            res = dict(
-                f=name,
-                parameters=regular_parameters,
-                serializable_parameters=serializable_parameters,
-                invocation_type=self.invocation_type,
-                should_persist=self.should_persist,
-            )
+
+            logging.info(f'kafka: {self.invocation_type} id: {self.target_id} f: {name} parameters: {kwargs}')
+            res = self._get_invocation_value(f_name=name, _kwargs=kwargs)
+
             import json
             s = json.dumps(res)
             await send_one(s, self.topic, target_id=self.target_id)
 
         return make_call
+
+    def _get_invocation_value(self, f_name, _kwargs):
+        serializable_parameters = {k: v.to_dict() for k, v in _kwargs.items() if isinstance(v, Serializable)}
+        regular_parameters = {k: v for k, v in _kwargs.items() if not isinstance(v, Serializable)}
+        res = dict(
+            f=f_name,
+            parameters=regular_parameters,
+            serializable_parameters=serializable_parameters,
+            invocation_type=self.invocation_type,
+            should_persist=self.should_persist,
+        )
+        return res
+
+    def _get_make_call_stateful_functions(self, name):
+
+        async def make_call(**kwargs):
+
+            logging.info(f'stateful-functions: {self.invocation_type} id: {self.target_id} f: {name} parameters: {kwargs}')
+            res = self._get_invocation_value(f_name=name, _kwargs=kwargs)
+
+            __context__ = statefun_context_var.get()
+            from statefun import message_builder
+
+            __context__.send(
+                message=message_builder(
+                    target_typename=self.target_typename,
+                    target_id=self.target_id,
+                    value=res,
+                    value_type=METHOD_TYPE
+                ),
+            )
+
+        return make_call
+
+    def __getattr__(self, name):
+        from onto.invocation_context import invocation_context_var
+        invocation_context = invocation_context_var.get()
+        from onto.invocation_context import InvocationContextEnum
+        if invocation_context == InvocationContextEnum.KAFKA_TO_FUNCTIONS_INGRESS:
+            return self._get_make_call_kafka(name=name)
+        elif invocation_context == InvocationContextEnum.STATEFUL_FUNCTIONS_INTERNAL:
+            return self._get_make_call_stateful_functions(name=name)
+        else:
+            raise TypeError(f'unsupported {invocation_context}')
+
 
 
