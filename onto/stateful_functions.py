@@ -9,6 +9,7 @@ from onto.models.base import Serializable
 
 METHOD_TYPE = make_json_type(typename="example/Method")
 EVENT_TYPE = make_json_type(typename="example/Event")
+ANY_TYPE = make_json_type(typename="example/Any")
 
 EGRESS_RECORD_TYPE = make_json_type(typename="io.statefun.playground/EgressRecord")
 
@@ -31,6 +32,14 @@ async def do_classmethod(obj_cls: type, classmethod_call):
 
 async def do_init(obj_cls: type, method_call: dict, storage: Context.storage) -> None:
     res = await do_classmethod(obj_cls, classmethod_call=method_call)
+    d: dict = res.to_dict()
+    import json
+    __d = json.dumps(d)
+    storage.__d = __d
+
+
+async def do_init_simple(obj_cls: type, doc_id, storage: Context.storage) -> None:
+    res = obj_cls.new(doc_id=doc_id)
     d: dict = res.to_dict()
     import json
     __d = json.dumps(d)
@@ -150,6 +159,13 @@ async def make_call(dm_cls: type, context: Context, message: Message, topic: str
         should_persist = function_call.get('should_persist', True)
         if function_call['invocation_type'] == 'ClassMethod':
             await do_init(dm_cls, method_call=function_call, storage=context.storage)
+        elif function_call['invocation_type'] == 'UpsertMethod':
+            """
+            Initialize if not exists, and then call method
+            """
+            if not context.storage.__d:
+                await do_init_simple(dm_cls, doc_id=message.target_id, storage=context.storage)
+            await do_method(dm_cls, method_call=function_call, storage=context.storage, doc_id=message.target_id, should_persist=should_persist)
         elif function_call['invocation_type'] == 'Method':
             await do_method(dm_cls, method_call=function_call, storage=context.storage, doc_id=message.target_id, should_persist=should_persist)
         elif function_call['invocation_type'] == 'DoNoOpEmit':
@@ -285,6 +301,16 @@ class StatefunProxy:
 
         return make_call
 
+    async def _mock_make_call(self, **kwargs) -> None:
+        """
+        Inject/patch here for testing
+
+        :param kwargs:
+        :return:
+        """
+        print(**kwargs)
+
+
     def __getattr__(self, name):
         from onto.invocation_context import invocation_context_var
         invocation_context = invocation_context_var.get()
@@ -293,6 +319,8 @@ class StatefunProxy:
             return self._get_make_call_kafka(name=name)
         elif invocation_context == InvocationContextEnum.STATEFUL_FUNCTIONS_INTERNAL:
             return self._get_make_call_stateful_functions(name=name)
+        elif invocation_context == InvocationContextEnum.LOCAL_TEST:
+            return self._mock_make_call
         else:
             raise TypeError(f'unsupported {invocation_context}')
 

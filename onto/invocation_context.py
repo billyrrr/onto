@@ -19,6 +19,8 @@ class InvocationContextEnum(Enum):
     # 通过 kafka 发送至 stateful functions ingress，用于外部服务向服务内部调用
     KAFKA_TO_FUNCTIONS_INGRESS = auto()
 
+    LOCAL_TEST = auto()
+
 
 invocation_context_var: Union[ContextVar[None], ContextVar['InvocationContextEnum'], Callable] = \
     make_variable('invocation_context', default=InvocationContextEnum.KAFKA_TO_FUNCTIONS_INGRESS)

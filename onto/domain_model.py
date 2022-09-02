@@ -38,6 +38,18 @@ class RemoteProxyMixin:
         return obj
 
     @classmethod
+    def upsert_method_proxy(cls: Type[OriginalCls], doc_id: str, topic=None) -> OriginalCls:
+        from onto.stateful_functions import StatefunProxy
+        obj = StatefunProxy(
+            wrapped=cls,
+            target_id=doc_id,
+            invocation_type='UpsertMethod',
+            topic=topic or cls._get_cmd_topic(),
+            target_typename=cls._get_target_typename(),
+        )
+        return obj
+
+    @classmethod
     def _get_target_typename(cls):
         """
         Stateful Functions typename
